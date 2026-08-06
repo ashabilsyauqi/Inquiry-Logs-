@@ -37,7 +37,7 @@ client.on('message_create', async (msg) => {
 
         // Forward to our Laravel webhook locally!
         const response = await axios.post('http://127.0.0.1:8000/api/wa-webhook', payload);
-        console.log(`Webhook sent! Status: ${response.status}. Sender: ${payload.sender}, Receiver: ${payload.receiver}, Message: ${payload.message}`);
+        // Removed verbose console.log here to prevent terminal spam
     } catch (error) {
         console.error('Error sending webhook:', error.message);
     }

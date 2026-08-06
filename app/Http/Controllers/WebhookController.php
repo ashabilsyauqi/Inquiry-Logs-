@@ -10,8 +10,7 @@ class WebhookController extends Controller
 {
     public function handleIncomingWA(Request $request)
     {
-        // Log the raw request payload
-        Log::info('Incoming WhatsApp Webhook: ', $request->all());
+        // No longer logging every single incoming message to save space.
 
         // Extract sender, receiver, and message
         // Note: Field names might vary depending on your WhatsApp Gateway provider
@@ -33,27 +32,42 @@ class WebhookController extends Controller
         // Keyword matching
         $lowerMessage = strtolower($message);
         
-        // Trigger if SENDER is YOU and message contains the specific phrase
-        if ($senderPhone === $myNumber && str_contains($lowerMessage, 'silahkan melakukan pembayaran')) {
-            // The target lead is the RECEIVER
+        // Trigger if SENDER is YOU
+        if ($senderPhone === $myNumber) {
             $leadPhone = $receiverPhone;
             
-            // Find Lead
-            $lead = Lead::where('phone', $leadPhone)->first();
+            // Trigger 1: Create Lead in Follow Up
+            if (str_contains($lowerMessage, 'hallo selamat datang')) {
+                $lead = Lead::where('phone', $leadPhone)->first();
+                if (!$lead) {
+                    $lead = Lead::create([
+                        'name'  => 'Lead ' . $leadPhone,
+                        'phone' => $leadPhone,
+                        'stage' => 'Follow Up'
+                    ]);
+                    Log::info("New lead created (ID: {$lead->id}, Phone: {$leadPhone}) with stage Follow Up.");
+                }
+            }
 
-            if ($lead) {
-                // If Lead exists, update stage
-                $lead->stage = 'Payment';
-                $lead->save();
-                Log::info("Lead {$lead->id} (Phone: {$leadPhone}) stage updated to Payment by Owner.");
-            } else {
-                // If Lead DOES NOT exist, create automatically
-                $lead = Lead::create([
-                    'name'  => 'Lead ' . $leadPhone,
-                    'phone' => $leadPhone,
-                    'stage' => 'Payment'
-                ]);
-                Log::info("New dynamic lead created (ID: {$lead->id}, Phone: {$leadPhone}) with stage Payment by Owner.");
+            // Trigger 2: Move to Payment (Only if already in Follow Up)
+            if (str_contains($lowerMessage, 'silahkan melakukan pembayaran')) {
+                $lead = Lead::where('phone', $leadPhone)->first();
+                if ($lead && $lead->stage === 'Follow Up') {
+                    $lead->stage = 'Payment';
+                    $lead->save();
+                    Log::info("Lead {$lead->id} (Phone: {$leadPhone}) stage updated to Payment by Owner.");
+                }
+            }
+
+            // Trigger 3: Move to Closed (Only if already in Payment)
+            // Menggunakan dua keyword untuk menghindari typo "Pembayran"
+            if (str_contains($lowerMessage, 'terverifikasi') && str_contains($lowerMessage, 'terima kasih')) {
+                $lead = Lead::where('phone', $leadPhone)->first();
+                if ($lead && $lead->stage === 'Payment') {
+                    $lead->stage = 'Closed';
+                    $lead->save();
+                    Log::info("Lead {$lead->id} (Phone: {$leadPhone}) stage updated to Closed by Owner.");
+                }
             }
         }
 

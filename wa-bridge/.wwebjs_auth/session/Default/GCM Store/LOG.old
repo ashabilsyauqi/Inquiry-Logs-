@@ -1,2 +1,3 @@
-2026/08/06-14:22:20.064 396ca Creating DB /Users/kingashabil/Documents/Difitech/software dev/crm-mvp/wa-bridge/.wwebjs_auth/session/Default/GCM Store since it was missing.
-2026/08/06-14:22:20.069 396ca Reusing MANIFEST /Users/kingashabil/Documents/Difitech/software dev/crm-mvp/wa-bridge/.wwebjs_auth/session/Default/GCM Store/MANIFEST-000001
+2026/08/06-14:28:55.600 3be1c Reusing MANIFEST /Users/kingashabil/Documents/Difitech/software dev/crm-mvp/wa-bridge/.wwebjs_auth/session/Default/GCM Store/MANIFEST-000001
+2026/08/06-14:28:55.601 3be1c Recovering log #3
+2026/08/06-14:28:55.601 3be1c Reusing old log /Users/kingashabil/Documents/Difitech/software dev/crm-mvp/wa-bridge/.wwebjs_auth/session/Default/GCM Store/000003.log 
