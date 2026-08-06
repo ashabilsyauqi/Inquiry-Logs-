@@ -1,0 +1,17 @@
+2026/08/06-14:26:13.525 3b06c Reusing MANIFEST /Users/kingashabil/Documents/Difitech/software dev/crm-mvp/wa-bridge/.wwebjs_auth/session/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/MANIFEST-000001
+2026/08/06-14:26:13.526 3b06c Recovering log #16
+2026/08/06-14:26:13.604 3b06c Reusing old log /Users/kingashabil/Documents/Difitech/software dev/crm-mvp/wa-bridge/.wwebjs_auth/session/Default/IndexedDB/https_web.whatsapp.com_0.indexeddb.leveldb/000016.log 
+2026/08/06-14:26:13.605 3b06c Delete type=2 #15
+2026/08/06-14:26:13.605 3b06c Delete type=2 #14
+2026/08/06-14:26:13.605 3b06c Delete type=2 #17
+2026/08/06-14:26:13.605 3b06c Delete type=2 #10
+2026/08/06-14:26:13.605 3b06c Delete type=2 #11
+2026/08/06-14:26:13.605 3b06c Delete type=2 #8
+2026/08/06-14:26:17.702 3b07a Level-0 table #22: started
+2026/08/06-14:26:17.738 3b07a Level-0 table #22: 1072076 bytes OK
+2026/08/06-14:26:17.740 3b07a Delete type=0 #16
+2026/08/06-14:26:17.791 3b07a Compacting 1@1 + 2@2 files
+2026/08/06-14:26:17.863 3b07a Generated table #23@1: 38697 keys, 2195249 bytes
+2026/08/06-14:26:17.903 3b07a Generated table #24@1: 16695 keys, 1665057 bytes
+2026/08/06-14:26:17.904 3b07a Compacted 1@1 + 2@2 files => 3860306 bytes
+2026/08/06-14:26:17.905 3b07a compacted to: files[ 0 0 2 0 0 0 0 ]
