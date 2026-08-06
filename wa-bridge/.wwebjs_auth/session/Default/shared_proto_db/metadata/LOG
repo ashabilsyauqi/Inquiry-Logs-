@@ -1,3 +1,2 @@
-2026/08/06-15:02:23.233 481eb Reusing MANIFEST /Users/kingashabil/Documents/Difitech/software dev/crm-mvp/wa-bridge/.wwebjs_auth/session/Default/shared_proto_db/metadata/MANIFEST-000001
-2026/08/06-15:02:23.233 481eb Recovering log #3
-2026/08/06-15:02:23.233 481eb Reusing old log /Users/kingashabil/Documents/Difitech/software dev/crm-mvp/wa-bridge/.wwebjs_auth/session/Default/shared_proto_db/metadata/000003.log 
+2026/08/06-16:35:54.886 6cf2f Creating DB /Users/kingashabil/Documents/Difitech/software dev/crm-mvp/wa-bridge/.wwebjs_auth/session/Default/shared_proto_db/metadata since it was missing.
+2026/08/06-16:35:54.898 6cf2f Reusing MANIFEST /Users/kingashabil/Documents/Difitech/software dev/crm-mvp/wa-bridge/.wwebjs_auth/session/Default/shared_proto_db/metadata/MANIFEST-000001

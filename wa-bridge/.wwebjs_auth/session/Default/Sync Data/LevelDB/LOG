@@ -1,3 +1,2 @@
-2026/08/06-15:02:22.156 481eb Reusing MANIFEST /Users/kingashabil/Documents/Difitech/software dev/crm-mvp/wa-bridge/.wwebjs_auth/session/Default/Sync Data/LevelDB/MANIFEST-000001
-2026/08/06-15:02:22.166 481eb Recovering log #3
-2026/08/06-15:02:22.166 481eb Reusing old log /Users/kingashabil/Documents/Difitech/software dev/crm-mvp/wa-bridge/.wwebjs_auth/session/Default/Sync Data/LevelDB/000003.log 
+2026/08/06-16:35:54.392 6cf2e Creating DB /Users/kingashabil/Documents/Difitech/software dev/crm-mvp/wa-bridge/.wwebjs_auth/session/Default/Sync Data/LevelDB since it was missing.
+2026/08/06-16:35:54.463 6cf2e Reusing MANIFEST /Users/kingashabil/Documents/Difitech/software dev/crm-mvp/wa-bridge/.wwebjs_auth/session/Default/Sync Data/LevelDB/MANIFEST-000001

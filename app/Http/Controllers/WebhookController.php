@@ -10,7 +10,8 @@ class WebhookController extends Controller
 {
     public function handleIncomingWA(Request $request)
     {
-        // No longer logging every single incoming message to save space.
+        // Debug dump
+        Log::info('Incoming WA Payload: ' . json_encode($request->all()));
 
         // Extract sender, receiver, and message
         // Note: Field names might vary depending on your WhatsApp Gateway provider
@@ -36,7 +37,7 @@ class WebhookController extends Controller
         if ($senderPhone === $myNumber) {
             $leadPhone = $receiverPhone;
             
-            // Trigger 1: Create Lead in Follow Up
+            // Trigger 1: Upgrade to Follow Up
             if (str_contains($lowerMessage, 'hallo selamat datang')) {
                 $lead = Lead::where('phone', $leadPhone)->first();
                 if (!$lead) {
@@ -46,6 +47,10 @@ class WebhookController extends Controller
                         'stage' => 'Follow Up'
                     ]);
                     Log::info("New lead created (ID: {$lead->id}, Phone: {$leadPhone}) with stage Follow Up.");
+                } elseif ($lead->stage === 'Inquiries') {
+                    $lead->stage = 'Follow Up';
+                    $lead->save();
+                    Log::info("Lead {$lead->id} (Phone: {$leadPhone}) stage updated from Inquiries to Follow Up by Owner.");
                 }
             }
 
@@ -67,6 +72,20 @@ class WebhookController extends Controller
                     $lead->stage = 'Closed';
                     $lead->save();
                     Log::info("Lead {$lead->id} (Phone: {$leadPhone}) stage updated to Closed by Owner.");
+                }
+            }
+        } else {
+            // Trigger 0: Incoming Message (SENDER is NOT YOU) -> Inquiries
+            if ($receiverPhone === $myNumber) {
+                $leadPhone = $senderPhone;
+                $lead = Lead::where('phone', $leadPhone)->first();
+                if (!$lead) {
+                    $lead = Lead::create([
+                        'name'  => 'Lead ' . $leadPhone,
+                        'phone' => $leadPhone,
+                        'stage' => 'Inquiries'
+                    ]);
+                    Log::info("New INCOMING lead created (ID: {$lead->id}, Phone: {$leadPhone}) with stage Inquiries.");
                 }
             }
         }

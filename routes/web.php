@@ -23,11 +23,12 @@ Route::get('/', function (Request $request) {
 
     // Calculate metrics
     $totalLeads = $leads->count();
+    $totalInquiries = $leads->where('stage', 'Inquiries')->count();
     $totalFollowUp = $leads->where('stage', 'Follow Up')->count();
     $totalPayment = $leads->where('stage', 'Payment')->count();
     $totalClosed = $leads->where('stage', 'Closed')->count();
 
     return view('dashboard', compact(
-        'leads', 'filter', 'totalLeads', 'totalFollowUp', 'totalPayment', 'totalClosed'
+        'leads', 'filter', 'totalLeads', 'totalInquiries', 'totalFollowUp', 'totalPayment', 'totalClosed'
     ));
 });

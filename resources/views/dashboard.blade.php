@@ -23,13 +23,20 @@
         </div>
         
         <!-- Stat Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center justify-between">
                 <div>
                     <p class="text-sm text-gray-500 font-medium">Total Leads</p>
                     <h3 class="text-3xl font-bold text-gray-800 mt-1">{{ $totalLeads }}</h3>
                 </div>
                 <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-xl font-bold">#</div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center justify-between border-l-4 border-l-purple-500">
+                <div>
+                    <p class="text-sm text-gray-500 font-medium">Inquiries</p>
+                    <h3 class="text-3xl font-bold text-purple-600 mt-1">{{ $totalInquiries }}</h3>
+                </div>
             </div>
             
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center justify-between border-l-4 border-l-blue-500">
@@ -75,7 +82,9 @@
                             <td class="px-6 py-4 font-medium text-gray-800">{{ $lead->name }}</td>
                             <td class="px-6 py-4 text-gray-600 font-mono">{{ $lead->phone }}</td>
                             <td class="px-6 py-4">
-                                @if($lead->stage == 'Follow Up')
+                                @if($lead->stage == 'Inquiries')
+                                    <span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-semibold">Inquiries</span>
+                                @elseif($lead->stage == 'Follow Up')
                                     <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold">Follow Up</span>
                                 @elseif($lead->stage == 'Payment')
                                     <span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-semibold">Payment</span>
@@ -98,6 +107,25 @@
         
         <h2 class="text-xl font-bold text-gray-800 mb-4">Kanban Board</h2>
         <div class="flex flex-col md:flex-row gap-6">
+            <!-- Inquiries Column -->
+            <div class="flex-1 bg-white rounded-lg shadow p-4 border-t-4 border-purple-500">
+                <h2 class="text-lg font-semibold border-b pb-2 mb-4 text-purple-600 flex justify-between items-center">
+                    Inquiries
+                    <span class="bg-purple-100 text-purple-800 text-xs py-1 px-2 rounded-full">{{ $totalInquiries }}</span>
+                </h2>
+                <div class="space-y-4">
+                    @foreach($leads->where('stage', 'Inquiries') as $lead)
+                    <div class="bg-purple-50 hover:bg-purple-100 transition duration-150 ease-in-out p-4 rounded shadow-sm border border-purple-100">
+                        <h3 class="font-bold text-gray-800">{{ $lead->name }}</h3>
+                        <p class="text-sm text-gray-600 mt-1 font-mono">{{ $lead->phone }}</p>
+                    </div>
+                    @endforeach
+                    @if($leads->where('stage', 'Inquiries')->isEmpty())
+                        <p class="text-sm text-gray-500 text-center py-4 italic">No leads here.</p>
+                    @endif
+                </div>
+            </div>
+
             <!-- Follow Up Column -->
             <div class="flex-1 bg-white rounded-lg shadow p-4 border-t-4 border-blue-500">
                 <h2 class="text-lg font-semibold border-b pb-2 mb-4 text-blue-600 flex justify-between items-center">
