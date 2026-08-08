@@ -3,3 +3,4 @@ deployment:
   tasks:
     - export DEPLOYPATH=/home/sryyuqht/crm.difitech.id
     - /bin/cp -R * $DEPLOYPATH
+    - cd $DEPLOYPATH && composer install --no-dev
