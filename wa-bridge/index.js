@@ -51,8 +51,9 @@ client.on('message_create', async (msg) => {
             isFromMe: msg.fromMe
         };
 
-        // Forward to our Laravel webhook locally!
-        const response = await axios.post('http://127.0.0.1:8000/api/wa-webhook', payload);
+        // Forward to our Laravel webhook (live cPanel domain or local fallback)
+        const webhookUrl = process.env.WEBHOOK_URL || 'https://crm.difitech.id/api/wa-webhook';
+        const response = await axios.post(webhookUrl, payload);
         // Removed verbose console.log here to prevent terminal spam
     } catch (error) {
         console.error('Error sending webhook:', error.message);
