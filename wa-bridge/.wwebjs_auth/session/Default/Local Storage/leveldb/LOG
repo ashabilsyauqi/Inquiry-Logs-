@@ -1,2 +1,3 @@
-2026/08/06-17:29:28.639 81cc3 Creating DB /Users/kingashabil/Documents/Difitech/software dev/crm-mvp/wa-bridge/.wwebjs_auth/session/Default/Local Storage/leveldb since it was missing.
-2026/08/06-17:29:28.654 81cc3 Reusing MANIFEST /Users/kingashabil/Documents/Difitech/software dev/crm-mvp/wa-bridge/.wwebjs_auth/session/Default/Local Storage/leveldb/MANIFEST-000001
+2026/08/08-18:10:35.937 b0529 Reusing MANIFEST /Users/kingashabil/Documents/Difitech/software dev/crm-mvp/wa-bridge/.wwebjs_auth/session/Default/Local Storage/leveldb/MANIFEST-000001
+2026/08/08-18:10:35.945 b0529 Recovering log #3
+2026/08/08-18:10:35.946 b0529 Reusing old log /Users/kingashabil/Documents/Difitech/software dev/crm-mvp/wa-bridge/.wwebjs_auth/session/Default/Local Storage/leveldb/000003.log 
