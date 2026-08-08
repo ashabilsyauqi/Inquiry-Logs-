@@ -25,3 +25,6 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+wa-bridge/.wwebjs_auth
+wa-bridge/.wwebjs_cache
+wa-bridge/test_contact.js

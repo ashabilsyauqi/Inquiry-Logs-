@@ -98,8 +98,11 @@ class WebhookController extends Controller
 
     private function sanitizePhone(string $phone): string
     {
-        // Remove spaces, dashes, plus signs
-        $phone = preg_replace('/[\s\-\+]/', '', $phone);
+        // Remove anything after @ (including @) such as @c.us or @lid
+        $phone = explode('@', $phone)[0];
+
+        // Remove any non-digit characters just to be sure
+        $phone = preg_replace('/[^0-9]/', '', $phone);
 
         // Convert leading 08... to 628...
         if (str_starts_with($phone, '08')) {

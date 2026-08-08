@@ -28,9 +28,25 @@ client.on('message_create', async (msg) => {
     if (msg.from.includes('@g.us') || msg.to.includes('@g.us')) return;
 
     try {
+        let sender = msg.from;
+        let receiver = msg.to;
+
+        try {
+            const senderContact = await client.getContactById(msg.from);
+            if (senderContact && senderContact.number) {
+                sender = senderContact.number;
+            }
+            const receiverContact = await client.getContactById(msg.to);
+            if (receiverContact && receiverContact.number) {
+                receiver = receiverContact.number;
+            }
+        } catch (e) {
+            // Ignore contact fetching errors
+        }
+
         const payload = {
-            sender: msg.from.replace('@c.us', ''),
-            receiver: msg.to.replace('@c.us', ''),
+            sender: sender.replace('@c.us', '').replace('@s.whatsapp.net', '').replace('@lid', ''),
+            receiver: receiver.replace('@c.us', '').replace('@s.whatsapp.net', '').replace('@lid', ''),
             message: msg.body,
             isFromMe: msg.fromMe
         };

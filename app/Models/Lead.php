@@ -13,5 +13,7 @@ class Lead extends Model
         'name',
         'phone',
         'stage',
+        'notes',
+        'priority',
     ];
 }

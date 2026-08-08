@@ -74,12 +74,27 @@
                             <th class="px-6 py-3 font-medium">No. WhatsApp</th>
                             <th class="px-6 py-3 font-medium">Stage</th>
                             <th class="px-6 py-3 font-medium">Tanggal Dibuat</th>
+                            <th class="px-6 py-3 font-medium text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 text-sm">
                         @foreach($leads as $lead)
                         <tr class="hover:bg-gray-50 transition">
-                            <td class="px-6 py-4 font-medium text-gray-800">{{ $lead->name }}</td>
+                            <td class="px-6 py-4">
+                                <div class="font-medium text-gray-800 flex items-center gap-2">
+                                    {{ $lead->name }}
+                                    @if($lead->priority > 0)
+                                        <div class="text-yellow-400 text-xs flex">
+                                            @for($i = 0; $i < $lead->priority; $i++)
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                                            @endfor
+                                        </div>
+                                    @endif
+                                </div>
+                                @if($lead->notes)
+                                    <div class="text-xs text-gray-500 mt-1 italic">{{ Str::limit($lead->notes, 30) }}</div>
+                                @endif
+                            </td>
                             <td class="px-6 py-4 text-gray-600 font-mono">{{ $lead->phone }}</td>
                             <td class="px-6 py-4">
                                 @if($lead->stage == 'Inquiries')
@@ -93,6 +108,11 @@
                                 @endif
                             </td>
                             <td class="px-6 py-4 text-gray-500">{{ $lead->created_at->format('d M Y, H:i') }}</td>
+                            <td class="px-6 py-4 text-center">
+                                <button onclick="openEditModal({{ $lead->id }}, '{{ addslashes($lead->name) }}', `{{ addslashes($lead->notes) }}`, {{ $lead->priority }})" class="text-blue-600 hover:text-blue-800 font-medium text-sm transition">
+                                    ✏️ Edit
+                                </button>
+                            </td>
                         </tr>
                         @endforeach
                         @if($leads->isEmpty())
@@ -116,7 +136,16 @@
                 <div class="space-y-4">
                     @foreach($leads->where('stage', 'Inquiries') as $lead)
                     <div class="bg-purple-50 hover:bg-purple-100 transition duration-150 ease-in-out p-4 rounded shadow-sm border border-purple-100">
-                        <h3 class="font-bold text-gray-800">{{ $lead->name }}</h3>
+                        <div class="flex justify-between items-start">
+                            <h3 class="font-bold text-gray-800">{{ $lead->name }}</h3>
+                            @if($lead->priority > 0)
+                                <div class="text-yellow-400 text-xs flex mt-1">
+                                    @for($i = 0; $i < $lead->priority; $i++)
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                                    @endfor
+                                </div>
+                            @endif
+                        </div>
                         <p class="text-sm text-gray-600 mt-1 font-mono">{{ $lead->phone }}</p>
                     </div>
                     @endforeach
@@ -135,7 +164,16 @@
                 <div class="space-y-4">
                     @foreach($leads->where('stage', 'Follow Up') as $lead)
                     <div class="bg-blue-50 hover:bg-blue-100 transition duration-150 ease-in-out p-4 rounded shadow-sm border border-blue-100">
-                        <h3 class="font-bold text-gray-800">{{ $lead->name }}</h3>
+                        <div class="flex justify-between items-start">
+                            <h3 class="font-bold text-gray-800">{{ $lead->name }}</h3>
+                            @if($lead->priority > 0)
+                                <div class="text-yellow-400 text-xs flex mt-1">
+                                    @for($i = 0; $i < $lead->priority; $i++)
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                                    @endfor
+                                </div>
+                            @endif
+                        </div>
                         <p class="text-sm text-gray-600 mt-1 font-mono">{{ $lead->phone }}</p>
                     </div>
                     @endforeach
@@ -154,7 +192,16 @@
                 <div class="space-y-4">
                     @foreach($leads->where('stage', 'Payment') as $lead)
                     <div class="bg-yellow-50 hover:bg-yellow-100 transition duration-150 ease-in-out p-4 rounded shadow-sm border border-yellow-100">
-                        <h3 class="font-bold text-gray-800">{{ $lead->name }}</h3>
+                        <div class="flex justify-between items-start">
+                            <h3 class="font-bold text-gray-800">{{ $lead->name }}</h3>
+                            @if($lead->priority > 0)
+                                <div class="text-yellow-400 text-xs flex mt-1">
+                                    @for($i = 0; $i < $lead->priority; $i++)
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                                    @endfor
+                                </div>
+                            @endif
+                        </div>
                         <p class="text-sm text-gray-600 mt-1 font-mono">{{ $lead->phone }}</p>
                     </div>
                     @endforeach
@@ -173,7 +220,16 @@
                 <div class="space-y-4">
                     @foreach($leads->where('stage', 'Closed') as $lead)
                     <div class="bg-green-50 hover:bg-green-100 transition duration-150 ease-in-out p-4 rounded shadow-sm border border-green-100">
-                        <h3 class="font-bold text-gray-800">{{ $lead->name }}</h3>
+                        <div class="flex justify-between items-start">
+                            <h3 class="font-bold text-gray-800">{{ $lead->name }}</h3>
+                            @if($lead->priority > 0)
+                                <div class="text-yellow-400 text-xs flex mt-1">
+                                    @for($i = 0; $i < $lead->priority; $i++)
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                                    @endfor
+                                </div>
+                            @endif
+                        </div>
                         <p class="text-sm text-gray-600 mt-1 font-mono">{{ $lead->phone }}</p>
                     </div>
                     @endforeach
@@ -185,10 +241,68 @@
         </div>
     </div>
 
+    <!-- Edit Lead Modal (Outside #dashboard-content so it doesn't get overwritten by auto-refresh) -->
+    <div id="editModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden flex items-center justify-center z-50">
+        <div class="bg-white rounded-xl shadow-lg w-full max-w-md mx-4 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+                <h3 class="text-lg font-bold text-gray-800">Edit Lead</h3>
+                <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600 transition">&times;</button>
+            </div>
+            <form id="editForm" method="POST" action="" class="p-6">
+                @csrf
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Nama Lead</label>
+                    <input type="text" name="name" id="editName" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Catatan</label>
+                    <textarea name="notes" id="editNotes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400" placeholder="Ketik catatan di sini..."></textarea>
+                </div>
+
+                <div class="mb-6">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Prioritas (Bintang)</label>
+                    <select name="priority" id="editPriority" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="0">0 Bintang (Normal)</option>
+                        <option value="1">1 Bintang ⭐</option>
+                        <option value="2">2 Bintang ⭐⭐</option>
+                        <option value="3">3 Bintang ⭐⭐⭐</option>
+                        <option value="4">4 Bintang ⭐⭐⭐⭐</option>
+                        <option value="5">5 Bintang ⭐⭐⭐⭐⭐ (Hot)</option>
+                    </select>
+                </div>
+                
+                <div class="flex justify-end gap-3">
+                    <button type="button" onclick="closeEditModal()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition font-medium text-sm">Batal</button>
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition font-medium text-sm">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
+        // Modal Logic
+        let isModalOpen = false;
+
+        function openEditModal(id, name, notes, priority) {
+            isModalOpen = true;
+            document.getElementById('editForm').action = '/leads/' + id + '/update';
+            document.getElementById('editName').value = name;
+            document.getElementById('editNotes').value = notes || '';
+            document.getElementById('editPriority').value = priority;
+            document.getElementById('editModal').classList.remove('hidden');
+        }
+
+        function closeEditModal() {
+            isModalOpen = false;
+            document.getElementById('editModal').classList.add('hidden');
+        }
+
         // Auto-refresh the page content every 5 seconds without hard reloading, 
         // to preserve scroll position and query parameters seamlessly.
         function fetchLeads() {
+            if (isModalOpen) return; // Pause refresh if user is editing!
+
             const currentParams = window.location.search;
             fetch('/' + currentParams)
                 .then(response => response.text())
