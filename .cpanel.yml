@@ -1,5 +1,5 @@
 ---
 deployment:
   tasks:
-    - export DEPLOYPATH=/home/YOUR_CPANEL_USERNAME/crm
+    - export DEPLOYPATH=/home/sryyuqht/public_html
     - /bin/cp -R * $DEPLOYPATH
