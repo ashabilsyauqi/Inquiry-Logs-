@@ -28,17 +28,20 @@
                 </div>
             </div>
 
-            <!-- Nav Links -->
+            <!-- Nav Links (Interactive Tab Switching) -->
             <nav class="p-4 space-y-1.5 text-sm font-medium">
-                <a href="#section-analytics" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-800 text-white font-semibold shadow-sm transition">
+                <button onclick="switchTab('all')" id="nav-all" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-800 text-white font-semibold shadow-sm transition text-left">
+                    <span class="text-base">🌐</span> Semua Tampilan
+                </button>
+                <button onclick="switchTab('analytics')" id="nav-analytics" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition text-left">
                     <span class="text-base">📊</span> Analytics & Chart
-                </a>
-                <a href="#section-kanban" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition">
+                </button>
+                <button onclick="switchTab('kanban')" id="nav-kanban" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition text-left">
                     <span class="text-base">📋</span> Kanban Board
-                </a>
-                <a href="#section-table" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition">
+                </button>
+                <button onclick="switchTab('table')" id="nav-table" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition text-left">
                     <span class="text-base">📑</span> Daftar Leads
-                </a>
+                </button>
                 <button onclick="openDeviceModal()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition text-left">
                     <span class="text-base">📱</span> Perangkat WA & QR
                 </button>
@@ -255,7 +258,7 @@
                     <table class="w-full text-left border-collapse">
                         <thead>
                             <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider border-b border-slate-100">
-                                <th class="px-6 py-3 font.semibold">Nama Lead</th>
+                                <th class="px-6 py-3 font-semibold">Nama Lead</th>
                                 <th class="px-6 py-3 font-semibold">No. WhatsApp</th>
                                 <th class="px-6 py-3 font-semibold">Akun WA CS</th>
                                 <th class="px-6 py-3 font-semibold">Stage</th>
@@ -654,6 +657,46 @@
         let currentScanningSession = 'default';
         let inquiryChartInstance = null;
         let currentChartPeriod = 'daily';
+
+        // INTERACTIVE TAB SWITCHING LOGIC (Sidebar Navigation)
+        function switchTab(tabName) {
+            const secAnalytics = document.getElementById('section-analytics');
+            const secTable = document.getElementById('section-table');
+            const secKanban = document.getElementById('section-kanban');
+
+            const navs = ['all', 'analytics', 'kanban', 'table'];
+            navs.forEach(t => {
+                const btn = document.getElementById('nav-' + t);
+                if (btn) {
+                    if (t === tabName) {
+                        btn.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-800 text-white font-semibold shadow-sm transition text-left";
+                    } else {
+                        btn.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition text-left";
+                    }
+                }
+            });
+
+            if (tabName === 'all') {
+                secAnalytics.classList.remove('hidden');
+                secTable.classList.remove('hidden');
+                secKanban.classList.remove('hidden');
+            } else if (tabName === 'analytics') {
+                secAnalytics.classList.remove('hidden');
+                secTable.classList.add('hidden');
+                secKanban.classList.add('hidden');
+            } else if (tabName === 'kanban') {
+                secAnalytics.classList.add('hidden');
+                secTable.classList.add('hidden');
+                secKanban.classList.remove('hidden');
+            } else if (tabName === 'table') {
+                secAnalytics.classList.add('hidden');
+                secTable.classList.remove('hidden');
+                secKanban.classList.add('hidden');
+            }
+
+            // Scroll to top of main area
+            document.getElementById('main-scroll-area').scrollTop = 0;
+        }
 
         // Chart.js Trend Analytics Initialization
         document.addEventListener('DOMContentLoaded', function() {
