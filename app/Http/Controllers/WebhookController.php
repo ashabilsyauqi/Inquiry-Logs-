@@ -54,40 +54,42 @@ class WebhookController extends Controller
             $leadPhone = $receiverPhone;
             $lead = Lead::where('phone', $leadPhone)->first();
 
-            if (str_contains($lowerMessage, 'hallo selamat datang')) {
+            // Stage 2: Meeting Call
+            if (str_contains($lowerMessage, 'hallo selamat datang') || str_contains($lowerMessage, 'meeting') || str_contains($lowerMessage, 'call')) {
                 if (!$lead) {
                     $displayName = $this->formatDisplayPhone($leadPhone);
                     $lead = Lead::create([
                         'wa_account_id' => $waAccount->id,
                         'name'  => $displayName,
                         'phone' => $leadPhone,
-                        'stage' => 'Follow Up'
+                        'stage' => 'Meeting Call'
                     ]);
-                } elseif ($lead->stage === 'Inquiries') {
-                    $lead->stage = 'Follow Up';
+                } elseif ($lead->stage === 'Lead Masuk') {
+                    $lead->stage = 'Meeting Call';
                     $lead->save();
                 }
             }
 
-            if (str_contains($lowerMessage, 'silahkan melakukan pembayaran')) {
-                if ($lead && $lead->stage === 'Follow Up') {
-                    $lead->stage = 'Payment';
+            // Stage 3: Kirim Penawaran
+            if (str_contains($lowerMessage, 'penawaran') || str_contains($lowerMessage, 'silahkan melakukan pembayaran')) {
+                if ($lead && ($lead->stage === 'Meeting Call' || $lead->stage === 'Lead Masuk')) {
+                    $lead->stage = 'Kirim Penawaran';
                     $lead->save();
                 }
             }
 
-            if (str_contains($lowerMessage, 'terverifikasi') && str_contains($lowerMessage, 'terima kasih')) {
-                if ($lead && $lead->stage === 'Payment') {
-                    $lead->stage = 'Closed';
+            // Stage 4: Deal
+            if (str_contains($lowerMessage, 'deal') || (str_contains($lowerMessage, 'terverifikasi') && str_contains($lowerMessage, 'terima kasih'))) {
+                if ($lead && ($lead->stage === 'Kirim Penawaran' || $lead->stage === 'Meeting Call')) {
+                    $lead->stage = 'Deal';
                     $lead->save();
                 }
             }
         } else {
-            // Incoming lead from customer
+            // Incoming lead from customer -> Default Stage: "Lead Masuk"
             $leadPhone = $senderPhone;
             $lead = Lead::where('phone', $leadPhone)->first();
 
-            // Format clean display name (Contact Name if available, or clean formatted phone +62...)
             $displayName = $senderNameInput ?: $this->formatDisplayPhone($leadPhone);
 
             if (!$lead) {
@@ -95,13 +97,12 @@ class WebhookController extends Controller
                     'wa_account_id' => $waAccount->id,
                     'name'  => $displayName,
                     'phone' => $leadPhone,
-                    'stage' => 'Inquiries'
+                    'stage' => 'Lead Masuk'
                 ]);
             } else {
                 if (!$lead->wa_account_id) {
                     $lead->wa_account_id = $waAccount->id;
                 }
-                // If existing name is just raw ID or default, update it with real contact name
                 if ($senderNameInput && (str_contains($lead->name, 'Lead') || preg_match('/^[0-9]+$/', $lead->name))) {
                     $lead->name = $senderNameInput;
                 }

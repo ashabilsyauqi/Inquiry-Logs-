@@ -31,14 +31,14 @@ Route::get('/', function (Request $request) {
     $waAccounts = WaAccount::all();
 
     $totalLeads = $leads->count();
-    $totalInquiries = $leads->where('stage', 'Inquiries')->count();
-    $totalFollowUp = $leads->where('stage', 'Follow Up')->count();
-    $totalPayment = $leads->where('stage', 'Payment')->count();
-    $totalClosed = $leads->where('stage', 'Closed')->count();
+    $totalLeadMasuk = $leads->where('stage', 'Lead Masuk')->count();
+    $totalMeetingCall = $leads->where('stage', 'Meeting Call')->count();
+    $totalKirimPenawaran = $leads->where('stage', 'Kirim Penawaran')->count();
+    $totalDeal = $leads->where('stage', 'Deal')->count();
 
     return view('dashboard', compact(
         'leads', 'filter', 'accountId', 'activeAccount', 'waAccounts',
-        'totalLeads', 'totalInquiries', 'totalFollowUp', 'totalPayment', 'totalClosed'
+        'totalLeads', 'totalLeadMasuk', 'totalMeetingCall', 'totalKirimPenawaran', 'totalDeal'
     ));
 });
 
@@ -53,6 +53,9 @@ Route::post('/leads/{id}/update', function (Request $request, $id) {
     }
     if ($request->has('priority')) {
         $lead->priority = (int) $request->input('priority');
+    }
+    if ($request->has('stage')) {
+        $lead->stage = $request->input('stage');
     }
 
     $lead->save();

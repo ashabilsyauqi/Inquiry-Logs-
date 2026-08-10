@@ -42,7 +42,7 @@
         <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
             <div>
                 <h1 class="text-3xl font-bold text-gray-900">CRM Admin Panel</h1>
-                <p class="text-sm text-gray-500 mt-1">Multi-Account WhatsApp & Isolated Pipeline Management System</p>
+                <p class="text-sm text-gray-500 mt-1">Multi-Account WhatsApp & Custom Sales Pipeline System</p>
             </div>
             
             <div class="flex flex-wrap items-center gap-3">
@@ -64,7 +64,7 @@
             </div>
         </div>
 
-        <!-- PIPELINE SWITCHER TABS (Dedicated Pipeline per WA Account) -->
+        <!-- PIPELINE SWITCHER TABS -->
         <div class="mb-8 overflow-x-auto">
             <div class="flex items-center gap-2 border-b border-gray-200 pb-2">
                 <span class="text-xs font-bold text-gray-400 uppercase tracking-wider mr-2">Pilih Pipeline:</span>
@@ -103,7 +103,7 @@
         </div>
         @endif
         
-        <!-- Stat Cards -->
+        <!-- Stat Cards (Updated Stages) -->
         <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center justify-between">
                 <div>
@@ -115,29 +115,29 @@
 
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center justify-between border-l-4 border-l-purple-500">
                 <div>
-                    <p class="text-sm text-gray-500 font-medium">Inquiries</p>
-                    <h3 class="text-3xl font-bold text-purple-600 mt-1">{{ $totalInquiries }}</h3>
+                    <p class="text-sm text-gray-500 font-medium">1. Lead Masuk</p>
+                    <h3 class="text-3xl font-bold text-purple-600 mt-1">{{ $totalLeadMasuk }}</h3>
                 </div>
             </div>
             
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center justify-between border-l-4 border-l-blue-500">
                 <div>
-                    <p class="text-sm text-gray-500 font-medium">Follow Up</p>
-                    <h3 class="text-3xl font-bold text-blue-600 mt-1">{{ $totalFollowUp }}</h3>
+                    <p class="text-sm text-gray-500 font-medium">2. Meeting Call</p>
+                    <h3 class="text-3xl font-bold text-blue-600 mt-1">{{ $totalMeetingCall }}</h3>
                 </div>
             </div>
 
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center justify-between border-l-4 border-l-yellow-500">
                 <div>
-                    <p class="text-sm text-gray-500 font-medium">Payment</p>
-                    <h3 class="text-3xl font-bold text-yellow-600 mt-1">{{ $totalPayment }}</h3>
+                    <p class="text-sm text-gray-500 font-medium">3. Kirim Penawaran</p>
+                    <h3 class="text-3xl font-bold text-yellow-600 mt-1">{{ $totalKirimPenawaran }}</h3>
                 </div>
             </div>
 
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center justify-between border-l-4 border-l-green-500">
                 <div>
-                    <p class="text-sm text-gray-500 font-medium">Closed</p>
-                    <h3 class="text-3xl font-bold text-green-600 mt-1">{{ $totalClosed }}</h3>
+                    <p class="text-sm text-gray-500 font-medium">4. Deal</p>
+                    <h3 class="text-3xl font-bold text-green-600 mt-1">{{ $totalDeal }}</h3>
                 </div>
             </div>
         </div>
@@ -187,19 +187,19 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4">
-                                @if($lead->stage == 'Inquiries')
-                                    <span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-semibold">Inquiries</span>
-                                @elseif($lead->stage == 'Follow Up')
-                                    <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold">Follow Up</span>
-                                @elseif($lead->stage == 'Payment')
-                                    <span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-semibold">Payment</span>
+                                @if($lead->stage == 'Lead Masuk')
+                                    <span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-semibold">Lead Masuk</span>
+                                @elseif($lead->stage == 'Meeting Call')
+                                    <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold">Meeting Call</span>
+                                @elseif($lead->stage == 'Kirim Penawaran')
+                                    <span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-semibold">Kirim Penawaran</span>
                                 @else
-                                    <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">Closed</span>
+                                    <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">Deal</span>
                                 @endif
                             </td>
                             <td class="px-6 py-4 text-gray-500">{{ $lead->created_at->format('d M Y, H:i') }}</td>
                             <td class="px-6 py-4 text-center">
-                                <button onclick="openEditModal({{ $lead->id }}, '{{ addslashes($lead->name) }}', `{{ addslashes($lead->notes) }}`, {{ $lead->priority }})" class="text-blue-600 hover:text-blue-800 font-medium text-sm transition">
+                                <button onclick="openEditModal({{ $lead->id }}, '{{ addslashes($lead->name) }}', `{{ addslashes($lead->notes) }}`, {{ $lead->priority }}, '{{ $lead->stage }}')" class="text-blue-600 hover:text-blue-800 font-medium text-sm transition">
                                     ✏️ Edit
                                 </button>
                             </td>
@@ -215,18 +215,19 @@
             </div>
         </div>
         
+        <!-- Kanban Board (Updated 4 Stages) -->
         <h2 class="text-xl font-bold text-gray-800 mb-4">
             Kanban Board {{ $activeAccount ? '(' . $activeAccount->name . ')' : '(Semua Pipeline)' }}
         </h2>
         <div class="flex flex-col md:flex-row gap-6">
-            <!-- Inquiries Column -->
+            <!-- 1. Lead Masuk Column -->
             <div class="flex-1 bg-white rounded-lg shadow p-4 border-t-4 border-purple-500">
                 <h2 class="text-lg font-semibold border-b pb-2 mb-4 text-purple-600 flex justify-between items-center">
-                    Inquiries
-                    <span class="bg-purple-100 text-purple-800 text-xs py-1 px-2 rounded-full">{{ $totalInquiries }}</span>
+                    Lead Masuk
+                    <span class="bg-purple-100 text-purple-800 text-xs py-1 px-2 rounded-full">{{ $totalLeadMasuk }}</span>
                 </h2>
                 <div class="space-y-4">
-                    @foreach($leads->where('stage', 'Inquiries') as $lead)
+                    @foreach($leads->where('stage', 'Lead Masuk') as $lead)
                     <div class="bg-purple-50 hover:bg-purple-100 transition duration-150 ease-in-out p-4 rounded shadow-sm border border-purple-100">
                         <div class="flex justify-between items-start">
                             <h3 class="font-bold text-gray-800">{{ $lead->name }}</h3>
@@ -244,20 +245,20 @@
                         </div>
                     </div>
                     @endforeach
-                    @if($leads->where('stage', 'Inquiries')->isEmpty())
-                        <p class="text-sm text-gray-500 text-center py-4 italic">No leads here.</p>
+                    @if($leads->where('stage', 'Lead Masuk')->isEmpty())
+                        <p class="text-sm text-gray-500 text-center py-4 italic">Belum ada lead masuk.</p>
                     @endif
                 </div>
             </div>
 
-            <!-- Follow Up Column -->
+            <!-- 2. Meeting Call Column -->
             <div class="flex-1 bg-white rounded-lg shadow p-4 border-t-4 border-blue-500">
                 <h2 class="text-lg font-semibold border-b pb-2 mb-4 text-blue-600 flex justify-between items-center">
-                    Follow Up
-                    <span class="bg-blue-100 text-blue-800 text-xs py-1 px-2 rounded-full">{{ $totalFollowUp }}</span>
+                    Meeting Call
+                    <span class="bg-blue-100 text-blue-800 text-xs py-1 px-2 rounded-full">{{ $totalMeetingCall }}</span>
                 </h2>
                 <div class="space-y-4">
-                    @foreach($leads->where('stage', 'Follow Up') as $lead)
+                    @foreach($leads->where('stage', 'Meeting Call') as $lead)
                     <div class="bg-blue-50 hover:bg-blue-100 transition duration-150 ease-in-out p-4 rounded shadow-sm border border-blue-100">
                         <div class="flex justify-between items-start">
                             <h3 class="font-bold text-gray-800">{{ $lead->name }}</h3>
@@ -275,20 +276,20 @@
                         </div>
                     </div>
                     @endforeach
-                    @if($leads->where('stage', 'Follow Up')->isEmpty())
-                        <p class="text-sm text-gray-500 text-center py-4 italic">No leads here.</p>
+                    @if($leads->where('stage', 'Meeting Call')->isEmpty())
+                        <p class="text-sm text-gray-500 text-center py-4 italic">Belum ada meeting call.</p>
                     @endif
                 </div>
             </div>
 
-            <!-- Payment Column -->
+            <!-- 3. Kirim Penawaran Column -->
             <div class="flex-1 bg-white rounded-lg shadow p-4 border-t-4 border-yellow-500">
                 <h2 class="text-lg font-semibold border-b pb-2 mb-4 text-yellow-600 flex justify-between items-center">
-                    Payment
-                    <span class="bg-yellow-100 text-yellow-800 text-xs py-1 px-2 rounded-full">{{ $totalPayment }}</span>
+                    Kirim Penawaran
+                    <span class="bg-yellow-100 text-yellow-800 text-xs py-1 px-2 rounded-full">{{ $totalKirimPenawaran }}</span>
                 </h2>
                 <div class="space-y-4">
-                    @foreach($leads->where('stage', 'Payment') as $lead)
+                    @foreach($leads->where('stage', 'Kirim Penawaran') as $lead)
                     <div class="bg-yellow-50 hover:bg-yellow-100 transition duration-150 ease-in-out p-4 rounded shadow-sm border border-yellow-100">
                         <div class="flex justify-between items-start">
                             <h3 class="font-bold text-gray-800">{{ $lead->name }}</h3>
@@ -306,20 +307,20 @@
                         </div>
                     </div>
                     @endforeach
-                    @if($leads->where('stage', 'Payment')->isEmpty())
-                        <p class="text-sm text-gray-500 text-center py-4 italic">No leads here.</p>
+                    @if($leads->where('stage', 'Kirim Penawaran')->isEmpty())
+                        <p class="text-sm text-gray-500 text-center py-4 italic">Belum ada penawaran.</p>
                     @endif
                 </div>
             </div>
 
-            <!-- Closed Column -->
+            <!-- 4. Deal Column -->
             <div class="flex-1 bg-white rounded-lg shadow p-4 border-t-4 border-green-500">
                 <h2 class="text-lg font-semibold border-b pb-2 mb-4 text-green-600 flex justify-between items-center">
-                    Closed
-                    <span class="bg-green-100 text-green-800 text-xs py-1 px-2 rounded-full">{{ $totalClosed }}</span>
+                    Deal
+                    <span class="bg-green-100 text-green-800 text-xs py-1 px-2 rounded-full">{{ $totalDeal }}</span>
                 </h2>
                 <div class="space-y-4">
-                    @foreach($leads->where('stage', 'Closed') as $lead)
+                    @foreach($leads->where('stage', 'Deal') as $lead)
                     <div class="bg-green-50 hover:bg-green-100 transition duration-150 ease-in-out p-4 rounded shadow-sm border border-green-100">
                         <div class="flex justify-between items-start">
                             <h3 class="font-bold text-gray-800">{{ $lead->name }}</h3>
@@ -337,8 +338,8 @@
                         </div>
                     </div>
                     @endforeach
-                    @if($leads->where('stage', 'Closed')->isEmpty())
-                        <p class="text-sm text-gray-500 text-center py-4 italic">No leads here.</p>
+                    @if($leads->where('stage', 'Deal')->isEmpty())
+                        <p class="text-sm text-gray-500 text-center py-4 italic">Belum ada deal.</p>
                     @endif
                 </div>
             </div>
@@ -349,7 +350,7 @@
     <div id="editModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden flex items-center justify-center z-50">
         <div class="bg-white rounded-xl shadow-lg w-full max-w-md mx-4 overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                <h3 class="text-lg font-bold text-gray-800">Edit Lead</h3>
+                <h3 class="text-lg font-bold text-gray-800">Edit Lead & Stage</h3>
                 <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600 transition">&times;</button>
             </div>
             <form id="editForm" method="POST" action="" class="p-6">
@@ -357,6 +358,16 @@
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Nama Lead</label>
                     <input type="text" name="name" id="editName" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div class="mb-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Tahapan / Stage Pipeline</label>
+                    <select name="stage" id="editStage" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="Lead Masuk">1. Lead Masuk</option>
+                        <option value="Meeting Call">2. Meeting Call</option>
+                        <option value="Kirim Penawaran">3. Kirim Penawaran</option>
+                        <option value="Deal">4. Deal</option>
+                    </select>
                 </div>
                 
                 <div class="mb-4">
@@ -466,12 +477,13 @@
         let activeQrPollInterval = null;
         let currentScanningSession = 'default';
 
-        function openEditModal(id, name, notes, priority) {
+        function openEditModal(id, name, notes, priority, stage) {
             isModalOpen = true;
             document.getElementById('editForm').action = '/leads/' + id + '/update';
             document.getElementById('editName').value = name;
             document.getElementById('editNotes').value = notes || '';
             document.getElementById('editPriority').value = priority;
+            if (stage) document.getElementById('editStage').value = stage;
             document.getElementById('editModal').classList.remove('hidden');
         }
 
