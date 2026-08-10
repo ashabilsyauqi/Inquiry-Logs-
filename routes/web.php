@@ -21,8 +21,10 @@ Route::get('/', function (Request $request) {
         $query->whereYear('created_at', Carbon::now()->year);
     }
 
+    $activeAccount = null;
     if ($accountId !== 'all') {
         $query->where('wa_account_id', $accountId);
+        $activeAccount = WaAccount::find($accountId);
     }
 
     $leads = $query->latest()->get();
@@ -35,7 +37,7 @@ Route::get('/', function (Request $request) {
     $totalClosed = $leads->where('stage', 'Closed')->count();
 
     return view('dashboard', compact(
-        'leads', 'filter', 'accountId', 'waAccounts',
+        'leads', 'filter', 'accountId', 'activeAccount', 'waAccounts',
         'totalLeads', 'totalInquiries', 'totalFollowUp', 'totalPayment', 'totalClosed'
     ));
 });

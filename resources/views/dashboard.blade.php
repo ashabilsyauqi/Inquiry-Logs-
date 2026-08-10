@@ -11,11 +11,11 @@
 </head>
 <body class="text-gray-800">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" id="dashboard-content">
-        <!-- Header & Filters -->
-        <div class="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+        <!-- Header & Top Navigation -->
+        <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
             <div>
                 <h1 class="text-3xl font-bold text-gray-900">CRM Admin Panel</h1>
-                <p class="text-sm text-gray-500 mt-1">Multi-Account WhatsApp & Lead Management System</p>
+                <p class="text-sm text-gray-500 mt-1">Multi-Account WhatsApp & Isolated Pipeline Management System</p>
             </div>
             
             <div class="flex flex-wrap items-center gap-3">
@@ -27,16 +27,6 @@
                     📱 Perangkat WA & QR Code
                 </button>
 
-                <!-- WA Account Filter -->
-                <select onchange="window.location.href='/?filter={{ $filter }}&account_id=' + this.value" class="px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg shadow-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="all" {{ $accountId == 'all' ? 'selected' : '' }}>Semua Akun WA</option>
-                    @foreach($waAccounts as $acc)
-                        <option value="{{ $acc->id }}" {{ $accountId == $acc->id ? 'selected' : '' }}>
-                            {{ $acc->name }} ({{ $acc->phone ?: 'Belum Scan' }})
-                        </option>
-                    @endforeach
-                </select>
-
                 <!-- Period Filters -->
                 <div class="flex gap-1 bg-white p-1 rounded-lg shadow-sm border border-gray-200">
                     <a href="/?filter=all&account_id={{ $accountId }}" class="px-3 py-1.5 text-xs rounded-md transition {{ $filter == 'all' ? 'bg-blue-600 text-white font-semibold' : 'text-gray-600 hover:bg-gray-100' }}">Semua</a>
@@ -46,8 +36,47 @@
                 </div>
             </div>
         </div>
+
+        <!-- PIPELINE SWITCHER TABS (Dedicated Pipeline per WA Account) -->
+        <div class="mb-8 overflow-x-auto">
+            <div class="flex items-center gap-2 border-b border-gray-200 pb-2">
+                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider mr-2">Pilih Pipeline:</span>
+                
+                <a href="/?filter={{ $filter }}&account_id=all" 
+                   class="px-4 py-2 text-sm rounded-xl font-medium transition flex items-center gap-2 whitespace-nowrap {{ $accountId == 'all' ? 'bg-gray-900 text-white shadow-md' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200' }}">
+                    🌐 Semua Pipeline (Global)
+                </a>
+
+                @foreach($waAccounts as $acc)
+                <a href="/?filter={{ $filter }}&account_id={{ $acc->id }}" 
+                   class="px-4 py-2 text-sm rounded-xl font-medium transition flex items-center gap-2 whitespace-nowrap {{ $accountId == $acc->id ? 'bg-emerald-600 text-white shadow-md' : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200' }}">
+                    <span>📱 {{ $acc->name }}</span>
+                    <span class="w-2 h-2 rounded-full {{ $acc->status == 'CONNECTED' ? 'bg-emerald-300' : 'bg-yellow-400' }}"></span>
+                </a>
+                @endforeach
+            </div>
+        </div>
+
+        <!-- Active Pipeline Banner (If a specific account is selected) -->
+        @if($activeAccount)
+        <div class="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-6 mb-8 text-white shadow-lg flex flex-col md:flex-row justify-between items-center gap-4">
+            <div>
+                <div class="flex items-center gap-3">
+                    <h2 class="text-2xl font-bold">Pipeline Sales: {{ $activeAccount->name }}</h2>
+                    <span class="px-3 py-1 rounded-full text-xs font-bold {{ $activeAccount->status == 'CONNECTED' ? 'bg-emerald-400 text-emerald-950' : 'bg-yellow-300 text-yellow-950' }}">
+                        {{ $activeAccount->status == 'CONNECTED' ? '🟢 Online (' . ($activeAccount->phone ?: 'Connected') . ')' : '🟡 Belum Scan QR' }}
+                    </span>
+                </div>
+                <p class="text-xs text-emerald-100 mt-1">Daftar Leads & Stat Cards di bawah dikhususkan untuk saluran komunikasi ini saja.</p>
+            </div>
+            
+            <button onclick="startScanQr('{{ $activeAccount->session_id }}'); openDeviceModal();" class="px-4 py-2 bg-white text-emerald-800 hover:bg-emerald-50 text-xs font-bold rounded-xl shadow transition whitespace-nowrap">
+                📲 Scan / Sambungkan WA Ini
+            </button>
+        </div>
+        @endif
         
-        <!-- Stat Cards -->
+        <!-- Stat Cards (Isolated by selected Pipeline) -->
         <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center justify-between">
                 <div>
@@ -89,7 +118,9 @@
         <!-- Data Table -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 mb-8 overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-                <h2 class="text-lg font-semibold text-gray-800">Daftar Leads</h2>
+                <h2 class="text-lg font-semibold text-gray-800">
+                    Daftar Leads {{ $activeAccount ? '(' . $activeAccount->name . ')' : '(Semua Pipeline)' }}
+                </h2>
                 <span class="text-xs text-gray-400">Total: {{ $leads->count() }} Data</span>
             </div>
             <div class="overflow-x-auto">
@@ -149,7 +180,7 @@
                         @endforeach
                         @if($leads->isEmpty())
                         <tr>
-                            <td colspan="6" class="px-6 py-8 text-center text-gray-400 italic">Belum ada data lead.</td>
+                            <td colspan="6" class="px-6 py-8 text-center text-gray-400 italic">Belum ada data lead di pipeline ini.</td>
                         </tr>
                         @endif
                     </tbody>
@@ -157,7 +188,9 @@
             </div>
         </div>
         
-        <h2 class="text-xl font-bold text-gray-800 mb-4">Kanban Board</h2>
+        <h2 class="text-xl font-bold text-gray-800 mb-4">
+            Kanban Board {{ $activeAccount ? '(' . $activeAccount->name . ')' : '(Semua Pipeline)' }}
+        </h2>
         <div class="flex flex-col md:flex-row gap-6">
             <!-- Inquiries Column -->
             <div class="flex-1 bg-white rounded-lg shadow p-4 border-t-4 border-purple-500">
@@ -455,6 +488,9 @@
                                 <div class="text-xs text-gray-400 mt-1 font-mono">Session ID: ${acc.session_id}</div>
                             </div>
                             <div class="flex gap-2">
+                                <a href="/?filter={{ $filter }}&account_id=${acc.id}" class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold rounded-lg transition border border-blue-200 flex items-center gap-1">
+                                    📊 Lihat Pipeline
+                                </a>
                                 <button onclick="startScanQr('${acc.session_id}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition shadow-sm">
                                     📲 Scan Barcode QR
                                 </button>
@@ -502,14 +538,12 @@
 
             if (activeQrPollInterval) clearInterval(activeQrPollInterval);
 
-            // Connect API request to WA Bridge
             fetch('http://localhost:3001/api/connect', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ session: sessionId })
             }).catch(e => console.log('WA Bridge connecting...'));
 
-            // Poll QR Endpoint every 2 seconds
             pollQr();
             activeQrPollInterval = setInterval(pollQr, 2000);
         }
@@ -528,7 +562,7 @@
                         loading.classList.add('hidden');
                         img.classList.add('hidden');
                         clearInterval(activeQrPollInterval);
-                        loadWaAccounts(); // refresh list
+                        loadWaAccounts();
                     } else if (data.qrDataUrl) {
                         loading.classList.add('hidden');
                         img.src = data.qrDataUrl;
