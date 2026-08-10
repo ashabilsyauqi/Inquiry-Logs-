@@ -172,6 +172,11 @@ async function syncRecentChats(client, sessionId) {
     }
 }
 
+// Global unhandled rejection catch to prevent node process crash on puppeteer context navigation
+process.on('unhandledRejection', (reason, promise) => {
+    console.log('[WA Bridge] Handled async promise rejection:', reason ? reason.message : reason);
+});
+
 // Automatically initialize 'default' session on startup
 createSession('default');
 
@@ -232,8 +237,8 @@ app.post('/api/logout', async (req, res) => {
 
     if (session && session.client) {
         try {
-            await session.client.logout();
-            await session.client.destroy();
+            await session.client.logout().catch(() => {});
+            await session.client.destroy().catch(() => {});
         } catch (err) {
             console.error(`Error logging out session ${sessionId}:`, err);
         }
