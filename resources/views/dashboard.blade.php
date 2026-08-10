@@ -8,6 +8,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .draggable-card { cursor: grab; }
+        .draggable-card:active { cursor: grabbing; opacity: 0.8; }
     </style>
 </head>
 <body class="text-slate-800 flex h-screen overflow-hidden">
@@ -147,20 +149,20 @@
             </div>
             @endif
 
-            <!-- 1. CEO EXECUTIVE LANDING PAGE (BRAND CARDS ONLY) -->
+            <!-- 1. CEO EXECUTIVE LANDING PAGE (DRAGGABLE BRAND CARDS ONLY) -->
             @if($user->isCeo() && $accountId == 'all')
             <section class="space-y-6">
                 <div class="flex justify-between items-center">
                     <div>
                         <h3 class="text-xl font-bold text-slate-900">🏢 Portfolio Running Brands (Pipelines)</h3>
-                        <p class="text-xs text-slate-500 mt-0.5">Klik nama brand atau tombol untuk masuk ke Dashboard & Pipeline khusus brand tersebut.</p>
+                        <p class="text-xs text-slate-500 mt-0.5">Posisi kartu dapat di-geser (drag & drop). Klik nama brand untuk masuk ke Dashboard khusus.</p>
                     </div>
                     <span class="text-xs font-semibold text-slate-400 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
                         Total Brand: {{ $waAccounts->count() }}
                     </span>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="brandCardsContainer">
                     @foreach($waAccounts as $acc)
                     @php
                         $accLeads = $acc->leads;
@@ -169,7 +171,7 @@
                         $monthLeads = $accLeads->where('created_at', '>=', \Carbon\Carbon::now()->startOfMonth())->count();
                         $dealsCount = $accLeads->where('stage', 'Deal')->count();
                     @endphp
-                    <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm hover:shadow-md transition flex flex-col justify-between cursor-pointer" onclick="window.location.href='/?filter={{ $filter }}&account_id={{ $acc->id }}'">
+                    <div draggable="true" ondragstart="dragCard(event)" ondragover="allowDropCard(event)" ondrop="dropCard(event)" class="draggable-card bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm hover:shadow-md transition flex flex-col justify-between cursor-pointer" onclick="window.location.href='/?filter={{ $filter }}&account_id={{ $acc->id }}'">
                         <div>
                             <div class="flex justify-between items-start mb-4">
                                 <div class="flex items-center gap-3">
@@ -402,27 +404,54 @@
                 </div>
             </section>
             
-            <!-- SECTION 3: DYNAMIC CUSTOM KANBAN BOARD VIEW -->
+            <!-- SECTION 3: INTERACTIVE & DRAGGABLE KANBAN BOARD WITH INLINE DOUBLE-CLICK TITLE EDIT & DIRECT ENTRY SELECTOR -->
             <section id="section-kanban" class="space-y-4">
-                <h2 class="text-xl font-bold text-slate-900">
-                    Kanban Board {{ $activeAccount ? '(' . $activeAccount->name . ')' : '(Semua Pipeline)' }}
-                </h2>
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900">
+                            Kanban Board {{ $activeAccount ? '(' . $activeAccount->name . ')' : '(Semua Pipeline)' }}
+                        </h2>
+                        <p class="text-xs text-slate-500">💡 <strong>Double-click judul stage</strong> untuk ganti nama langsung. Klik tombol <strong>⭐ Set Entry</strong> untuk pintu masuk WA.</p>
+                    </div>
+                </div>
                 
-                <div class="flex flex-col md:flex-row gap-6 overflow-x-auto pb-4">
+                <div class="flex flex-col md:flex-row gap-6 overflow-x-auto pb-4" id="kanbanColumnsContainer">
                     @foreach($stages as $stage)
                     @php
                         $stageLeads = $leads->where('stage', $stage->name);
                     @endphp
-                    <div class="flex-1 min-w-[260px] bg-white rounded-2xl shadow-sm p-4 border-t-4 border-emerald-500 border-x border-b border-slate-200/80">
-                        <h2 class="text-base font-bold border-b border-slate-100 pb-3 mb-4 text-slate-800 flex justify-between items-center">
-                            <span class="flex items-center gap-1.5">
-                                {{ $stage->name }}
+                    <div draggable="true" ondragstart="dragCard(event)" ondragover="allowDropCard(event)" ondrop="dropCard(event)" class="draggable-card flex-1 min-w-[260px] bg-white rounded-2xl shadow-sm p-4 border-t-4 border-emerald-500 border-x border-b border-slate-200/80">
+                        <!-- Kanban Column Header with Inline Editing & Entry Selector -->
+                        <div class="border-b border-slate-100 pb-3 mb-4">
+                            <div class="flex justify-between items-center">
+                                <h2 class="text-base font-bold text-slate-800 flex items-center gap-1.5 truncate">
+                                    <!-- Double Clickable Stage Title -->
+                                    <span id="stage-title-{{ $stage->id }}" 
+                                          ondblclick="inlineEditStageName({{ $stage->id }}, '{{ $stage->name }}')" 
+                                          title="Double click untuk ubah nama stage ini" 
+                                          class="cursor-pointer hover:text-emerald-700 hover:underline transition">
+                                        {{ $stage->name }}
+                                    </span>
+                                </h2>
+                                <span class="bg-emerald-100 text-emerald-800 text-xs py-0.5 px-2.5 rounded-full font-bold flex-shrink-0">{{ $stageLeads->count() }}</span>
+                            </div>
+
+                            <!-- Direct Entry Stage Selector Badge -->
+                            <div class="mt-2 flex items-center justify-between">
                                 @if(!empty($stage->is_default))
-                                    <span class="text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded">Entry</span>
+                                    <span title="Inquiry WA baru akan otomatis masuk ke stage ini" class="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-full border border-emerald-300 flex items-center gap-1">
+                                        🟢 Entry Stage WA
+                                    </span>
+                                @else
+                                    <button onclick="setAsDefaultStageDirect({{ $stage->id }})" title="Klik untuk jadikan pintu masuk inquiry WA baru" class="text-[10px] font-semibold text-slate-500 hover:text-emerald-700 bg-slate-100 hover:bg-emerald-50 px-2 py-0.5 rounded border border-slate-200 transition">
+                                        ⭐ Set Entry Stage
+                                    </button>
                                 @endif
-                            </span>
-                            <span class="bg-emerald-100 text-emerald-800 text-xs py-0.5 px-2.5 rounded-full font-bold">{{ $stageLeads->count() }}</span>
-                        </h2>
+                                <span class="text-[10px] text-slate-400 italic">Double-click title</span>
+                            </div>
+                        </div>
+
+                        <!-- Kanban Cards Container -->
                         <div class="space-y-3">
                             @foreach($stageLeads as $lead)
                             <div onclick="openLeadDetailModal({{ $lead->id }})" class="bg-slate-50 hover:bg-emerald-50/60 transition duration-150 p-4 rounded-xl shadow-sm border border-slate-200/80 cursor-pointer">
@@ -719,6 +748,65 @@
         let inquiryChartInstance = null;
         let currentChartPeriod = 'daily';
         let activeSettingsBrandId = null;
+        let draggedElement = null;
+
+        // HTML5 DRAG & DROP FOR CARDS & COLUMNS
+        function dragCard(e) {
+            draggedElement = e.currentTarget;
+            e.dataTransfer.effectAllowed = 'move';
+        }
+        function allowDropCard(e) {
+            e.preventDefault();
+        }
+        function dropCard(e) {
+            e.preventDefault();
+            const target = e.currentTarget;
+            if (draggedElement && target && draggedElement !== target) {
+                const parent = target.parentNode;
+                const children = Array.from(parent.children);
+                const draggedIdx = children.indexOf(draggedElement);
+                const targetIdx = children.indexOf(target);
+
+                if (draggedIdx < targetIdx) {
+                    parent.insertBefore(draggedElement, target.nextSibling);
+                } else {
+                    parent.insertBefore(draggedElement, target);
+                }
+            }
+        }
+
+        // DOUBLE-CLICK INLINE STAGE RENAME LOGIC
+        function inlineEditStageName(stageId, currentName) {
+            const titleSpan = document.getElementById('stage-title-' + stageId);
+            if (!titleSpan) return;
+
+            const newName = prompt('Ubah Nama Stage:', currentName);
+            if (newName && newName.trim() !== '' && newName.trim() !== currentName) {
+                titleSpan.textContent = 'Menyimpan...';
+
+                fetch('/pipeline-stages/' + stageId + '/rename', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                    body: JSON.stringify({ name: newName.trim() })
+                })
+                .then(res => res.json())
+                .then(res => {
+                    window.location.reload();
+                });
+            }
+        }
+
+        // DIRECT ENTRY STAGE SELECTOR ON KANBAN HEADER
+        function setAsDefaultStageDirect(stageId) {
+            fetch('/pipeline-stages/' + stageId + '/set-default', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+            })
+            .then(res => res.json())
+            .then(res => {
+                window.location.reload();
+            });
+        }
 
         // INTERACTIVE TAB SWITCHING LOGIC
         function switchTab(tabName) {

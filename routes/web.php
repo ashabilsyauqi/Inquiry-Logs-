@@ -88,18 +88,18 @@ Route::middleware(['auth'])->group(function () {
             $stages = PipelineStage::whereNull('wa_account_id')->orWhereIn('wa_account_id', $waAccounts->pluck('id'))->get()->unique('name');
             if ($stages->isEmpty()) {
                 $stages = collect([
-                    (object)['name' => 'Lead Masuk', 'color' => 'purple', 'is_default' => true],
-                    (object)['name' => 'Meeting Call', 'color' => 'blue', 'is_default' => false],
-                    (object)['name' => 'Kirim Penawaran', 'color' => 'yellow', 'is_default' => false],
-                    (object)['name' => 'Deal', 'color' => 'green', 'is_default' => false],
+                    (object)['id' => 1, 'name' => 'Lead Masuk', 'color' => 'purple', 'is_default' => true],
+                    (object)['id' => 2, 'name' => 'Meeting Call', 'color' => 'blue', 'is_default' => false],
+                    (object)['id' => 3, 'name' => 'Kirim Penawaran', 'color' => 'yellow', 'is_default' => false],
+                    (object)['id' => 4, 'name' => 'Deal', 'color' => 'green', 'is_default' => false],
                 ]);
             }
         } else {
             $stages = collect([
-                (object)['name' => 'Lead Masuk', 'color' => 'purple', 'is_default' => true],
-                (object)['name' => 'Meeting Call', 'color' => 'blue', 'is_default' => false],
-                (object)['name' => 'Kirim Penawaran', 'color' => 'yellow', 'is_default' => false],
-                (object)['name' => 'Deal', 'color' => 'green', 'is_default' => false],
+                (object)['id' => 1, 'name' => 'Lead Masuk', 'color' => 'purple', 'is_default' => true],
+                (object)['id' => 2, 'name' => 'Meeting Call', 'color' => 'blue', 'is_default' => false],
+                (object)['id' => 3, 'name' => 'Kirim Penawaran', 'color' => 'yellow', 'is_default' => false],
+                (object)['id' => 4, 'name' => 'Deal', 'color' => 'green', 'is_default' => false],
             ]);
         }
 
@@ -202,6 +202,22 @@ Route::middleware(['auth'])->group(function () {
             'is_default' => $isFirst,
         ]);
 
+        return response()->json(['status' => 'success', 'stage' => $stage]);
+    });
+
+    Route::post('/pipeline-stages/{id}/rename', function (Request $request, $id) {
+        $stage = PipelineStage::findOrFail($id);
+        $newName = trim($request->input('name'));
+        if ($newName) {
+            $oldName = $stage->name;
+            $stage->name = $newName;
+            $stage->save();
+
+            // Update existing leads with old stage name to new stage name
+            Lead::where('wa_account_id', $stage->wa_account_id)
+                ->where('stage', $oldName)
+                ->update(['stage' => $newName]);
+        }
         return response()->json(['status' => 'success', 'stage' => $stage]);
     });
 
