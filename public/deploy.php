@@ -15,8 +15,27 @@ if ($providedSecret !== $secretKey) {
 header('Content-Type: text/plain');
 echo "=== CRM INSTANT DEPLOYMENT STARTED ===\n\n";
 
-$repoPath = '/home/sryyuqht/repositories/inquiry-Logs-';
+$possibleRepoPaths = [
+    '/home/sryyuqht/repositories/Inquiry-Logs-',
+    '/home/sryyuqht/repositories/inquiry-Logs-',
+    '/home/sryyuqht/repositories/inquiry-logs'
+];
+
+$repoPath = null;
+foreach ($possibleRepoPaths as $path) {
+    if (is_dir($path)) {
+        $repoPath = $path;
+        break;
+    }
+}
+
+if (!$repoPath) {
+    die("Error: Could not find repository folder in /home/sryyuqht/repositories/\n");
+}
+
 $targetPath = '/home/sryyuqht/crm.difitech.id';
+
+echo "Using repository path: {$repoPath}\n";
 
 // Step 1: Git Pull from GitHub repository
 echo "[1/4] Pulling latest code from GitHub (admin-panel branch)...\n";
