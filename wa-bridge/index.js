@@ -58,6 +58,9 @@ function createSession(sessionId = 'default') {
             const info = client.info;
             sessionData.phone = info.wid.user;
             console.log(`[WA Bridge] [${sessionId}] Client Ready! Phone: ${sessionData.phone}`);
+            
+            // Scan and backfill missed/unread chats during offline period
+            syncRecentChats(client, sessionId);
         } catch (e) {
             console.log(`[WA Bridge] [${sessionId}] Client Ready!`);
         }
@@ -122,6 +125,38 @@ function createSession(sessionId = 'default') {
     });
 
     return sessionData;
+}
+
+// Function to scan and backfill recent missed chats when WA reconnects
+async function syncRecentChats(client, sessionId) {
+    try {
+        console.log(`[WA Bridge] [${sessionId}] Scanning recent missed chats after reconnect...`);
+        const chats = await client.getChats();
+        const recentChats = chats.slice(0, 20); // Scan top 20 recent chats
+
+        for (const chat of recentChats) {
+            if (chat.isGroup) continue;
+            const messages = await chat.fetchMessages({ limit: 5 });
+
+            for (const msg of messages) {
+                let sender = msg.from;
+                let receiver = msg.to;
+
+                const payload = {
+                    sessionId,
+                    sender: sender.replace('@c.us', '').replace('@s.whatsapp.net', '').replace('@lid', ''),
+                    receiver: receiver.replace('@c.us', '').replace('@s.whatsapp.net', '').replace('@lid', ''),
+                    message: msg.body,
+                    isFromMe: msg.fromMe
+                };
+
+                await axios.post(WEBHOOK_URL, payload).catch(() => {});
+            }
+        }
+        console.log(`[WA Bridge] [${sessionId}] Missed chats sync complete.`);
+    } catch (err) {
+        console.error(`[WA Bridge] [${sessionId}] Error syncing missed chats:`, err.message);
+    }
 }
 
 // Automatically initialize 'default' session on startup

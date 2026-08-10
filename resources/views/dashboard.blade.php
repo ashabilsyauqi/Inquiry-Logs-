@@ -11,6 +11,33 @@
 </head>
 <body class="text-gray-800">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" id="dashboard-content">
+        
+        <!-- Disconnection Alert Banner -->
+        @php
+            $disconnectedAccounts = $waAccounts->where('status', '!=', 'CONNECTED');
+        @endphp
+
+        @if($disconnectedAccounts->isNotEmpty())
+        <div class="bg-amber-50 border-l-4 border-amber-500 p-4 mb-6 rounded-r-xl shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-amber-100 rounded-full text-amber-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <div>
+                    <h4 class="font-bold text-amber-900 text-sm">Peringatan: Perangkat WA Terputus!</h4>
+                    <p class="text-xs text-amber-700 mt-0.5">
+                        Ada {{ $disconnectedAccounts->count() }} Akun WA terputus koneksi ({{ $disconnectedAccounts->pluck('name')->join(', ') }}). Pesan baru akan otomatis tersinkron saat tersambung kembali.
+                    </p>
+                </div>
+            </div>
+            <button onclick="openDeviceModal();" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs rounded-lg transition whitespace-nowrap shadow-sm">
+                📲 Scan Ulang Barcode Sekarang
+            </button>
+        </div>
+        @endif
+
         <!-- Header & Top Navigation -->
         <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
             <div>
@@ -57,7 +84,7 @@
             </div>
         </div>
 
-        <!-- Active Pipeline Banner (If a specific account is selected) -->
+        <!-- Active Pipeline Banner -->
         @if($activeAccount)
         <div class="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-6 mb-8 text-white shadow-lg flex flex-col md:flex-row justify-between items-center gap-4">
             <div>
@@ -76,7 +103,7 @@
         </div>
         @endif
         
-        <!-- Stat Cards (Isolated by selected Pipeline) -->
+        <!-- Stat Cards -->
         <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center justify-between">
                 <div>
@@ -393,7 +420,7 @@
                     </div>
                 </div>
 
-                <!-- QR Scanner Area (Hidden by Default until user clicks Scan) -->
+                <!-- QR Scanner Area -->
                 <div id="qrSection" class="hidden border-t pt-6 text-center bg-gray-50 p-6 rounded-xl border border-gray-200">
                     <h4 class="font-bold text-gray-800 text-base flex items-center justify-center gap-2">
                         📲 Scan Barcode QR Code
@@ -415,8 +442,11 @@
                         Menunggu Scan...
                     </div>
 
-                    <div class="mt-4">
-                        <button onclick="closeQrSection()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-medium rounded-lg">
+                    <div class="mt-4 flex justify-center gap-2">
+                        <button onclick="startScanQr(currentScanningSession)" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg shadow">
+                            🔄 Regenerate / Scan Ulang QR
+                        </button>
+                        <button onclick="closeQrSection()" class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-medium rounded-lg">
                             Tutup Scanner
                         </button>
                     </div>
@@ -450,7 +480,6 @@
             document.getElementById('editModal').classList.add('hidden');
         }
 
-        // Device Modal Logic
         function openDeviceModal() {
             isModalOpen = true;
             document.getElementById('deviceModal').classList.remove('hidden');
@@ -482,7 +511,7 @@
                                 <div class="font-bold text-gray-800 text-sm flex items-center gap-2">
                                     ${acc.name}
                                     <span class="px-2 py-0.5 text-xs rounded-full ${acc.status === 'CONNECTED' ? 'bg-emerald-100 text-emerald-700' : 'bg-yellow-100 text-yellow-700'} font-semibold">
-                                        ${acc.status === 'CONNECTED' ? '🟢 Terhubung (' + (acc.phone || '') + ')' : '🟡 Belum Scan'}
+                                        ${acc.status === 'CONNECTED' ? '🟢 Terhubung (' + (acc.phone || '') + ')' : '🟡 Terputus / Scan QR'}
                                     </span>
                                 </div>
                                 <div class="text-xs text-gray-400 mt-1 font-mono">Session ID: ${acc.session_id}</div>
@@ -491,8 +520,8 @@
                                 <a href="/?filter={{ $filter }}&account_id=${acc.id}" class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold rounded-lg transition border border-blue-200 flex items-center gap-1">
                                     📊 Lihat Pipeline
                                 </a>
-                                <button onclick="startScanQr('${acc.session_id}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition shadow-sm">
-                                    📲 Scan Barcode QR
+                                <button onclick="startScanQr('${acc.session_id}')" class="px-3 py-1.5 ${acc.status === 'CONNECTED' ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-emerald-600 text-white hover:bg-emerald-700'} text-xs font-semibold rounded-lg transition shadow-sm">
+                                    ${acc.status === 'CONNECTED' ? '🔄 Re-Scan' : '📲 Scan Barcode QR'}
                                 </button>
                                 <button onclick="deleteAccount(${acc.id})" class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold rounded-lg transition">
                                     Hapus
@@ -583,7 +612,6 @@
             if (activeQrPollInterval) clearInterval(activeQrPollInterval);
         }
 
-        // Auto-refresh content
         function fetchLeads() {
             if (isModalOpen) return;
             const currentParams = window.location.search;
