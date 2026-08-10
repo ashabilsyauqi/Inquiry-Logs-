@@ -34,7 +34,7 @@ class WaAccount extends Model
     public function ensureDefaultStages()
     {
         if ($this->pipelineStages()->count() === 0) {
-            $s1 = PipelineStage::create(['wa_account_id' => $this->id, 'name' => 'Lead Masuk', 'order' => 1, 'color' => 'purple']);
+            $s1 = PipelineStage::create(['wa_account_id' => $this->id, 'name' => 'Lead Masuk', 'order' => 1, 'color' => 'purple', 'is_default' => true]);
             $s2 = PipelineStage::create(['wa_account_id' => $this->id, 'name' => 'Meeting Call', 'order' => 2, 'color' => 'blue']);
             $s3 = PipelineStage::create(['wa_account_id' => $this->id, 'name' => 'Kirim Penawaran', 'order' => 3, 'color' => 'yellow']);
             $s4 = PipelineStage::create(['wa_account_id' => $this->id, 'name' => 'Deal', 'order' => 4, 'color' => 'green']);
@@ -45,6 +45,14 @@ class WaAccount extends Model
             StageTrigger::create(['wa_account_id' => $this->id, 'pipeline_stage_id' => $s3->id, 'keyword' => 'proposal']);
             StageTrigger::create(['wa_account_id' => $this->id, 'pipeline_stage_id' => $s4->id, 'keyword' => 'deal']);
             StageTrigger::create(['wa_account_id' => $this->id, 'pipeline_stage_id' => $s4->id, 'keyword' => 'lunas']);
+        } else {
+            if (!$this->pipelineStages()->where('is_default', true)->exists()) {
+                $firstStage = $this->pipelineStages()->first();
+                if ($firstStage) {
+                    $firstStage->is_default = true;
+                    $firstStage->save();
+                }
+            }
         }
     }
 }

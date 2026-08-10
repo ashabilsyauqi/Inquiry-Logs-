@@ -88,18 +88,18 @@ Route::middleware(['auth'])->group(function () {
             $stages = PipelineStage::whereNull('wa_account_id')->orWhereIn('wa_account_id', $waAccounts->pluck('id'))->get()->unique('name');
             if ($stages->isEmpty()) {
                 $stages = collect([
-                    (object)['name' => 'Lead Masuk', 'color' => 'purple'],
-                    (object)['name' => 'Meeting Call', 'color' => 'blue'],
-                    (object)['name' => 'Kirim Penawaran', 'color' => 'yellow'],
-                    (object)['name' => 'Deal', 'color' => 'green'],
+                    (object)['name' => 'Lead Masuk', 'color' => 'purple', 'is_default' => true],
+                    (object)['name' => 'Meeting Call', 'color' => 'blue', 'is_default' => false],
+                    (object)['name' => 'Kirim Penawaran', 'color' => 'yellow', 'is_default' => false],
+                    (object)['name' => 'Deal', 'color' => 'green', 'is_default' => false],
                 ]);
             }
         } else {
             $stages = collect([
-                (object)['name' => 'Lead Masuk', 'color' => 'purple'],
-                (object)['name' => 'Meeting Call', 'color' => 'blue'],
-                (object)['name' => 'Kirim Penawaran', 'color' => 'yellow'],
-                (object)['name' => 'Deal', 'color' => 'green'],
+                (object)['name' => 'Lead Masuk', 'color' => 'purple', 'is_default' => true],
+                (object)['name' => 'Meeting Call', 'color' => 'blue', 'is_default' => false],
+                (object)['name' => 'Kirim Penawaran', 'color' => 'yellow', 'is_default' => false],
+                (object)['name' => 'Deal', 'color' => 'green', 'is_default' => false],
             ]);
         }
 
@@ -191,6 +191,7 @@ Route::middleware(['auth'])->group(function () {
             return response()->json(['status' => 'error', 'message' => 'Missing name or account'], 400);
         }
 
+        $isFirst = PipelineStage::where('wa_account_id', $waAccountId)->count() === 0;
         $maxOrder = PipelineStage::where('wa_account_id', $waAccountId)->max('order') ?? 0;
 
         $stage = PipelineStage::create([
@@ -198,14 +199,35 @@ Route::middleware(['auth'])->group(function () {
             'name' => $name,
             'order' => $maxOrder + 1,
             'color' => $color,
+            'is_default' => $isFirst,
         ]);
 
         return response()->json(['status' => 'success', 'stage' => $stage]);
     });
 
+    Route::post('/pipeline-stages/{id}/set-default', function ($id) {
+        $stage = PipelineStage::findOrFail($id);
+        PipelineStage::where('wa_account_id', $stage->wa_account_id)->update(['is_default' => false]);
+        $stage->is_default = true;
+        $stage->save();
+
+        return response()->json(['status' => 'success', 'message' => "Stage '{$stage->name}' diset sebagai Entry Stage Inquiry Masuk!"]);
+    });
+
     Route::post('/pipeline-stages/{id}/delete', function ($id) {
         $stage = PipelineStage::findOrFail($id);
+        $waAccountId = $stage->wa_account_id;
+        $wasDefault = $stage->is_default;
         $stage->delete();
+
+        if ($wasDefault) {
+            $nextStage = PipelineStage::where('wa_account_id', $waAccountId)->first();
+            if ($nextStage) {
+                $nextStage->is_default = true;
+                $nextStage->save();
+            }
+        }
+
         return response()->json(['status' => 'success']);
     });
 

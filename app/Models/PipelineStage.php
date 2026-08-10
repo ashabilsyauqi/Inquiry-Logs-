@@ -14,6 +14,11 @@ class PipelineStage extends Model
         'name',
         'order',
         'color',
+        'is_default',
+    ];
+
+    protected $casts = [
+        'is_default' => 'boolean',
     ];
 
     public function waAccount()

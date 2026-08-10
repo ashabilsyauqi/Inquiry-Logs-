@@ -147,7 +147,7 @@
             </div>
             @endif
 
-            <!-- 1. CEO EXECUTIVE LANDING PAGE (BRAND CARDS ONLY - NO KANBAN / NO LEAD TABLE DUMP) -->
+            <!-- 1. CEO EXECUTIVE LANDING PAGE (BRAND CARDS ONLY) -->
             @if($user->isCeo() && $accountId == 'all')
             <section class="space-y-6">
                 <div class="flex justify-between items-center">
@@ -293,7 +293,12 @@
                     @endphp
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 flex items-center justify-between border-l-4 border-l-emerald-500">
                         <div>
-                            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider truncate">{{ $stage->name }}</p>
+                            <div class="flex items-center gap-1.5">
+                                <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider truncate">{{ $stage->name }}</p>
+                                @if(!empty($stage->is_default))
+                                    <span class="text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded">Entry</span>
+                                @endif
+                            </div>
                             <h3 class="text-3xl font-bold text-emerald-600 mt-1">{{ $stageCount }}</h3>
                         </div>
                     </div>
@@ -410,7 +415,12 @@
                     @endphp
                     <div class="flex-1 min-w-[260px] bg-white rounded-2xl shadow-sm p-4 border-t-4 border-emerald-500 border-x border-b border-slate-200/80">
                         <h2 class="text-base font-bold border-b border-slate-100 pb-3 mb-4 text-slate-800 flex justify-between items-center">
-                            <span>{{ $stage->name }}</span>
+                            <span class="flex items-center gap-1.5">
+                                {{ $stage->name }}
+                                @if(!empty($stage->is_default))
+                                    <span class="text-[9px] bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded">Entry</span>
+                                @endif
+                            </span>
                             <span class="bg-emerald-100 text-emerald-800 text-xs py-0.5 px-2.5 rounded-full font-bold">{{ $stageLeads->count() }}</span>
                         </h2>
                         <div class="space-y-3">
@@ -556,7 +566,10 @@
 
                 <!-- Section 2: Stages List -->
                 <div>
-                    <h4 class="font-bold text-slate-800 text-sm mb-3">📋 Daftar Stage Aktif</h4>
+                    <div class="flex justify-between items-center mb-3">
+                        <h4 class="font-bold text-slate-800 text-sm">📋 Daftar Stage Aktif</h4>
+                        <span class="text-[11px] text-slate-500 italic">Pilih 1 Stage sebagai <strong>Entry Stage (Pintu Masuk Lead Baru)</strong></span>
+                    </div>
                     <div id="stagesListContainer" class="space-y-2">
                         <div class="text-center py-4 text-slate-400 text-xs">Memuat data stage...</div>
                     </div>
@@ -837,12 +850,28 @@
                         stagesContainer.innerHTML = `<div class="p-3 bg-slate-50 text-slate-400 text-xs text-center rounded-lg">Belum ada stage khusus.</div>`;
                     } else {
                         stagesContainer.innerHTML = acc.pipeline_stages.map(s => `
-                            <div class="p-3 bg-white border border-slate-200 rounded-xl flex justify-between items-center">
-                                <span class="font-bold text-slate-800 text-xs flex items-center gap-2">
-                                    <span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
-                                    ${s.order}. ${s.name}
-                                </span>
-                                <button onclick="deleteStage(${s.id})" class="text-rose-600 hover:text-rose-800 text-xs font-bold px-2 py-1 bg-rose-50 rounded-md">Hapus</button>
+                            <div class="p-3 bg-white border border-slate-200 rounded-xl flex flex-col sm:flex-row justify-between items-center gap-2">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold text-slate-800 text-xs flex items-center gap-2">
+                                        <span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
+                                        ${s.order}. ${s.name}
+                                    </span>
+                                    ${s.is_default ? `
+                                        <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-full border border-emerald-300">
+                                            🟢 Entry Stage WA (Default)
+                                        </span>
+                                    ` : ''}
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    ${!s.is_default ? `
+                                        <button onclick="setAsDefaultStage(${s.id})" class="text-xs font-semibold text-slate-600 hover:text-emerald-700 bg-slate-100 hover:bg-emerald-50 px-2.5 py-1 rounded-md border border-slate-200 transition">
+                                            ⭐ Set Sebagai Entry Stage
+                                        </button>
+                                    ` : ''}
+                                    <button onclick="deleteStage(${s.id})" class="text-rose-600 hover:text-rose-800 text-xs font-bold px-2 py-1 bg-rose-50 rounded-md">
+                                        Hapus
+                                    </button>
+                                </div>
                             </div>
                         `).join('');
 
@@ -870,6 +899,17 @@
                         `).join('');
                     }
                 });
+        }
+
+        function setAsDefaultStage(stageId) {
+            fetch('/pipeline-stages/' + stageId + '/set-default', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+            })
+            .then(res => res.json())
+            .then(res => {
+                loadBrandSettingsData(activeSettingsBrandId);
+            });
         }
 
         function addNewStage() {
