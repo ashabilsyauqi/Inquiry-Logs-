@@ -4,9 +4,12 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use App\Models\Lead;
 use App\Models\WaAccount;
+use App\Models\PipelineStage;
+use App\Models\StageTrigger;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AnalyticsController;
+use App\Http\Controllers\WebhookController;
 use Carbon\Carbon;
 
 // Guest Routes
@@ -15,6 +18,9 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::get('/register', [AuthController::class, 'showRegister']);
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+// Webhook Disconnection Alert Route
+Route::post('/api/wa-disconnect-alert', [WebhookController::class, 'handleDisconnectAlert']);
 
 // Authenticated CRM Routes
 Route::middleware(['auth'])->group(function () {
@@ -31,6 +37,7 @@ Route::middleware(['auth'])->group(function () {
                 'session_id' => 'session_user_' . $user->id,
                 'status' => 'DISCONNECTED'
             ]);
+            $waAccount->ensureDefaultStages();
             $user->wa_account_id = $waAccount->id;
             $user->save();
         }
@@ -54,27 +61,51 @@ Route::middleware(['auth'])->group(function () {
         $activeAccount = null;
         if ($accountId !== 'all') {
             $query->where('wa_account_id', $accountId);
-            $activeAccount = WaAccount::find($accountId);
+            $activeAccount = WaAccount::with(['pipelineStages.triggers'])->find($accountId);
+            if ($activeAccount) {
+                $activeAccount->ensureDefaultStages();
+            }
         }
 
         $leads = $query->latest()->get();
 
-        // CEO sees all WA Accounts, Admin only sees their own assigned WA Account
+        // CEO sees all WA Accounts with lead counts & metrics
         if ($user->isCeo()) {
-            $waAccounts = WaAccount::all();
+            $waAccounts = WaAccount::with(['leads', 'pipelineStages.triggers'])->get();
+            foreach ($waAccounts as $acc) {
+                $acc->ensureDefaultStages();
+            }
         } else {
-            $waAccounts = $user->wa_account_id ? WaAccount::where('id', $user->wa_account_id)->get() : collect();
+            $waAccounts = $user->wa_account_id ? WaAccount::with(['leads', 'pipelineStages.triggers'])->where('id', $user->wa_account_id)->get() : collect();
         }
 
         $totalLeads = $leads->count();
-        $totalLeadMasuk = $leads->where('stage', 'Lead Masuk')->count();
-        $totalMeetingCall = $leads->where('stage', 'Meeting Call')->count();
-        $totalKirimPenawaran = $leads->where('stage', 'Kirim Penawaran')->count();
-        $totalDeal = $leads->where('stage', 'Deal')->count();
+
+        // Determine pipeline stages for current view
+        if ($activeAccount) {
+            $stages = $activeAccount->pipelineStages;
+        } elseif ($user->isCeo() && $accountId === 'all') {
+            $stages = PipelineStage::whereNull('wa_account_id')->orWhereIn('wa_account_id', $waAccounts->pluck('id'))->get()->unique('name');
+            if ($stages->isEmpty()) {
+                $stages = collect([
+                    (object)['name' => 'Lead Masuk', 'color' => 'purple'],
+                    (object)['name' => 'Meeting Call', 'color' => 'blue'],
+                    (object)['name' => 'Kirim Penawaran', 'color' => 'yellow'],
+                    (object)['name' => 'Deal', 'color' => 'green'],
+                ]);
+            }
+        } else {
+            $stages = collect([
+                (object)['name' => 'Lead Masuk', 'color' => 'purple'],
+                (object)['name' => 'Meeting Call', 'color' => 'blue'],
+                (object)['name' => 'Kirim Penawaran', 'color' => 'yellow'],
+                (object)['name' => 'Deal', 'color' => 'green'],
+            ]);
+        }
 
         return view('dashboard', compact(
-            'leads', 'filter', 'accountId', 'activeAccount', 'waAccounts', 'user',
-            'totalLeads', 'totalLeadMasuk', 'totalMeetingCall', 'totalKirimPenawaran', 'totalDeal'
+            'leads', 'filter', 'accountId', 'activeAccount', 'waAccounts', 'user', 'stages',
+            'totalLeads'
         ));
     });
 
@@ -113,7 +144,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/wa-accounts', function () {
         $user = Auth::user();
         if ($user->isCeo()) {
-            return response()->json(WaAccount::all());
+            return response()->json(WaAccount::with(['pipelineStages.triggers'])->get());
         }
 
         if (!$user->wa_account_id) {
@@ -122,11 +153,12 @@ Route::middleware(['auth'])->group(function () {
                 'session_id' => 'session_user_' . $user->id,
                 'status' => 'DISCONNECTED'
             ]);
+            $waAccount->ensureDefaultStages();
             $user->wa_account_id = $waAccount->id;
             $user->save();
         }
 
-        return response()->json(WaAccount::where('id', $user->wa_account_id)->get());
+        return response()->json(WaAccount::with(['pipelineStages.triggers'])->where('id', $user->wa_account_id)->get());
     });
 
     Route::post('/wa-accounts', function (Request $request) {
@@ -138,6 +170,7 @@ Route::middleware(['auth'])->group(function () {
             'session_id' => $sessionId,
             'status' => 'DISCONNECTED'
         ]);
+        $account->ensureDefaultStages();
 
         return response()->json(['status' => 'success', 'account' => $account]);
     });
@@ -145,6 +178,59 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/wa-accounts/{id}/delete', function ($id) {
         $account = WaAccount::findOrFail($id);
         $account->delete();
+        return response()->json(['status' => 'success']);
+    });
+
+    // Custom Pipeline Stages CRUD
+    Route::post('/pipeline-stages', function (Request $request) {
+        $waAccountId = $request->input('wa_account_id');
+        $name = $request->input('name');
+        $color = $request->input('color', 'purple');
+
+        if (!$name || !$waAccountId) {
+            return response()->json(['status' => 'error', 'message' => 'Missing name or account'], 400);
+        }
+
+        $maxOrder = PipelineStage::where('wa_account_id', $waAccountId)->max('order') ?? 0;
+
+        $stage = PipelineStage::create([
+            'wa_account_id' => $waAccountId,
+            'name' => $name,
+            'order' => $maxOrder + 1,
+            'color' => $color,
+        ]);
+
+        return response()->json(['status' => 'success', 'stage' => $stage]);
+    });
+
+    Route::post('/pipeline-stages/{id}/delete', function ($id) {
+        $stage = PipelineStage::findOrFail($id);
+        $stage->delete();
+        return response()->json(['status' => 'success']);
+    });
+
+    // Custom Keyword Triggers CRUD
+    Route::post('/stage-triggers', function (Request $request) {
+        $waAccountId = $request->input('wa_account_id');
+        $stageId = $request->input('pipeline_stage_id');
+        $keyword = strtolower(trim($request->input('keyword')));
+
+        if (!$keyword || !$waAccountId || !$stageId) {
+            return response()->json(['status' => 'error', 'message' => 'Missing parameters'], 400);
+        }
+
+        $trigger = StageTrigger::create([
+            'wa_account_id' => $waAccountId,
+            'pipeline_stage_id' => $stageId,
+            'keyword' => $keyword,
+        ]);
+
+        return response()->json(['status' => 'success', 'trigger' => $trigger]);
+    });
+
+    Route::post('/stage-triggers/{id}/delete', function ($id) {
+        $trigger = StageTrigger::findOrFail($id);
+        $trigger->delete();
         return response()->json(['status' => 'success']);
     });
 

@@ -11,9 +11,15 @@ app.use(express.json());
 
 const PORT = process.env.BRIDGE_PORT || 3001;
 const WEBHOOK_URL = process.env.WEBHOOK_URL || 'http://127.0.0.1:8000/api/wa-webhook';
+const DISCONNECT_ALERT_URL = process.env.DISCONNECT_ALERT_URL || 'http://127.0.0.1:8000/api/wa-disconnect-alert';
 
 // Map to store sessions: sessionId -> { sessionId, client, status, qrDataUrl, phone }
 const sessions = new Map();
+
+function sendDisconnectAlert(sessionId, reason) {
+    axios.post(DISCONNECT_ALERT_URL, { sessionId, reason })
+        .catch(err => console.error(`[WA Bridge] Failed sending disconnect alert for ${sessionId}:`, err.message));
+}
 
 function createSession(sessionId = 'default') {
     if (sessions.has(sessionId)) {
@@ -75,6 +81,7 @@ function createSession(sessionId = 'default') {
         sessionData.status = 'DISCONNECTED';
         sessionData.qrDataUrl = null;
         console.error(`[WA Bridge] [${sessionId}] Auth failure:`, msg);
+        sendDisconnectAlert(sessionId, 'Auth failure: ' + msg);
     });
 
     client.on('disconnected', (reason) => {
@@ -82,6 +89,7 @@ function createSession(sessionId = 'default') {
         sessionData.qrDataUrl = null;
         sessionData.phone = null;
         console.log(`[WA Bridge] [${sessionId}] Disconnected:`, reason);
+        sendDisconnectAlert(sessionId, 'Disconnected: ' + reason);
     });
 
     client.on('message_create', async (msg) => {
@@ -125,6 +133,7 @@ function createSession(sessionId = 'default') {
     client.initialize().catch(err => {
         console.error(`[WA Bridge] [${sessionId}] Initialize error:`, err);
         sessionData.status = 'DISCONNECTED';
+        sendDisconnectAlert(sessionId, 'Initialize error: ' + err.message);
     });
 
     return sessionData;

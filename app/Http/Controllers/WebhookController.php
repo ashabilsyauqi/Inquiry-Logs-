@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\Lead;
 use App\Models\WaAccount;
 use App\Models\LeadMessage;
+use App\Models\StageTrigger;
+use App\Models\User;
 use Illuminate\Support\Facades\Log;
 
 class WebhookController extends Controller
@@ -40,10 +42,14 @@ class WebhookController extends Controller
                 'session_id' => $sessionId,
                 'status' => 'CONNECTED'
             ]);
-        } else if ($receiverPhone && !$waAccount->phone) {
-            $waAccount->phone = $receiverPhone;
-            $waAccount->status = 'CONNECTED';
-            $waAccount->save();
+            $waAccount->ensureDefaultStages();
+        } else {
+            $waAccount->ensureDefaultStages();
+            if ($receiverPhone && !$waAccount->phone) {
+                $waAccount->phone = $receiverPhone;
+                $waAccount->status = 'CONNECTED';
+                $waAccount->save();
+            }
         }
 
         $myNumber = $waAccount->phone ?: $receiverPhone;
@@ -52,46 +58,38 @@ class WebhookController extends Controller
         $isFromMe = $request->input('isFromMe') || ($senderPhone === $myNumber);
         $lead = null;
 
+        $leadPhone = $isFromMe ? $receiverPhone : $senderPhone;
+        $lead = Lead::where('phone', $leadPhone)->first();
+
+        // Dynamic Keyword Stage Automation Triggers
+        $activeTriggers = StageTrigger::where('wa_account_id', $waAccount->id)->with('pipelineStage')->get();
+        $matchedStageName = null;
+
+        foreach ($activeTriggers as $trigger) {
+            if ($trigger->pipelineStage && str_contains($lowerMessage, strtolower($trigger->keyword))) {
+                $matchedStageName = $trigger->pipelineStage->name;
+                break;
+            }
+        }
+
+        $firstStage = $waAccount->pipelineStages()->first();
+        $defaultStageName = $firstStage ? $firstStage->name : 'Lead Masuk';
+
         if ($isFromMe) {
-            $leadPhone = $receiverPhone;
-            $lead = Lead::where('phone', $leadPhone)->first();
-
-            // Stage 2: Meeting Call
-            if (str_contains($lowerMessage, 'hallo selamat datang') || str_contains($lowerMessage, 'meeting') || str_contains($lowerMessage, 'call')) {
-                if (!$lead) {
-                    $displayName = $this->formatDisplayPhone($leadPhone);
-                    $lead = Lead::create([
-                        'wa_account_id' => $waAccount->id,
-                        'name'  => $displayName,
-                        'phone' => $leadPhone,
-                        'stage' => 'Meeting Call'
-                    ]);
-                } elseif ($lead->stage === 'Lead Masuk') {
-                    $lead->stage = 'Meeting Call';
-                    $lead->save();
-                }
-            }
-
-            // Stage 3: Kirim Penawaran
-            if (str_contains($lowerMessage, 'penawaran') || str_contains($lowerMessage, 'silahkan melakukan pembayaran')) {
-                if ($lead && ($lead->stage === 'Meeting Call' || $lead->stage === 'Lead Masuk')) {
-                    $lead->stage = 'Kirim Penawaran';
-                    $lead->save();
-                }
-            }
-
-            // Stage 4: Deal
-            if (str_contains($lowerMessage, 'deal') || (str_contains($lowerMessage, 'terverifikasi') && str_contains($lowerMessage, 'terima kasih'))) {
-                if ($lead && ($lead->stage === 'Kirim Penawaran' || $lead->stage === 'Meeting Call')) {
-                    $lead->stage = 'Deal';
-                    $lead->save();
-                }
+            if (!$lead) {
+                $displayName = $this->formatDisplayPhone($leadPhone);
+                $lead = Lead::create([
+                    'wa_account_id' => $waAccount->id,
+                    'name'  => $displayName,
+                    'phone' => $leadPhone,
+                    'stage' => $matchedStageName ?: $defaultStageName
+                ]);
+            } elseif ($matchedStageName) {
+                $lead->stage = $matchedStageName;
+                $lead->save();
             }
         } else {
-            // Incoming lead from customer -> Default Stage: "Lead Masuk"
-            $leadPhone = $senderPhone;
-            $lead = Lead::where('phone', $leadPhone)->first();
-
+            // Incoming lead from customer
             $displayName = $senderNameInput ?: $this->formatDisplayPhone($leadPhone);
 
             if (!$lead) {
@@ -99,7 +97,7 @@ class WebhookController extends Controller
                     'wa_account_id' => $waAccount->id,
                     'name'  => $displayName,
                     'phone' => $leadPhone,
-                    'stage' => 'Lead Masuk'
+                    'stage' => $matchedStageName ?: $defaultStageName
                 ]);
             } else {
                 if (!$lead->wa_account_id) {
@@ -107,6 +105,9 @@ class WebhookController extends Controller
                 }
                 if ($senderNameInput && (str_contains($lead->name, 'Lead') || preg_match('/^[0-9]+$/', $lead->name))) {
                     $lead->name = $senderNameInput;
+                }
+                if ($matchedStageName) {
+                    $lead->stage = $matchedStageName;
                 }
                 $lead->save();
             }
@@ -126,6 +127,40 @@ class WebhookController extends Controller
             'status' => 'success',
             'message' => 'Webhook processed successfully'
         ]);
+    }
+
+    // Webhook Endpoint for Disconnection Alerts from wa-bridge
+    public function handleDisconnectAlert(Request $request)
+    {
+        $sessionId = $request->input('sessionId') ?? 'default';
+        $reason = $request->input('reason') ?? 'Lost connection / Unauthenticated';
+
+        $waAccount = WaAccount::where('session_id', $sessionId)->first();
+        if ($waAccount) {
+            $waAccount->status = 'DISCONNECTED';
+            $waAccount->save();
+
+            // Send Email Notification Alert to CEO Users
+            $ceos = User::where('role', 'CEO')->get();
+            $accountName = $waAccount->name;
+            $phone = $waAccount->phone ?: 'Belum Terhubung';
+
+            foreach ($ceos as $ceo) {
+                $to = $ceo->email;
+                $subject = "⚠️ PERINGATAN DARURAT: WhatsApp CS {$accountName} Terputus!";
+                $message = "Halo CEO / Owner,\n\n"
+                         . "Peringatan! Perangkat WhatsApp untuk brand '{$accountName}' (No: {$phone}) telah TERPUTUS dari server.\n"
+                         . "Alasan: {$reason}\n\n"
+                         . "Silakan segera masuk ke CRM Admin Panel (https://crm.difitech.id) dan lakukan Scan Barcode QR Code ulang untuk menyambungkan kembali koneksi.\n\n"
+                         . "Pesan ini dikirimkan secara otomatis oleh CRM MVP System.";
+                
+                @mail($to, $subject, $message, "From: CRM Alert <no-reply@difitech.id>");
+            }
+
+            Log::warning("⚠️ DISCONNECTION EMAIL ALERT DISPATCHED: Account {$accountName} ({$sessionId})");
+        }
+
+        return response()->json(['status' => 'success', 'message' => 'Disconnection alert processed']);
     }
 
     private function sanitizePhone(string $phone): string

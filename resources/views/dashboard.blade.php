@@ -28,9 +28,15 @@
                 </div>
             </div>
 
-            <!-- Nav Links (Interactive Tab Switching) -->
+            <!-- Nav Links -->
             <nav class="p-4 space-y-1.5 text-sm font-medium">
-                <button onclick="switchTab('all')" id="nav-all" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-800 text-white font-semibold shadow-sm transition text-left">
+                @if($user->isCeo())
+                <a href="/?account_id=all" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl {{ $accountId == 'all' ? 'bg-slate-800 text-white font-semibold shadow-sm' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }} transition text-left">
+                    <span class="text-base">🏢</span> Running Brands (Portfolio)
+                </a>
+                @endif
+
+                <button onclick="switchTab('all')" id="nav-all" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition text-left">
                     <span class="text-base">🌐</span> Semua Tampilan
                 </button>
                 <button onclick="switchTab('analytics')" id="nav-analytics" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition text-left">
@@ -86,14 +92,20 @@
         <header class="bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-30 flex justify-between items-center">
             <div>
                 <h2 class="text-xl font-bold text-slate-900">
-                    {{ $user->isCeo() ? 'Dashboard CEO / Owner' : 'Dashboard Sales Admin' }}
+                    {{ $user->isCeo() ? 'Executive Dashboard CEO' : 'Dashboard Sales Admin' }}
                 </h2>
                 <p class="text-xs text-slate-500">
-                    {{ $user->isCeo() ? 'Akses Global Seluruh Sales Pipeline & User Approval' : 'Terisolasi Khusus Pipeline: ' . ($user->waAccount->name ?? 'Default Account') }}
+                    {{ $user->isCeo() ? ($accountId == 'all' ? 'Halaman Utama Portfolio Running Brands (Pipelines Overview)' : 'Detail Pipeline: ' . ($activeAccount->name ?? '')) : 'Terisolasi Khusus Pipeline: ' . ($user->waAccount->name ?? 'Default Account') }}
                 </p>
             </div>
 
             <div class="flex items-center gap-3">
+                @if($activeAccount)
+                <button onclick="openBrandSettingsModal({{ $activeAccount->id }})" class="px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded-xl shadow-sm transition flex items-center gap-2">
+                    ⚙️ Custom Stage & Trigger
+                </button>
+                @endif
+
                 <button onclick="openDeviceModal()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-sm transition flex items-center gap-2">
                     📱 WA Device Manager
                 </button>
@@ -120,7 +132,7 @@
                         </svg>
                     </div>
                     <div>
-                        <h4 class="font-bold text-amber-900 text-sm">Peringatan: Perangkat WA Terputus!</h4>
+                        <h4 class="font-bold text-amber-900 text-sm">Peringatan: Perangkat WA Terputus! Email Alert Telah Dikirim!</h4>
                         <p class="text-xs text-amber-700 mt-0.5">
                             Ada {{ $disconnectedAccounts->count() }} Akun WA terputus ({{ $disconnectedAccounts->pluck('name')->join(', ') }}). Pesan baru akan otomatis tersinkron saat tersambung kembali.
                         </p>
@@ -132,15 +144,82 @@
             </div>
             @endif
 
+            <!-- CEO LANDING PAGE: EXECUTIVE RUNNING BRANDS GRID -->
+            @if($user->isCeo() && $accountId == 'all')
+            <section class="space-y-6">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <h3 class="text-xl font-bold text-slate-900">🏢 Portfolio Running Brands (Pipelines)</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Pilih salah satu brand untuk melihat detail pipeline, stages, dan pergerakan lead-nya.</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    @foreach($waAccounts as $acc)
+                    @php
+                        $accLeads = $acc->leads;
+                        $totalAccLeads = $accLeads->count();
+                        $dealsCount = $accLeads->where('stage', 'Deal')->count();
+                    @endphp
+                    <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-start mb-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xl">
+                                        📱
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-slate-900 text-base leading-tight">{{ $acc->name }}</h4>
+                                        <p class="text-xs text-slate-400 font-mono mt-0.5">{{ $acc->phone ?: 'Session: ' . $acc->session_id }}</p>
+                                    </div>
+                                </div>
+                                <span class="px-2.5 py-1 text-[10px] font-bold rounded-full {{ $acc->status == 'CONNECTED' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800' }}">
+                                    {{ $acc->status == 'CONNECTED' ? '🟢 Online' : '🔴 Terputus' }}
+                                </span>
+                            </div>
+
+                            <!-- Metrics Summary -->
+                            <div class="grid grid-cols-2 gap-3 mb-6 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                <div>
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase">Total Lead</span>
+                                    <p class="text-lg font-bold text-slate-800 mt-0.5">{{ $totalAccLeads }}</p>
+                                </div>
+                                <div>
+                                    <span class="text-[10px] font-bold text-slate-400 uppercase">Closing Deal</span>
+                                    <p class="text-lg font-bold text-emerald-600 mt-0.5">{{ $dealsCount }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            <a href="/?filter={{ $filter }}&account_id={{ $acc->id }}" class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow transition text-center">
+                                📊 Buka Pipeline Brand Ini
+                            </a>
+                            <button onclick="openBrandSettingsModal({{ $acc->id }})" class="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition border border-slate-200">
+                                ⚙️ Stages & Triggers
+                            </button>
+                        </div>
+                    </div>
+                    @endforeach
+                    @if($waAccounts->isEmpty())
+                    <div class="col-span-3 bg-white p-8 rounded-2xl border border-slate-200 text-center text-slate-400 text-sm">
+                        Belum ada Running Brand / Akun WA CS. Klik "WA Device Manager" untuk menambahkan.
+                    </div>
+                    @endif
+                </div>
+            </section>
+            @endif
+
+            <!-- BRAND PIPELINE DETAIL VIEW -->
+            @if(!$user->isCeo() || $accountId != 'all')
+            
             <!-- PIPELINE SWITCHER TABS (CEO Only) -->
             @if($user->isCeo())
-            <div class="overflow-x-auto bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
+            <div class="overflow-x-auto bg-white p-3 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between gap-4">
                 <div class="flex items-center gap-2">
-                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider mr-2">Pilih Pipeline:</span>
-                    
                     <a href="/?filter={{ $filter }}&account_id=all" 
-                       class="px-4 py-2 text-xs rounded-xl font-semibold transition flex items-center gap-2 whitespace-nowrap {{ $accountId == 'all' ? 'bg-slate-900 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
-                        🌐 Semua Pipeline (Global)
+                       class="px-4 py-2 text-xs rounded-xl font-semibold transition flex items-center gap-2 whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200">
+                        ⬅️ Kembali ke Portfolio Brands
                     </a>
 
                     @foreach($waAccounts as $acc)
@@ -167,17 +246,22 @@
                     <p class="text-xs text-emerald-100 mt-1">Daftar Leads & Stat Cards dikhususkan untuk saluran ini saja.</p>
                 </div>
                 
-                @if($user->isCeo())
-                <button onclick="startScanQr('{{ $activeAccount->session_id }}'); openDeviceModal();" class="px-4 py-2 bg-white text-emerald-800 hover:bg-emerald-50 text-xs font-bold rounded-xl shadow transition whitespace-nowrap">
-                    📲 Scan / Sambungkan WA Ini
-                </button>
-                @endif
+                <div class="flex gap-2">
+                    <button onclick="openBrandSettingsModal({{ $activeAccount->id }})" class="px-4 py-2 bg-purple-900 hover:bg-purple-950 text-white text-xs font-bold rounded-xl shadow transition whitespace-nowrap">
+                        ⚙️ Kelola Stage & Keyword Trigger
+                    </button>
+                    @if($user->isCeo())
+                    <button onclick="startScanQr('{{ $activeAccount->session_id }}'); openDeviceModal();" class="px-4 py-2 bg-white text-emerald-800 hover:bg-emerald-50 text-xs font-bold rounded-xl shadow transition whitespace-nowrap">
+                        📲 Scan / Sambungkan WA
+                    </button>
+                    @endif
+                </div>
             </div>
             @endif
 
             <!-- SECTION 1: STAT CARDS & INTERACTIVE TREND CHART -->
             <section id="section-analytics" class="space-y-6">
-                <!-- Stat Cards -->
+                <!-- Dynamic Custom Stat Cards -->
                 <div class="grid grid-cols-1 md:grid-cols-5 gap-5">
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 flex items-center justify-between">
                         <div>
@@ -187,33 +271,17 @@
                         <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 text-lg font-bold">#</div>
                     </div>
 
-                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 flex items-center justify-between border-l-4 border-l-purple-500">
+                    @foreach($stages as $stage)
+                    @php
+                        $stageCount = $leads->where('stage', $stage->name)->count();
+                    @endphp
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 flex items-center justify-between border-l-4 border-l-emerald-500">
                         <div>
-                            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">1. Lead Masuk</p>
-                            <h3 class="text-3xl font-bold text-purple-600 mt-1">{{ $totalLeadMasuk }}</h3>
+                            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider truncate">{{ $stage->name }}</p>
+                            <h3 class="text-3xl font-bold text-emerald-600 mt-1">{{ $stageCount }}</h3>
                         </div>
                     </div>
-                    
-                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 flex items-center justify-between border-l-4 border-l-blue-500">
-                        <div>
-                            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">2. Meeting Call</p>
-                            <h3 class="text-3xl font-bold text-blue-600 mt-1">{{ $totalMeetingCall }}</h3>
-                        </div>
-                    </div>
-
-                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 flex items-center justify-between border-l-4 border-l-yellow-500">
-                        <div>
-                            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">3. Kirim Penawaran</p>
-                            <h3 class="text-3xl font-bold text-yellow-600 mt-1">{{ $totalKirimPenawaran }}</h3>
-                        </div>
-                    </div>
-
-                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 flex items-center justify-between border-l-4 border-l-green-500">
-                        <div>
-                            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">4. Deal</p>
-                            <h3 class="text-3xl font-bold text-green-600 mt-1">{{ $totalDeal }}</h3>
-                        </div>
-                    </div>
+                    @endforeach
                 </div>
 
                 <!-- Interactive Trend Chart Card -->
@@ -291,15 +359,9 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4">
-                                    @if($lead->stage == 'Lead Masuk')
-                                        <span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-semibold">Lead Masuk</span>
-                                    @elseif($lead->stage == 'Meeting Call')
-                                        <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold">Meeting Call</span>
-                                    @elseif($lead->stage == 'Kirim Penawaran')
-                                        <span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-semibold">Kirim Penawaran</span>
-                                    @else
-                                        <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">Deal</span>
-                                    @endif
+                                    <span class="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-xs font-semibold">
+                                        {{ $lead->stage }}
+                                    </span>
                                 </td>
                                 <td class="px-6 py-4 text-slate-500 text-xs">{{ $lead->created_at->format('d M, H:i') }}</td>
                                 <td class="px-6 py-4 text-center" onclick="event.stopPropagation()">
@@ -319,22 +381,25 @@
                 </div>
             </section>
             
-            <!-- SECTION 3: KANBAN BOARD VIEW -->
+            <!-- SECTION 3: DYNAMIC CUSTOM KANBAN BOARD VIEW -->
             <section id="section-kanban" class="space-y-4">
                 <h2 class="text-xl font-bold text-slate-900">
                     Kanban Board {{ $activeAccount ? '(' . $activeAccount->name . ')' : '(Semua Pipeline)' }}
                 </h2>
                 
-                <div class="flex flex-col md:flex-row gap-6">
-                    <!-- 1. Lead Masuk Column -->
-                    <div class="flex-1 bg-white rounded-2xl shadow-sm p-4 border-t-4 border-purple-500 border-x border-b border-slate-200/80">
-                        <h2 class="text-base font-bold border-b border-slate-100 pb-3 mb-4 text-purple-600 flex justify-between items-center">
-                            <span>1. Lead Masuk</span>
-                            <span class="bg-purple-100 text-purple-800 text-xs py-0.5 px-2.5 rounded-full font-bold">{{ $totalLeadMasuk }}</span>
+                <div class="flex flex-col md:flex-row gap-6 overflow-x-auto pb-4">
+                    @foreach($stages as $stage)
+                    @php
+                        $stageLeads = $leads->where('stage', $stage->name);
+                    @endphp
+                    <div class="flex-1 min-w-[260px] bg-white rounded-2xl shadow-sm p-4 border-t-4 border-emerald-500 border-x border-b border-slate-200/80">
+                        <h2 class="text-base font-bold border-b border-slate-100 pb-3 mb-4 text-slate-800 flex justify-between items-center">
+                            <span>{{ $stage->name }}</span>
+                            <span class="bg-emerald-100 text-emerald-800 text-xs py-0.5 px-2.5 rounded-full font-bold">{{ $stageLeads->count() }}</span>
                         </h2>
                         <div class="space-y-3">
-                            @foreach($leads->where('stage', 'Lead Masuk') as $lead)
-                            <div onclick="openLeadDetailModal({{ $lead->id }})" class="bg-purple-50/70 hover:bg-purple-100/80 transition duration-150 p-4 rounded-xl shadow-sm border border-purple-100 cursor-pointer">
+                            @foreach($stageLeads as $lead)
+                            <div onclick="openLeadDetailModal({{ $lead->id }})" class="bg-slate-50 hover:bg-emerald-50/60 transition duration-150 p-4 rounded-xl shadow-sm border border-slate-200/80 cursor-pointer">
                                 <div class="flex justify-between items-start">
                                     <h3 class="font-bold text-slate-800 text-sm">{{ $lead->name }}</h3>
                                     @if($lead->priority > 0)
@@ -348,117 +413,21 @@
                                 <p class="text-xs text-slate-500 mt-1 font-sans flex items-center gap-1">
                                     <span>🕒</span> {{ $lead->created_at->format('d M, H:i') }}
                                 </p>
-                                <div class="mt-2.5 text-[10px] font-bold text-purple-700 bg-purple-100 inline-block px-2 py-0.5 rounded">
+                                <div class="mt-2.5 text-[10px] font-bold text-slate-600 bg-slate-200/70 inline-block px-2 py-0.5 rounded">
                                     {{ $lead->waAccount->name ?? 'Default Account' }}
                                 </div>
                             </div>
                             @endforeach
-                            @if($leads->where('stage', 'Lead Masuk')->isEmpty())
-                                <p class="text-xs text-slate-400 text-center py-6 italic">Belum ada lead masuk.</p>
+                            @if($stageLeads->isEmpty())
+                                <p class="text-xs text-slate-400 text-center py-6 italic">Kosong.</p>
                             @endif
                         </div>
                     </div>
-
-                    <!-- 2. Meeting Call Column -->
-                    <div class="flex-1 bg-white rounded-2xl shadow-sm p-4 border-t-4 border-blue-500 border-x border-b border-slate-200/80">
-                        <h2 class="text-base font-bold border-b border-slate-100 pb-3 mb-4 text-blue-600 flex justify-between items-center">
-                            <span>2. Meeting Call</span>
-                            <span class="bg-blue-100 text-blue-800 text-xs py-0.5 px-2.5 rounded-full font-bold">{{ $totalMeetingCall }}</span>
-                        </h2>
-                        <div class="space-y-3">
-                            @foreach($leads->where('stage', 'Meeting Call') as $lead)
-                            <div onclick="openLeadDetailModal({{ $lead->id }})" class="bg-blue-50/70 hover:bg-blue-100/80 transition duration-150 p-4 rounded-xl shadow-sm border border-blue-100 cursor-pointer">
-                                <div class="flex justify-between items-start">
-                                    <h3 class="font-bold text-slate-800 text-sm">{{ $lead->name }}</h3>
-                                    @if($lead->priority > 0)
-                                        <div class="text-yellow-400 text-xs flex mt-0.5">
-                                            @for($i = 0; $i < $lead->priority; $i++)
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
-                                            @endfor
-                                        </div>
-                                    @endif
-                                </div>
-                                <p class="text-xs text-slate-500 mt-1 font-sans flex items-center gap-1">
-                                    <span>🕒</span> {{ $lead->created_at->format('d M, H:i') }}
-                                </p>
-                                <div class="mt-2.5 text-[10px] font-bold text-blue-700 bg-blue-100 inline-block px-2 py-0.5 rounded">
-                                    {{ $lead->waAccount->name ?? 'Default Account' }}
-                                </div>
-                            </div>
-                            @endforeach
-                            @if($leads->where('stage', 'Meeting Call')->isEmpty())
-                                <p class="text-xs text-slate-400 text-center py-6 italic">Belum ada meeting call.</p>
-                            @endif
-                        </div>
-                    </div>
-
-                    <!-- 3. Kirim Penawaran Column -->
-                    <div class="flex-1 bg-white rounded-2xl shadow-sm p-4 border-t-4 border-yellow-500 border-x border-b border-slate-200/80">
-                        <h2 class="text-base font-bold border-b border-slate-100 pb-3 mb-4 text-yellow-600 flex justify-between items-center">
-                            <span>3. Kirim Penawaran</span>
-                            <span class="bg-yellow-100 text-yellow-800 text-xs py-0.5 px-2.5 rounded-full font-bold">{{ $totalKirimPenawaran }}</span>
-                        </h2>
-                        <div class="space-y-3">
-                            @foreach($leads->where('stage', 'Kirim Penawaran') as $lead)
-                            <div onclick="openLeadDetailModal({{ $lead->id }})" class="bg-yellow-50/70 hover:bg-yellow-100/80 transition duration-150 p-4 rounded-xl shadow-sm border border-yellow-100 cursor-pointer">
-                                <div class="flex justify-between items-start">
-                                    <h3 class="font-bold text-slate-800 text-sm">{{ $lead->name }}</h3>
-                                    @if($lead->priority > 0)
-                                        <div class="text-yellow-400 text-xs flex mt-0.5">
-                                            @for($i = 0; $i < $lead->priority; $i++)
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
-                                            @endfor
-                                        </div>
-                                    @endif
-                                </div>
-                                <p class="text-xs text-slate-500 mt-1 font-sans flex items-center gap-1">
-                                    <span>🕒</span> {{ $lead->created_at->format('d M, H:i') }}
-                                </p>
-                                <div class="mt-2.5 text-[10px] font-bold text-yellow-700 bg-yellow-100 inline-block px-2 py-0.5 rounded">
-                                    {{ $lead->waAccount->name ?? 'Default Account' }}
-                                </div>
-                            </div>
-                            @endforeach
-                            @if($leads->where('stage', 'Kirim Penawaran')->isEmpty())
-                                <p class="text-xs text-slate-400 text-center py-6 italic">Belum ada penawaran.</p>
-                            @endif
-                        </div>
-                    </div>
-
-                    <!-- 4. Deal Column -->
-                    <div class="flex-1 bg-white rounded-2xl shadow-sm p-4 border-t-4 border-green-500 border-x border-b border-slate-200/80">
-                        <h2 class="text-base font-bold border-b border-slate-100 pb-3 mb-4 text-green-600 flex justify-between items-center">
-                            <span>4. Deal</span>
-                            <span class="bg-green-100 text-green-800 text-xs py-0.5 px-2.5 rounded-full font-bold">{{ $totalDeal }}</span>
-                        </h2>
-                        <div class="space-y-3">
-                            @foreach($leads->where('stage', 'Deal') as $lead)
-                            <div onclick="openLeadDetailModal({{ $lead->id }})" class="bg-green-50/70 hover:bg-green-100/80 transition duration-150 p-4 rounded-xl shadow-sm border border-green-100 cursor-pointer">
-                                <div class="flex justify-between items-start">
-                                    <h3 class="font-bold text-slate-800 text-sm">{{ $lead->name }}</h3>
-                                    @if($lead->priority > 0)
-                                        <div class="text-yellow-400 text-xs flex mt-0.5">
-                                            @for($i = 0; $i < $lead->priority; $i++)
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
-                                            @endfor
-                                        </div>
-                                    @endif
-                                </div>
-                                <p class="text-xs text-slate-500 mt-1 font-sans flex items-center gap-1">
-                                    <span>🕒</span> {{ $lead->created_at->format('d M, H:i') }}
-                                </p>
-                                <div class="mt-2.5 text-[10px] font-bold text-green-700 bg-green-100 inline-block px-2 py-0.5 rounded">
-                                    {{ $lead->waAccount->name ?? 'Default Account' }}
-                                </div>
-                            </div>
-                            @endforeach
-                            @if($leads->where('stage', 'Deal')->isEmpty())
-                                <p class="text-xs text-slate-400 text-center py-6 italic">Belum ada deal.</p>
-                            @endif
-                        </div>
-                    </div>
+                    @endforeach
                 </div>
             </section>
+
+            @endif
 
         </div>
     </main>
@@ -493,10 +462,9 @@
                         <div class="mb-3">
                             <label class="block text-xs font-semibold text-slate-600 mb-1">Tahapan / Stage Pipeline</label>
                             <select name="stage" id="modalStage" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                <option value="Lead Masuk">1. Lead Masuk</option>
-                                <option value="Meeting Call">2. Meeting Call</option>
-                                <option value="Kirim Penawaran">3. Kirim Penawaran</option>
-                                <option value="Deal">4. Deal</option>
+                                @foreach($stages as $st)
+                                    <option value="{{ $st->name }}">{{ $st->name }}</option>
+                                @endforeach
                             </select>
                         </div>
 
@@ -539,6 +507,70 @@
 
             <div class="px-6 py-3 bg-slate-50 border-t border-slate-200 flex justify-end">
                 <button onclick="closeLeadDetailModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium text-xs rounded-xl transition">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- BRAND SETTINGS MODAL (Custom Stages & Keyword Triggers Management) -->
+    <div id="brandSettingsModal" class="fixed inset-0 bg-slate-950/70 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="px-6 py-5 bg-gradient-to-r from-purple-900 to-indigo-900 text-white flex justify-between items-center">
+                <div>
+                    <h3 class="text-xl font-bold flex items-center gap-2">
+                        ⚙️ Kelola Stage & Keyword Trigger Brand
+                    </h3>
+                    <p class="text-xs text-purple-200 mt-0.5" id="brandSettingsSubtitle">Kustomisasi alokasi stage & otomasi kata kunci WA</p>
+                </div>
+                <button onclick="closeBrandSettingsModal()" class="text-purple-200 hover:text-white text-2xl font-bold">&times;</button>
+            </div>
+
+            <div class="p-6 overflow-y-auto flex-1 space-y-6">
+                <!-- Section 1: Add New Stage -->
+                <div class="bg-purple-50 border border-purple-200 rounded-xl p-4">
+                    <h4 class="font-bold text-purple-900 text-sm mb-2">➕ Tambah Stage Baru untuk Brand Ini</h4>
+                    <div class="flex gap-2">
+                        <input type="text" id="newStageName" placeholder="Nama Stage (Misal: Discovery Call / Kirim Invoice)" class="px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none flex-1">
+                        <button onclick="addNewStage()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold text-xs rounded-lg shadow whitespace-nowrap transition">
+                            + Tambah Stage
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Section 2: Stages List -->
+                <div>
+                    <h4 class="font-bold text-slate-800 text-sm mb-3">📋 Daftar Stage Aktif</h4>
+                    <div id="stagesListContainer" class="space-y-2">
+                        <div class="text-center py-4 text-slate-400 text-xs">Memuat data stage...</div>
+                    </div>
+                </div>
+
+                <!-- Section 3: Add Keyword Trigger -->
+                <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+                    <h4 class="font-bold text-emerald-900 text-sm mb-2">⚡ Tambah Otomasi Trigger Kata Kunci WA</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                        <select id="triggerStageSelect" class="px-3 py-2 text-sm border rounded-lg outline-none bg-white">
+                            <option value="">Pilih Target Stage...</option>
+                        </select>
+                        <input type="text" id="newTriggerKeyword" placeholder="Kata Kunci (Misal: zoom, penawaran)" class="px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
+                        <button onclick="addNewTrigger()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg shadow whitespace-nowrap transition">
+                            + Tambah Trigger
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Section 4: Triggers List -->
+                <div>
+                    <h4 class="font-bold text-slate-800 text-sm mb-3">⚡ Daftar Trigger Kata Kunci Aktif</h4>
+                    <div id="triggersListContainer" class="space-y-2">
+                        <div class="text-center py-4 text-slate-400 text-xs">Memuat data trigger...</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+                <button onclick="closeBrandSettingsModal()" class="px-5 py-2 bg-slate-200 text-slate-700 font-medium text-sm rounded-lg hover:bg-slate-300 transition">
                     Tutup
                 </button>
             </div>
@@ -657,8 +689,9 @@
         let currentScanningSession = 'default';
         let inquiryChartInstance = null;
         let currentChartPeriod = 'daily';
+        let activeSettingsBrandId = null;
 
-        // INTERACTIVE TAB SWITCHING LOGIC (Sidebar Navigation)
+        // INTERACTIVE TAB SWITCHING LOGIC
         function switchTab(tabName) {
             const secAnalytics = document.getElementById('section-analytics');
             const secTable = document.getElementById('section-table');
@@ -676,31 +709,18 @@
                 }
             });
 
-            if (tabName === 'all') {
-                secAnalytics.classList.remove('hidden');
-                secTable.classList.remove('hidden');
-                secKanban.classList.remove('hidden');
-            } else if (tabName === 'analytics') {
-                secAnalytics.classList.remove('hidden');
-                secTable.classList.add('hidden');
-                secKanban.classList.add('hidden');
-            } else if (tabName === 'kanban') {
-                secAnalytics.classList.add('hidden');
-                secTable.classList.add('hidden');
-                secKanban.classList.remove('hidden');
-            } else if (tabName === 'table') {
-                secAnalytics.classList.add('hidden');
-                secTable.classList.remove('hidden');
-                secKanban.classList.add('hidden');
-            }
+            if (secAnalytics) secAnalytics.classList.toggle('hidden', tabName !== 'all' && tabName !== 'analytics');
+            if (secTable) secTable.classList.toggle('hidden', tabName !== 'all' && tabName !== 'table');
+            if (secKanban) secKanban.classList.toggle('hidden', tabName !== 'all' && tabName !== 'kanban');
 
-            // Scroll to top of main area
             document.getElementById('main-scroll-area').scrollTop = 0;
         }
 
         // Chart.js Trend Analytics Initialization
         document.addEventListener('DOMContentLoaded', function() {
-            initInquiryChart();
+            if (document.getElementById('inquiryChart')) {
+                initInquiryChart();
+            }
             loadPendingBadgeCount();
         });
 
@@ -744,10 +764,12 @@
             currentChartPeriod = period;
             ['btn-daily', 'btn-weekly', 'btn-monthly'].forEach(id => {
                 const btn = document.getElementById(id);
-                if (id === 'btn-' + period) {
-                    btn.className = "px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 text-white shadow-sm transition";
-                } else {
-                    btn.className = "px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-600 hover:bg-slate-200 transition";
+                if (btn) {
+                    if (id === 'btn-' + period) {
+                        btn.className = "px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 text-white shadow-sm transition";
+                    } else {
+                        btn.className = "px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-600 hover:bg-slate-200 transition";
+                    }
                 }
             });
             fetchChartData(period);
@@ -760,10 +782,133 @@
             fetch('/api/analytics/chart-data?period=' + period + '&account_id=' + accountId)
                 .then(res => res.json())
                 .then(res => {
-                    inquiryChartInstance.data.labels = res.labels;
-                    inquiryChartInstance.data.datasets[0].data = res.data;
-                    inquiryChartInstance.update();
+                    if (inquiryChartInstance) {
+                        inquiryChartInstance.data.labels = res.labels;
+                        inquiryChartInstance.data.datasets[0].data = res.data;
+                        inquiryChartInstance.update();
+                    }
                 });
+        }
+
+        // BRAND SETTINGS (CUSTOM STAGES & TRIGGERS MODAL)
+        function openBrandSettingsModal(brandId) {
+            isModalOpen = true;
+            activeSettingsBrandId = brandId;
+            document.getElementById('brandSettingsModal').classList.remove('hidden');
+            loadBrandSettingsData(brandId);
+        }
+
+        function closeBrandSettingsModal() {
+            isModalOpen = false;
+            document.getElementById('brandSettingsModal').classList.add('hidden');
+        }
+
+        function loadBrandSettingsData(brandId) {
+            fetch('/wa-accounts')
+                .then(res => res.json())
+                .then(accounts => {
+                    const acc = accounts.find(a => a.id == brandId);
+                    if (!acc) return;
+
+                    document.getElementById('brandSettingsSubtitle').textContent = "Brand: " + acc.name + " (" + (acc.phone || 'Perangkat Disconnected') + ")";
+
+                    // Render Stages
+                    const stagesContainer = document.getElementById('stagesListContainer');
+                    const stageSelect = document.getElementById('triggerStageSelect');
+                    stageSelect.innerHTML = `<option value="">Pilih Target Stage...</option>`;
+
+                    if (!acc.pipeline_stages || acc.pipeline_stages.length === 0) {
+                        stagesContainer.innerHTML = `<div class="p-3 bg-slate-50 text-slate-400 text-xs text-center rounded-lg">Belum ada stage khusus.</div>`;
+                    } else {
+                        stagesContainer.innerHTML = acc.pipeline_stages.map(s => `
+                            <div class="p-3 bg-white border border-slate-200 rounded-xl flex justify-between items-center">
+                                <span class="font-bold text-slate-800 text-xs flex items-center gap-2">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span>
+                                    ${s.order}. ${s.name}
+                                </span>
+                                <button onclick="deleteStage(${s.id})" class="text-rose-600 hover:text-rose-800 text-xs font-bold px-2 py-1 bg-rose-50 rounded-md">Hapus</button>
+                            </div>
+                        `).join('');
+
+                        acc.pipeline_stages.forEach(s => {
+                            stageSelect.innerHTML += `<option value="${s.id}">${s.name}</option>`;
+                        });
+                    }
+
+                    // Render Triggers
+                    const triggersContainer = document.getElementById('triggersListContainer');
+                    const triggers = acc.pipeline_stages ? acc.pipeline_stages.flatMap(s => (s.triggers || []).map(t => ({...t, stageName: s.name}))) : [];
+
+                    if (triggers.length === 0) {
+                        triggersContainer.innerHTML = `<div class="p-3 bg-slate-50 text-slate-400 text-xs text-center rounded-lg">Belum ada otomasi trigger kata kunci.</div>`;
+                    } else {
+                        triggersContainer.innerHTML = triggers.map(t => `
+                            <div class="p-3 bg-white border border-slate-200 rounded-xl flex justify-between items-center">
+                                <div class="text-xs">
+                                    <span class="font-mono bg-slate-100 text-slate-800 px-2 py-0.5 rounded border border-slate-300 font-bold">"${t.keyword}"</span>
+                                    <span class="text-slate-400 mx-1">➔</span>
+                                    <span class="font-bold text-purple-700">${t.stageName}</span>
+                                </div>
+                                <button onclick="deleteTrigger(${t.id})" class="text-rose-600 hover:text-rose-800 text-xs font-bold px-2 py-1 bg-rose-50 rounded-md">Hapus</button>
+                            </div>
+                        `).join('');
+                    }
+                });
+        }
+
+        function addNewStage() {
+            const nameInput = document.getElementById('newStageName');
+            const name = nameInput.value.trim();
+            if (!name) return alert('Ketik nama stage terlebih dahulu.');
+
+            fetch('/pipeline-stages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                body: JSON.stringify({ wa_account_id: activeSettingsBrandId, name })
+            })
+            .then(res => res.json())
+            .then(res => {
+                nameInput.value = '';
+                loadBrandSettingsData(activeSettingsBrandId);
+            });
+        }
+
+        function deleteStage(id) {
+            if (!confirm('Hapus stage ini?')) return;
+            fetch('/pipeline-stages/' + id + '/delete', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+            })
+            .then(() => loadBrandSettingsData(activeSettingsBrandId));
+        }
+
+        function addNewTrigger() {
+            const stageSelect = document.getElementById('triggerStageSelect');
+            const keywordInput = document.getElementById('newTriggerKeyword');
+            const stageId = stageSelect.value;
+            const keyword = keywordInput.value.trim();
+
+            if (!stageId || !keyword) return alert('Pilih stage dan ketik kata kunci.');
+
+            fetch('/stage-triggers', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                body: JSON.stringify({ wa_account_id: activeSettingsBrandId, pipeline_stage_id: stageId, keyword })
+            })
+            .then(res => res.json())
+            .then(res => {
+                keywordInput.value = '';
+                loadBrandSettingsData(activeSettingsBrandId);
+            });
+        }
+
+        function deleteTrigger(id) {
+            if (!confirm('Hapus trigger kata kunci ini?')) return;
+            fetch('/stage-triggers/' + id + '/delete', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+            })
+            .then(() => loadBrandSettingsData(activeSettingsBrandId));
         }
 
         // Lead Modal Logic
