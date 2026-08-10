@@ -32,11 +32,12 @@
             <nav class="p-4 space-y-1.5 text-sm font-medium">
                 @if($user->isCeo())
                 <a href="/?account_id=all" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl {{ $accountId == 'all' ? 'bg-slate-800 text-white font-semibold shadow-sm' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }} transition text-left">
-                    <span class="text-base">🏢</span> Running Brands (Portfolio)
+                    <span class="text-base">🏢</span> Running Brands (CEO)
                 </a>
                 @endif
 
-                <button onclick="switchTab('all')" id="nav-all" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition text-left">
+                @if(!$user->isCeo() || $accountId != 'all')
+                <button onclick="switchTab('all')" id="nav-all" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-800 text-white font-semibold shadow-sm transition text-left">
                     <span class="text-base">🌐</span> Semua Tampilan
                 </button>
                 <button onclick="switchTab('analytics')" id="nav-analytics" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition text-left">
@@ -48,6 +49,8 @@
                 <button onclick="switchTab('table')" id="nav-table" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition text-left">
                     <span class="text-base">📑</span> Daftar Leads
                 </button>
+                @endif
+
                 <button onclick="openDeviceModal()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition text-left">
                     <span class="text-base">📱</span> Perangkat WA & QR
                 </button>
@@ -92,10 +95,10 @@
         <header class="bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-30 flex justify-between items-center">
             <div>
                 <h2 class="text-xl font-bold text-slate-900">
-                    {{ $user->isCeo() ? 'Executive Dashboard CEO' : 'Dashboard Sales Admin' }}
+                    {{ $user->isCeo() ? ($accountId == 'all' ? 'Executive Dashboard CEO' : 'Dashboard Brand: ' . ($activeAccount->name ?? '')) : 'Dashboard Brand: ' . ($user->waAccount->name ?? 'Default Account') }}
                 </h2>
                 <p class="text-xs text-slate-500">
-                    {{ $user->isCeo() ? ($accountId == 'all' ? 'Halaman Utama Portfolio Running Brands (Pipelines Overview)' : 'Detail Pipeline: ' . ($activeAccount->name ?? '')) : 'Terisolasi Khusus Pipeline: ' . ($user->waAccount->name ?? 'Default Account') }}
+                    {{ $user->isCeo() ? ($accountId == 'all' ? 'Portfolio Overview Seluruh Running Brands (Pipelines)' : 'Analisis & Pipeline Khusus Brand ' . ($activeAccount->name ?? '')) : 'Pipeline Sales Khusus: ' . ($user->waAccount->name ?? 'Default Account') }}
                 </p>
             </div>
 
@@ -144,14 +147,17 @@
             </div>
             @endif
 
-            <!-- CEO LANDING PAGE: EXECUTIVE RUNNING BRANDS GRID -->
+            <!-- 1. CEO EXECUTIVE LANDING PAGE (BRAND CARDS ONLY - NO KANBAN / NO LEAD TABLE DUMP) -->
             @if($user->isCeo() && $accountId == 'all')
             <section class="space-y-6">
                 <div class="flex justify-between items-center">
                     <div>
                         <h3 class="text-xl font-bold text-slate-900">🏢 Portfolio Running Brands (Pipelines)</h3>
-                        <p class="text-xs text-slate-500 mt-0.5">Pilih salah satu brand untuk melihat detail pipeline, stages, dan pergerakan lead-nya.</p>
+                        <p class="text-xs text-slate-500 mt-0.5">Klik nama brand atau tombol untuk masuk ke Dashboard & Pipeline khusus brand tersebut.</p>
                     </div>
+                    <span class="text-xs font-semibold text-slate-400 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
+                        Total Brand: {{ $waAccounts->count() }}
+                    </span>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -159,17 +165,19 @@
                     @php
                         $accLeads = $acc->leads;
                         $totalAccLeads = $accLeads->count();
+                        $todayLeads = $accLeads->where('created_at', '>=', \Carbon\Carbon::today())->count();
+                        $monthLeads = $accLeads->where('created_at', '>=', \Carbon\Carbon::now()->startOfMonth())->count();
                         $dealsCount = $accLeads->where('stage', 'Deal')->count();
                     @endphp
-                    <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm hover:shadow-md transition flex flex-col justify-between">
+                    <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm hover:shadow-md transition flex flex-col justify-between cursor-pointer" onclick="window.location.href='/?filter={{ $filter }}&account_id={{ $acc->id }}'">
                         <div>
                             <div class="flex justify-between items-start mb-4">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xl">
+                                    <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xl shadow-sm">
                                         📱
                                     </div>
                                     <div>
-                                        <h4 class="font-bold text-slate-900 text-base leading-tight">{{ $acc->name }}</h4>
+                                        <h4 class="font-bold text-slate-900 text-base leading-tight hover:text-emerald-600 transition">{{ $acc->name }}</h4>
                                         <p class="text-xs text-slate-400 font-mono mt-0.5">{{ $acc->phone ?: 'Session: ' . $acc->session_id }}</p>
                                     </div>
                                 </div>
@@ -178,25 +186,29 @@
                                 </span>
                             </div>
 
-                            <!-- Metrics Summary -->
-                            <div class="grid grid-cols-2 gap-3 mb-6 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                            <!-- Metrics Summary Grid -->
+                            <div class="grid grid-cols-3 gap-2 mb-6 bg-slate-50 p-3 rounded-xl border border-slate-100 text-center">
                                 <div>
-                                    <span class="text-[10px] font-bold text-slate-400 uppercase">Total Lead</span>
-                                    <p class="text-lg font-bold text-slate-800 mt-0.5">{{ $totalAccLeads }}</p>
+                                    <span class="text-[9px] font-bold text-slate-400 uppercase">Hari Ini</span>
+                                    <p class="text-base font-bold text-slate-800 mt-0.5">{{ $todayLeads }}</p>
                                 </div>
                                 <div>
-                                    <span class="text-[10px] font-bold text-slate-400 uppercase">Closing Deal</span>
-                                    <p class="text-lg font-bold text-emerald-600 mt-0.5">{{ $dealsCount }}</p>
+                                    <span class="text-[9px] font-bold text-slate-400 uppercase">Bulan Ini</span>
+                                    <p class="text-base font-bold text-blue-600 mt-0.5">{{ $monthLeads }}</p>
+                                </div>
+                                <div>
+                                    <span class="text-[9px] font-bold text-slate-400 uppercase">Closing</span>
+                                    <p class="text-base font-bold text-emerald-600 mt-0.5">{{ $dealsCount }}</p>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-2" onclick="event.stopPropagation()">
                             <a href="/?filter={{ $filter }}&account_id={{ $acc->id }}" class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow transition text-center">
-                                📊 Buka Pipeline Brand Ini
+                                📊 Buka Dashboard Brand
                             </a>
                             <button onclick="openBrandSettingsModal({{ $acc->id }})" class="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition border border-slate-200">
-                                ⚙️ Stages & Triggers
+                                ⚙️
                             </button>
                         </div>
                     </div>
@@ -210,28 +222,32 @@
             </section>
             @endif
 
-            <!-- BRAND PIPELINE DETAIL VIEW -->
+            <!-- 2. BRAND DASHBOARD VIEW (STAT CARDS, ADJUSTABLE PERIOD, TREND CHART, KANBAN, DATA TABLE) -->
             @if(!$user->isCeo() || $accountId != 'all')
             
-            <!-- PIPELINE SWITCHER TABS (CEO Only) -->
-            @if($user->isCeo())
-            <div class="overflow-x-auto bg-white p-3 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between gap-4">
-                <div class="flex items-center gap-2">
+            <!-- Top Action Header & Adjustable Period Filters -->
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                <div class="flex items-center gap-3">
+                    @if($user->isCeo())
                     <a href="/?filter={{ $filter }}&account_id=all" 
-                       class="px-4 py-2 text-xs rounded-xl font-semibold transition flex items-center gap-2 whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200">
-                        ⬅️ Kembali ke Portfolio Brands
+                       class="px-4 py-2 text-xs rounded-xl font-bold transition flex items-center gap-2 bg-slate-900 text-white hover:bg-slate-800 shadow">
+                        ⬅️ Kembali ke Portfolio Brands CEO
                     </a>
+                    @endif
 
-                    @foreach($waAccounts as $acc)
-                    <a href="/?filter={{ $filter }}&account_id={{ $acc->id }}" 
-                       class="px-4 py-2 text-xs rounded-xl font-semibold transition flex items-center gap-2 whitespace-nowrap {{ $accountId == $acc->id ? 'bg-emerald-600 text-white shadow-md' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
-                        <span>📱 {{ $acc->name }}</span>
-                        <span class="w-2 h-2 rounded-full {{ $acc->status == 'CONNECTED' ? 'bg-emerald-300' : 'bg-yellow-400' }}"></span>
-                    </a>
-                    @endforeach
+                    <h3 class="font-bold text-slate-800 text-sm">
+                        Filter Periode Data Brand:
+                    </h3>
+                </div>
+
+                <!-- Adjustable Period Filter Buttons (Semua, Hari Ini, Bulan Ini, Tahun Ini) -->
+                <div class="flex gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+                    <a href="/?filter=all&account_id={{ $accountId }}" class="px-3 py-1.5 text-xs font-semibold rounded-lg transition {{ $filter == 'all' ? 'bg-blue-600 text-white font-bold shadow-sm' : 'text-slate-600 hover:bg-slate-200' }}">Semua</a>
+                    <a href="/?filter=daily&account_id={{ $accountId }}" class="px-3 py-1.5 text-xs font-semibold rounded-lg transition {{ $filter == 'daily' ? 'bg-blue-600 text-white font-bold shadow-sm' : 'text-slate-600 hover:bg-slate-200' }}">Hari Ini</a>
+                    <a href="/?filter=monthly&account_id={{ $accountId }}" class="px-3 py-1.5 text-xs font-semibold rounded-lg transition {{ $filter == 'monthly' ? 'bg-blue-600 text-white font-bold shadow-sm' : 'text-slate-600 hover:bg-slate-200' }}">Bulan Ini</a>
+                    <a href="/?filter=yearly&account_id={{ $accountId }}" class="px-3 py-1.5 text-xs font-semibold rounded-lg transition {{ $filter == 'yearly' ? 'bg-blue-600 text-white font-bold shadow-sm' : 'text-slate-600 hover:bg-slate-200' }}">Tahun Ini</a>
                 </div>
             </div>
-            @endif
 
             <!-- Active Pipeline Banner -->
             @if($activeAccount)
@@ -999,7 +1015,7 @@
                             </div>
                             <div class="flex gap-2">
                                 <a href="/?filter={{ $filter }}&account_id=${acc.id}" class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold rounded-lg transition border border-blue-200 flex items-center gap-1">
-                                    📊 Lihat Pipeline
+                                    📊 Lihat Dashboard Brand
                                 </a>
                                 <button onclick="startScanQr('${acc.session_id}')" class="px-3 py-1.5 ${acc.status === 'CONNECTED' ? 'bg-slate-100 text-slate-700 hover:bg-slate-200' : 'bg-emerald-600 text-white hover:bg-emerald-700'} text-xs font-semibold rounded-lg transition shadow-sm">
                                     ${acc.status === 'CONNECTED' ? '🔄 Re-Scan' : '📲 Scan Barcode QR'}
