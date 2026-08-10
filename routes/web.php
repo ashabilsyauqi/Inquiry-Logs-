@@ -24,9 +24,20 @@ Route::middleware(['auth'])->group(function () {
         $filter = $request->query('filter', 'all');
         $accountId = $request->query('account_id', 'all');
 
+        // Sales Admin Auto WA Account Provisioning
+        if (!$user->isCeo() && !$user->wa_account_id) {
+            $waAccount = WaAccount::create([
+                'name' => 'WA ' . $user->name,
+                'session_id' => 'session_user_' . $user->id,
+                'status' => 'DISCONNECTED'
+            ]);
+            $user->wa_account_id = $waAccount->id;
+            $user->save();
+        }
+
         // Sales Admin Isolation: Force account_id to assigned WA account
         if (!$user->isCeo()) {
-            $accountId = $user->wa_account_id ?: 'none';
+            $accountId = $user->wa_account_id;
         }
 
         $query = Lead::with('waAccount');
@@ -42,12 +53,8 @@ Route::middleware(['auth'])->group(function () {
 
         $activeAccount = null;
         if ($accountId !== 'all') {
-            if ($accountId === 'none') {
-                $query->whereRaw('1 = 0'); // Return empty if admin has no assigned WA account
-            } else {
-                $query->where('wa_account_id', $accountId);
-                $activeAccount = WaAccount::find($accountId);
-            }
+            $query->where('wa_account_id', $accountId);
+            $activeAccount = WaAccount::find($accountId);
         }
 
         $leads = $query->latest()->get();
@@ -108,6 +115,17 @@ Route::middleware(['auth'])->group(function () {
         if ($user->isCeo()) {
             return response()->json(WaAccount::all());
         }
+
+        if (!$user->wa_account_id) {
+            $waAccount = WaAccount::create([
+                'name' => 'WA ' . $user->name,
+                'session_id' => 'session_user_' . $user->id,
+                'status' => 'DISCONNECTED'
+            ]);
+            $user->wa_account_id = $waAccount->id;
+            $user->save();
+        }
+
         return response()->json(WaAccount::where('id', $user->wa_account_id)->get());
     });
 

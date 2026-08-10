@@ -33,11 +33,21 @@ class UserController extends Controller
         $user = User::findOrFail($id);
         $waAccountId = $request->input('wa_account_id');
 
+        // If no WA Account selected, automatically create a dedicated WA Account for this Sales Admin
+        if (!$waAccountId) {
+            $waAccount = WaAccount::create([
+                'name' => 'WA ' . $user->name,
+                'session_id' => 'session_user_' . $user->id,
+                'status' => 'DISCONNECTED'
+            ]);
+            $waAccountId = $waAccount->id;
+        }
+
         $user->status = 'APPROVED';
-        $user->wa_account_id = $waAccountId ?: null;
+        $user->wa_account_id = $waAccountId;
         $user->save();
 
-        return response()->json(['status' => 'success', 'message' => 'Akun berhasil disetujui!']);
+        return response()->json(['status' => 'success', 'message' => 'Akun berhasil disetujui! Perangkat WA & Pipeline khusus telah dibuatkan.']);
     }
 
     public function reject($id)
