@@ -16,6 +16,7 @@ class WebhookController extends Controller
         $sender = $request->input('sender') ?? $request->input('from');
         $receiver = $request->input('receiver') ?? $request->input('to');
         $message = $request->input('message') ?? $request->input('text');
+        $senderNameInput = $request->input('senderName');
         $sessionId = $request->input('sessionId') ?? 'default';
 
         if (!$sender || !$receiver || !$message) {
@@ -25,7 +26,7 @@ class WebhookController extends Controller
         $senderPhone = $this->sanitizePhone($sender);
         $receiverPhone = $this->sanitizePhone($receiver);
 
-        // Find or create the target WaAccount based on session_id or receiver phone
+        // Find or create target WaAccount
         $waAccount = WaAccount::where('session_id', $sessionId)->first();
         if (!$waAccount && $receiverPhone) {
             $waAccount = WaAccount::where('phone', $receiverPhone)->first();
@@ -47,30 +48,27 @@ class WebhookController extends Controller
         $myNumber = $waAccount->phone ?: $receiverPhone;
         $lowerMessage = strtolower($message);
 
-        // Check if message is from owner (outgoing) or from customer (incoming)
         $isFromMe = $request->input('isFromMe') || ($senderPhone === $myNumber);
 
         if ($isFromMe) {
             $leadPhone = $receiverPhone;
             $lead = Lead::where('phone', $leadPhone)->first();
 
-            // Trigger 1: Upgrade to Follow Up
             if (str_contains($lowerMessage, 'hallo selamat datang')) {
                 if (!$lead) {
+                    $displayName = $this->formatDisplayPhone($leadPhone);
                     $lead = Lead::create([
                         'wa_account_id' => $waAccount->id,
-                        'name'  => 'Lead ' . $leadPhone,
+                        'name'  => $displayName,
                         'phone' => $leadPhone,
                         'stage' => 'Follow Up'
                     ]);
-                    Log::info("New lead created (ID: {$lead->id}) with stage Follow Up.");
                 } elseif ($lead->stage === 'Inquiries') {
                     $lead->stage = 'Follow Up';
                     $lead->save();
                 }
             }
 
-            // Trigger 2: Move to Payment
             if (str_contains($lowerMessage, 'silahkan melakukan pembayaran')) {
                 if ($lead && $lead->stage === 'Follow Up') {
                     $lead->stage = 'Payment';
@@ -78,7 +76,6 @@ class WebhookController extends Controller
                 }
             }
 
-            // Trigger 3: Move to Closed
             if (str_contains($lowerMessage, 'terverifikasi') && str_contains($lowerMessage, 'terima kasih')) {
                 if ($lead && $lead->stage === 'Payment') {
                     $lead->stage = 'Closed';
@@ -90,16 +87,24 @@ class WebhookController extends Controller
             $leadPhone = $senderPhone;
             $lead = Lead::where('phone', $leadPhone)->first();
 
+            // Format clean display name (Contact Name if available, or clean formatted phone +62...)
+            $displayName = $senderNameInput ?: $this->formatDisplayPhone($leadPhone);
+
             if (!$lead) {
                 $lead = Lead::create([
                     'wa_account_id' => $waAccount->id,
-                    'name'  => 'Lead ' . $leadPhone,
+                    'name'  => $displayName,
                     'phone' => $leadPhone,
                     'stage' => 'Inquiries'
                 ]);
-                Log::info("New INCOMING lead created (ID: {$lead->id}, Phone: {$leadPhone}) for Account: {$waAccount->name}");
-            } else if (!$lead->wa_account_id) {
-                $lead->wa_account_id = $waAccount->id;
+            } else {
+                if (!$lead->wa_account_id) {
+                    $lead->wa_account_id = $waAccount->id;
+                }
+                // If existing name is just raw ID or default, update it with real contact name
+                if ($senderNameInput && (str_contains($lead->name, 'Lead') || preg_match('/^[0-9]+$/', $lead->name))) {
+                    $lead->name = $senderNameInput;
+                }
                 $lead->save();
             }
         }
@@ -118,5 +123,13 @@ class WebhookController extends Controller
             $phone = '62' . substr($phone, 1);
         }
         return $phone;
+    }
+
+    private function formatDisplayPhone(string $phone): string
+    {
+        if (str_starts_with($phone, '62')) {
+            return '+62 ' . substr($phone, 2, 3) . '-' . substr($phone, 5, 4) . '-' . substr($phone, 9);
+        }
+        return '+' . $phone;
     }
 }

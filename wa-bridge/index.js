@@ -91,11 +91,13 @@ function createSession(sessionId = 'default') {
         try {
             let sender = msg.from;
             let receiver = msg.to;
+            let senderName = null;
 
             try {
                 const senderContact = await client.getContactById(msg.from);
-                if (senderContact && senderContact.number) {
-                    sender = senderContact.number;
+                if (senderContact) {
+                    if (senderContact.number) sender = senderContact.number;
+                    senderName = senderContact.name || senderContact.pushname || null;
                 }
                 const receiverContact = await client.getContactById(msg.to);
                 if (receiverContact && receiverContact.number) {
@@ -109,6 +111,7 @@ function createSession(sessionId = 'default') {
                 sessionId,
                 sender: sender.replace('@c.us', '').replace('@s.whatsapp.net', '').replace('@lid', ''),
                 receiver: receiver.replace('@c.us', '').replace('@s.whatsapp.net', '').replace('@lid', ''),
+                senderName,
                 message: msg.body,
                 isFromMe: msg.fromMe
             };
@@ -141,11 +144,21 @@ async function syncRecentChats(client, sessionId) {
             for (const msg of messages) {
                 let sender = msg.from;
                 let receiver = msg.to;
+                let senderName = null;
+
+                try {
+                    const senderContact = await client.getContactById(msg.from);
+                    if (senderContact) {
+                        if (senderContact.number) sender = senderContact.number;
+                        senderName = senderContact.name || senderContact.pushname || null;
+                    }
+                } catch (e) {}
 
                 const payload = {
                     sessionId,
                     sender: sender.replace('@c.us', '').replace('@s.whatsapp.net', '').replace('@lid', ''),
                     receiver: receiver.replace('@c.us', '').replace('@s.whatsapp.net', '').replace('@lid', ''),
+                    senderName,
                     message: msg.body,
                     isFromMe: msg.fromMe
                 };
