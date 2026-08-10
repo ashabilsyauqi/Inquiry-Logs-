@@ -3,392 +3,493 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CRM MVP Dashboard</title>
+    <title>CRM Admin Panel - Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
     </style>
 </head>
-<body class="text-gray-800">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" id="dashboard-content">
-        
-        <!-- Disconnection Alert Banner -->
-        @php
-            $disconnectedAccounts = $waAccounts->where('status', '!=', 'CONNECTED');
-        @endphp
+<body class="text-slate-800 flex h-screen overflow-hidden">
 
-        @if($disconnectedAccounts->isNotEmpty())
-        <div class="bg-amber-50 border-l-4 border-amber-500 p-4 mb-6 rounded-r-xl shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div class="flex items-center gap-3">
-                <div class="p-2 bg-amber-100 rounded-full text-amber-700">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
+    <!-- LEFT SIDEBAR NAVIGATION -->
+    <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between hidden md:flex flex-shrink-0 border-r border-slate-800">
+        <div>
+            <!-- Sidebar Header / Logo -->
+            <div class="p-6 border-b border-slate-800 flex items-center gap-3">
+                <div class="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white text-xl font-bold shadow-lg shadow-emerald-900/50">
+                    🚀
                 </div>
                 <div>
-                    <h4 class="font-bold text-amber-900 text-sm">Peringatan: Perangkat WA Terputus!</h4>
-                    <p class="text-xs text-amber-700 mt-0.5">
-                        Ada {{ $disconnectedAccounts->count() }} Akun WA terputus koneksi ({{ $disconnectedAccounts->pluck('name')->join(', ') }}). Pesan baru akan otomatis tersinkron saat tersambung kembali.
-                    </p>
-                </div>
-            </div>
-            <button onclick="openDeviceModal();" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs rounded-lg transition whitespace-nowrap shadow-sm">
-                📲 Scan Ulang Barcode Sekarang
-            </button>
-        </div>
-        @endif
-
-        <!-- Header & Top Navigation -->
-        <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
-            <div>
-                <h1 class="text-3xl font-bold text-gray-900">CRM Admin Panel</h1>
-                <p class="text-sm text-gray-500 mt-1">Multi-Account WhatsApp & Interactive Chat Tracking System</p>
-            </div>
-            
-            <div class="flex flex-wrap items-center gap-3">
-                <!-- Device Manager Button -->
-                <button onclick="openDeviceModal()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold rounded-lg shadow-sm transition flex items-center gap-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                    </svg>
-                    📱 Perangkat WA & QR Code
-                </button>
-
-                <!-- Period Filters -->
-                <div class="flex gap-1 bg-white p-1 rounded-lg shadow-sm border border-gray-200">
-                    <a href="/?filter=all&account_id={{ $accountId }}" class="px-3 py-1.5 text-xs rounded-md transition {{ $filter == 'all' ? 'bg-blue-600 text-white font-semibold' : 'text-gray-600 hover:bg-gray-100' }}">Semua</a>
-                    <a href="/?filter=daily&account_id={{ $accountId }}" class="px-3 py-1.5 text-xs rounded-md transition {{ $filter == 'daily' ? 'bg-blue-600 text-white font-semibold' : 'text-gray-600 hover:bg-gray-100' }}">Hari Ini</a>
-                    <a href="/?filter=monthly&account_id={{ $accountId }}" class="px-3 py-1.5 text-xs rounded-md transition {{ $filter == 'monthly' ? 'bg-blue-600 text-white font-semibold' : 'text-gray-600 hover:bg-gray-100' }}">Bulan Ini</a>
-                    <a href="/?filter=yearly&account_id={{ $accountId }}" class="px-3 py-1.5 text-xs rounded-md transition {{ $filter == 'yearly' ? 'bg-blue-600 text-white font-semibold' : 'text-gray-600 hover:bg-gray-100' }}">Tahun Ini</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- PIPELINE SWITCHER TABS -->
-        <div class="mb-8 overflow-x-auto">
-            <div class="flex items-center gap-2 border-b border-gray-200 pb-2">
-                <span class="text-xs font-bold text-gray-400 uppercase tracking-wider mr-2">Pilih Pipeline:</span>
-                
-                <a href="/?filter={{ $filter }}&account_id=all" 
-                   class="px-4 py-2 text-sm rounded-xl font-medium transition flex items-center gap-2 whitespace-nowrap {{ $accountId == 'all' ? 'bg-gray-900 text-white shadow-md' : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200' }}">
-                    🌐 Semua Pipeline (Global)
-                </a>
-
-                @foreach($waAccounts as $acc)
-                <a href="/?filter={{ $filter }}&account_id={{ $acc->id }}" 
-                   class="px-4 py-2 text-sm rounded-xl font-medium transition flex items-center gap-2 whitespace-nowrap {{ $accountId == $acc->id ? 'bg-emerald-600 text-white shadow-md' : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200' }}">
-                    <span>📱 {{ $acc->name }}</span>
-                    <span class="w-2 h-2 rounded-full {{ $acc->status == 'CONNECTED' ? 'bg-emerald-300' : 'bg-yellow-400' }}"></span>
-                </a>
-                @endforeach
-            </div>
-        </div>
-
-        <!-- Active Pipeline Banner -->
-        @if($activeAccount)
-        <div class="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-6 mb-8 text-white shadow-lg flex flex-col md:flex-row justify-between items-center gap-4">
-            <div>
-                <div class="flex items-center gap-3">
-                    <h2 class="text-2xl font-bold">Pipeline Sales: {{ $activeAccount->name }}</h2>
-                    <span class="px-3 py-1 rounded-full text-xs font-bold {{ $activeAccount->status == 'CONNECTED' ? 'bg-emerald-400 text-emerald-950' : 'bg-yellow-300 text-yellow-950' }}">
-                        {{ $activeAccount->status == 'CONNECTED' ? '🟢 Online (' . ($activeAccount->phone ?: 'Connected') . ')' : '🟡 Belum Scan QR' }}
+                    <h2 class="font-bold text-white text-base leading-tight">CRM MVP</h2>
+                    <span class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded {{ $user->isCeo() ? 'bg-purple-900/80 text-purple-300 border border-purple-700' : 'bg-blue-900/80 text-blue-300 border border-blue-700' }}">
+                        {{ $user->role }}
                     </span>
                 </div>
-                <p class="text-xs text-emerald-100 mt-1">Daftar Leads & Stat Cards di bawah dikhususkan untuk saluran komunikasi ini saja.</p>
             </div>
-            
-            <button onclick="startScanQr('{{ $activeAccount->session_id }}'); openDeviceModal();" class="px-4 py-2 bg-white text-emerald-800 hover:bg-emerald-50 text-xs font-bold rounded-xl shadow transition whitespace-nowrap">
-                📲 Scan / Sambungkan WA Ini
-            </button>
+
+            <!-- Nav Links -->
+            <nav class="p-4 space-y-1.5 text-sm font-medium">
+                <a href="#section-analytics" class="flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-800 text-white font-semibold shadow-sm transition">
+                    <span class="text-base">📊</span> Analytics & Chart
+                </a>
+                <a href="#section-kanban" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition">
+                    <span class="text-base">📋</span> Kanban Board
+                </a>
+                <a href="#section-table" class="flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition">
+                    <span class="text-base">📑</span> Daftar Leads
+                </a>
+                <button onclick="openDeviceModal()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition text-left">
+                    <span class="text-base">📱</span> Perangkat WA & QR
+                </button>
+
+                @if($user->isCeo())
+                <button onclick="openUserManagementModal()" class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-gradient-to-r from-purple-900/40 to-indigo-900/40 text-purple-200 border border-purple-700/50 hover:bg-purple-800/50 transition text-left mt-4">
+                    <span class="flex items-center gap-3 font-semibold">
+                        <span class="text-base">👥</span> User Approval
+                    </span>
+                    <span id="pendingBadge" class="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden">0</span>
+                </button>
+                @endif
+            </nav>
         </div>
-        @endif
+
+        <!-- User Profile & Logout -->
+        <div class="p-4 border-t border-slate-800 bg-slate-950/50">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2.5 overflow-hidden">
+                    <div class="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
+                        {{ strtoupper(substr($user->name, 0, 1)) }}
+                    </div>
+                    <div class="truncate">
+                        <p class="text-xs font-bold text-white truncate">{{ $user->name }}</p>
+                        <p class="text-[10px] text-slate-400 truncate">{{ $user->email }}</p>
+                    </div>
+                </div>
+            </div>
+            <form method="POST" action="/logout">
+                @csrf
+                <button type="submit" class="w-full py-2 bg-slate-800 hover:bg-rose-900/50 hover:text-rose-300 text-slate-300 font-semibold text-xs rounded-lg transition border border-slate-700 flex items-center justify-center gap-2">
+                    🚪 Logout
+                </button>
+            </form>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="flex-1 overflow-y-auto" id="main-scroll-area">
         
-        <!-- Stat Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center justify-between">
-                <div>
-                    <p class="text-sm text-gray-500 font-medium">Total Leads</p>
-                    <h3 class="text-3xl font-bold text-gray-800 mt-1">{{ $totalLeads }}</h3>
-                </div>
-                <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-xl font-bold">#</div>
-            </div>
-
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center justify-between border-l-4 border-l-purple-500">
-                <div>
-                    <p class="text-sm text-gray-500 font-medium">1. Lead Masuk</p>
-                    <h3 class="text-3xl font-bold text-purple-600 mt-1">{{ $totalLeadMasuk }}</h3>
-                </div>
-            </div>
-            
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center justify-between border-l-4 border-l-blue-500">
-                <div>
-                    <p class="text-sm text-gray-500 font-medium">2. Meeting Call</p>
-                    <h3 class="text-3xl font-bold text-blue-600 mt-1">{{ $totalMeetingCall }}</h3>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center justify-between border-l-4 border-l-yellow-500">
-                <div>
-                    <p class="text-sm text-gray-500 font-medium">3. Kirim Penawaran</p>
-                    <h3 class="text-3xl font-bold text-yellow-600 mt-1">{{ $totalKirimPenawaran }}</h3>
-                </div>
-            </div>
-
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center justify-between border-l-4 border-l-green-500">
-                <div>
-                    <p class="text-sm text-gray-500 font-medium">4. Deal</p>
-                    <h3 class="text-3xl font-bold text-green-600 mt-1">{{ $totalDeal }}</h3>
-                </div>
-            </div>
-        </div>
-
-        <!-- Data Table -->
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 mb-8 overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
-                <h2 class="text-lg font-semibold text-gray-800">
-                    Daftar Leads {{ $activeAccount ? '(' . $activeAccount->name . ')' : '(Semua Pipeline)' }}
+        <!-- Top Header Bar -->
+        <header class="bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-30 flex justify-between items-center">
+            <div>
+                <h2 class="text-xl font-bold text-slate-900">
+                    {{ $user->isCeo() ? 'Dashboard CEO / Owner' : 'Dashboard Sales Admin' }}
                 </h2>
-                <span class="text-xs text-gray-400">Total: {{ $leads->count() }} Data</span>
+                <p class="text-xs text-slate-500">
+                    {{ $user->isCeo() ? 'Akses Global Seluruh Sales Pipeline & User Approval' : 'Terisolasi Khusus Pipeline: ' . ($user->waAccount->name ?? 'Default Account') }}
+                </p>
             </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="bg-gray-50 text-gray-500 text-sm border-b">
-                            <th class="px-6 py-3 font-medium">Nama Lead</th>
-                            <th class="px-6 py-3 font-medium">No. WhatsApp</th>
-                            <th class="px-6 py-3 font-medium">Akun WA CS</th>
-                            <th class="px-6 py-3 font-medium">Stage</th>
-                            <th class="px-6 py-3 font-medium">Waktu Dibuat</th>
-                            <th class="px-6 py-3 font-medium text-center">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100 text-sm">
-                        @foreach($leads as $lead)
-                        <tr class="hover:bg-gray-50 cursor-pointer transition" onclick="openLeadDetailModal({{ $lead->id }})">
-                            <td class="px-6 py-4">
-                                <div class="font-medium text-gray-800 flex items-center gap-2">
-                                    {{ $lead->name }}
+
+            <div class="flex items-center gap-3">
+                <button onclick="openDeviceModal()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-sm transition flex items-center gap-2">
+                    📱 WA Device Manager
+                </button>
+                <form method="POST" action="/logout" class="md:hidden">
+                    @csrf
+                    <button type="submit" class="px-3 py-2 bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl">Logout</button>
+                </form>
+            </div>
+        </header>
+
+        <div class="max-w-7xl mx-auto px-6 py-6 space-y-8" id="dashboard-content">
+
+            <!-- Disconnection Alert Banner -->
+            @php
+                $disconnectedAccounts = $waAccounts->where('status', '!=', 'CONNECTED');
+            @endphp
+
+            @if($disconnectedAccounts->isNotEmpty())
+            <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-xl shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 bg-amber-100 rounded-full text-amber-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-amber-900 text-sm">Peringatan: Perangkat WA Terputus!</h4>
+                        <p class="text-xs text-amber-700 mt-0.5">
+                            Ada {{ $disconnectedAccounts->count() }} Akun WA terputus ({{ $disconnectedAccounts->pluck('name')->join(', ') }}). Pesan baru akan otomatis tersinkron saat tersambung kembali.
+                        </p>
+                    </div>
+                </div>
+                <button onclick="openDeviceModal();" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs rounded-lg transition whitespace-nowrap shadow-sm">
+                    📲 Scan Ulang Barcode
+                </button>
+            </div>
+            @endif
+
+            <!-- PIPELINE SWITCHER TABS (CEO Only) -->
+            @if($user->isCeo())
+            <div class="overflow-x-auto bg-white p-3 rounded-2xl border border-slate-200 shadow-sm">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider mr-2">Pilih Pipeline:</span>
+                    
+                    <a href="/?filter={{ $filter }}&account_id=all" 
+                       class="px-4 py-2 text-xs rounded-xl font-semibold transition flex items-center gap-2 whitespace-nowrap {{ $accountId == 'all' ? 'bg-slate-900 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
+                        🌐 Semua Pipeline (Global)
+                    </a>
+
+                    @foreach($waAccounts as $acc)
+                    <a href="/?filter={{ $filter }}&account_id={{ $acc->id }}" 
+                       class="px-4 py-2 text-xs rounded-xl font-semibold transition flex items-center gap-2 whitespace-nowrap {{ $accountId == $acc->id ? 'bg-emerald-600 text-white shadow-md' : 'bg-slate-100 text-slate-700 hover:bg-slate-200' }}">
+                        <span>📱 {{ $acc->name }}</span>
+                        <span class="w-2 h-2 rounded-full {{ $acc->status == 'CONNECTED' ? 'bg-emerald-300' : 'bg-yellow-400' }}"></span>
+                    </a>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
+            <!-- Active Pipeline Banner -->
+            @if($activeAccount)
+            <div class="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-6 text-white shadow-lg flex flex-col md:flex-row justify-between items-center gap-4">
+                <div>
+                    <div class="flex items-center gap-3">
+                        <h2 class="text-2xl font-bold">Pipeline Sales: {{ $activeAccount->name }}</h2>
+                        <span class="px-3 py-1 rounded-full text-xs font-bold {{ $activeAccount->status == 'CONNECTED' ? 'bg-emerald-400 text-emerald-950' : 'bg-yellow-300 text-yellow-950' }}">
+                            {{ $activeAccount->status == 'CONNECTED' ? '🟢 Online (' . ($activeAccount->phone ?: 'Connected') . ')' : '🟡 Belum Scan QR' }}
+                        </span>
+                    </div>
+                    <p class="text-xs text-emerald-100 mt-1">Daftar Leads & Stat Cards dikhususkan untuk saluran ini saja.</p>
+                </div>
+                
+                @if($user->isCeo())
+                <button onclick="startScanQr('{{ $activeAccount->session_id }}'); openDeviceModal();" class="px-4 py-2 bg-white text-emerald-800 hover:bg-emerald-50 text-xs font-bold rounded-xl shadow transition whitespace-nowrap">
+                    📲 Scan / Sambungkan WA Ini
+                </button>
+                @endif
+            </div>
+            @endif
+
+            <!-- SECTION 1: STAT CARDS & INTERACTIVE TREND CHART -->
+            <section id="section-analytics" class="space-y-6">
+                <!-- Stat Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-5 gap-5">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Total Leads</p>
+                            <h3 class="text-3xl font-bold text-slate-900 mt-1">{{ $totalLeads }}</h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 text-lg font-bold">#</div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 flex items-center justify-between border-l-4 border-l-purple-500">
+                        <div>
+                            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">1. Lead Masuk</p>
+                            <h3 class="text-3xl font-bold text-purple-600 mt-1">{{ $totalLeadMasuk }}</h3>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 flex items-center justify-between border-l-4 border-l-blue-500">
+                        <div>
+                            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">2. Meeting Call</p>
+                            <h3 class="text-3xl font-bold text-blue-600 mt-1">{{ $totalMeetingCall }}</h3>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 flex items-center justify-between border-l-4 border-l-yellow-500">
+                        <div>
+                            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">3. Kirim Penawaran</p>
+                            <h3 class="text-3xl font-bold text-yellow-600 mt-1">{{ $totalKirimPenawaran }}</h3>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 flex items-center justify-between border-l-4 border-l-green-500">
+                        <div>
+                            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">4. Deal</p>
+                            <h3 class="text-3xl font-bold text-green-600 mt-1">{{ $totalDeal }}</h3>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interactive Trend Chart Card -->
+                <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm">
+                    <div class="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4 border-b border-slate-100 pb-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                                📈 Grafik Tren Inquiry Masuk
+                            </h3>
+                            <p class="text-xs text-slate-500 mt-0.5">Analisis perkembangan prospek masuk secara real-time</p>
+                        </div>
+                        
+                        <!-- Adjustable Chart Period Buttons -->
+                        <div class="flex gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+                            <button onclick="updateChartPeriod('daily')" id="btn-daily" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 text-white shadow-sm transition">
+                                📅 Harian (Daily)
+                            </button>
+                            <button onclick="updateChartPeriod('weekly')" id="btn-weekly" class="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-600 hover:bg-slate-200 transition">
+                                🗓️ Mingguan (Weekly)
+                            </button>
+                            <button onclick="updateChartPeriod('monthly')" id="btn-monthly" class="px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-600 hover:bg-slate-200 transition">
+                                📊 Bulanan (Monthly)
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="h-72 relative">
+                        <canvas id="inquiryChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SECTION 2: DAFTAR LEADS TABLE VIEW -->
+            <section id="section-table" class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
+                    <h2 class="text-lg font-bold text-slate-900">
+                        Daftar Leads {{ $activeAccount ? '(' . $activeAccount->name . ')' : '(Semua Pipeline)' }}
+                    </h2>
+                    <span class="text-xs text-slate-400 font-medium">Total: {{ $leads->count() }} Data</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider border-b border-slate-100">
+                                <th class="px-6 py-3 font.semibold">Nama Lead</th>
+                                <th class="px-6 py-3 font-semibold">No. WhatsApp</th>
+                                <th class="px-6 py-3 font-semibold">Akun WA CS</th>
+                                <th class="px-6 py-3 font-semibold">Stage</th>
+                                <th class="px-6 py-3 font-semibold">Waktu Dibuat</th>
+                                <th class="px-6 py-3 font-semibold text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 text-sm">
+                            @foreach($leads as $lead)
+                            <tr class="hover:bg-slate-50/80 cursor-pointer transition" onclick="openLeadDetailModal({{ $lead->id }})">
+                                <td class="px-6 py-4">
+                                    <div class="font-bold text-slate-800 flex items-center gap-2">
+                                        {{ $lead->name }}
+                                        @if($lead->priority > 0)
+                                            <div class="text-yellow-400 text-xs flex">
+                                                @for($i = 0; $i < $lead->priority; $i++)
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                                                @endfor
+                                            </div>
+                                        @endif
+                                    </div>
+                                    @if($lead->notes)
+                                        <div class="text-xs text-slate-500 mt-0.5 italic">{{ Str::limit($lead->notes, 35) }}</div>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 text-slate-600 font-mono text-xs">{{ $lead->phone }}</td>
+                                <td class="px-6 py-4">
+                                    <span class="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-md text-xs font-semibold border border-slate-200">
+                                        {{ $lead->waAccount->name ?? 'Default' }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4">
+                                    @if($lead->stage == 'Lead Masuk')
+                                        <span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-semibold">Lead Masuk</span>
+                                    @elseif($lead->stage == 'Meeting Call')
+                                        <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold">Meeting Call</span>
+                                    @elseif($lead->stage == 'Kirim Penawaran')
+                                        <span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-semibold">Kirim Penawaran</span>
+                                    @else
+                                        <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">Deal</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 text-slate-500 text-xs">{{ $lead->created_at->format('d M, H:i') }}</td>
+                                <td class="px-6 py-4 text-center" onclick="event.stopPropagation()">
+                                    <button onclick="openLeadDetailModal({{ $lead->id }})" class="text-blue-600 hover:text-blue-800 font-semibold text-xs bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition border border-blue-200">
+                                        💬 Detail & Chat
+                                    </button>
+                                </td>
+                            </tr>
+                            @endforeach
+                            @if($leads->isEmpty())
+                            <tr>
+                                <td colspan="6" class="px-6 py-8 text-center text-slate-400 italic">Belum ada data lead di pipeline ini.</td>
+                            </tr>
+                            @endif
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            
+            <!-- SECTION 3: KANBAN BOARD VIEW -->
+            <section id="section-kanban" class="space-y-4">
+                <h2 class="text-xl font-bold text-slate-900">
+                    Kanban Board {{ $activeAccount ? '(' . $activeAccount->name . ')' : '(Semua Pipeline)' }}
+                </h2>
+                
+                <div class="flex flex-col md:flex-row gap-6">
+                    <!-- 1. Lead Masuk Column -->
+                    <div class="flex-1 bg-white rounded-2xl shadow-sm p-4 border-t-4 border-purple-500 border-x border-b border-slate-200/80">
+                        <h2 class="text-base font-bold border-b border-slate-100 pb-3 mb-4 text-purple-600 flex justify-between items-center">
+                            <span>1. Lead Masuk</span>
+                            <span class="bg-purple-100 text-purple-800 text-xs py-0.5 px-2.5 rounded-full font-bold">{{ $totalLeadMasuk }}</span>
+                        </h2>
+                        <div class="space-y-3">
+                            @foreach($leads->where('stage', 'Lead Masuk') as $lead)
+                            <div onclick="openLeadDetailModal({{ $lead->id }})" class="bg-purple-50/70 hover:bg-purple-100/80 transition duration-150 p-4 rounded-xl shadow-sm border border-purple-100 cursor-pointer">
+                                <div class="flex justify-between items-start">
+                                    <h3 class="font-bold text-slate-800 text-sm">{{ $lead->name }}</h3>
                                     @if($lead->priority > 0)
-                                        <div class="text-yellow-400 text-xs flex">
+                                        <div class="text-yellow-400 text-xs flex mt-0.5">
                                             @for($i = 0; $i < $lead->priority; $i++)
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
                                             @endfor
                                         </div>
                                     @endif
                                 </div>
-                                @if($lead->notes)
-                                    <div class="text-xs text-gray-500 mt-1 italic">{{ Str::limit($lead->notes, 30) }}</div>
-                                @endif
-                            </td>
-                            <td class="px-6 py-4 text-gray-600 font-mono">{{ $lead->phone }}</td>
-                            <td class="px-6 py-4">
-                                <span class="bg-gray-100 text-gray-700 px-2.5 py-1 rounded text-xs font-medium">
-                                    {{ $lead->waAccount->name ?? 'Default' }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4">
-                                @if($lead->stage == 'Lead Masuk')
-                                    <span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-semibold">Lead Masuk</span>
-                                @elseif($lead->stage == 'Meeting Call')
-                                    <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold">Meeting Call</span>
-                                @elseif($lead->stage == 'Kirim Penawaran')
-                                    <span class="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-xs font-semibold">Kirim Penawaran</span>
-                                @else
-                                    <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">Deal</span>
-                                @endif
-                            </td>
-                            <td class="px-6 py-4 text-gray-500 text-xs">{{ $lead->created_at->format('d M, H:i') }}</td>
-                            <td class="px-6 py-4 text-center" onclick="event.stopPropagation()">
-                                <button onclick="openLeadDetailModal({{ $lead->id }})" class="text-blue-600 hover:text-blue-800 font-medium text-sm transition">
-                                    💬 Detail & Chat
-                                </button>
-                            </td>
-                        </tr>
-                        @endforeach
-                        @if($leads->isEmpty())
-                        <tr>
-                            <td colspan="6" class="px-6 py-8 text-center text-gray-400 italic">Belum ada data lead di pipeline ini.</td>
-                        </tr>
-                        @endif
-                    </tbody>
-                </table>
-            </div>
+                                <p class="text-xs text-slate-500 mt-1 font-sans flex items-center gap-1">
+                                    <span>🕒</span> {{ $lead->created_at->format('d M, H:i') }}
+                                </p>
+                                <div class="mt-2.5 text-[10px] font-bold text-purple-700 bg-purple-100 inline-block px-2 py-0.5 rounded">
+                                    {{ $lead->waAccount->name ?? 'Default Account' }}
+                                </div>
+                            </div>
+                            @endforeach
+                            @if($leads->where('stage', 'Lead Masuk')->isEmpty())
+                                <p class="text-xs text-slate-400 text-center py-6 italic">Belum ada lead masuk.</p>
+                            @endif
+                        </div>
+                    </div>
+
+                    <!-- 2. Meeting Call Column -->
+                    <div class="flex-1 bg-white rounded-2xl shadow-sm p-4 border-t-4 border-blue-500 border-x border-b border-slate-200/80">
+                        <h2 class="text-base font-bold border-b border-slate-100 pb-3 mb-4 text-blue-600 flex justify-between items-center">
+                            <span>2. Meeting Call</span>
+                            <span class="bg-blue-100 text-blue-800 text-xs py-0.5 px-2.5 rounded-full font-bold">{{ $totalMeetingCall }}</span>
+                        </h2>
+                        <div class="space-y-3">
+                            @foreach($leads->where('stage', 'Meeting Call') as $lead)
+                            <div onclick="openLeadDetailModal({{ $lead->id }})" class="bg-blue-50/70 hover:bg-blue-100/80 transition duration-150 p-4 rounded-xl shadow-sm border border-blue-100 cursor-pointer">
+                                <div class="flex justify-between items-start">
+                                    <h3 class="font-bold text-slate-800 text-sm">{{ $lead->name }}</h3>
+                                    @if($lead->priority > 0)
+                                        <div class="text-yellow-400 text-xs flex mt-0.5">
+                                            @for($i = 0; $i < $lead->priority; $i++)
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                                            @endfor
+                                        </div>
+                                    @endif
+                                </div>
+                                <p class="text-xs text-slate-500 mt-1 font-sans flex items-center gap-1">
+                                    <span>🕒</span> {{ $lead->created_at->format('d M, H:i') }}
+                                </p>
+                                <div class="mt-2.5 text-[10px] font-bold text-blue-700 bg-blue-100 inline-block px-2 py-0.5 rounded">
+                                    {{ $lead->waAccount->name ?? 'Default Account' }}
+                                </div>
+                            </div>
+                            @endforeach
+                            @if($leads->where('stage', 'Meeting Call')->isEmpty())
+                                <p class="text-xs text-slate-400 text-center py-6 italic">Belum ada meeting call.</p>
+                            @endif
+                        </div>
+                    </div>
+
+                    <!-- 3. Kirim Penawaran Column -->
+                    <div class="flex-1 bg-white rounded-2xl shadow-sm p-4 border-t-4 border-yellow-500 border-x border-b border-slate-200/80">
+                        <h2 class="text-base font-bold border-b border-slate-100 pb-3 mb-4 text-yellow-600 flex justify-between items-center">
+                            <span>3. Kirim Penawaran</span>
+                            <span class="bg-yellow-100 text-yellow-800 text-xs py-0.5 px-2.5 rounded-full font-bold">{{ $totalKirimPenawaran }}</span>
+                        </h2>
+                        <div class="space-y-3">
+                            @foreach($leads->where('stage', 'Kirim Penawaran') as $lead)
+                            <div onclick="openLeadDetailModal({{ $lead->id }})" class="bg-yellow-50/70 hover:bg-yellow-100/80 transition duration-150 p-4 rounded-xl shadow-sm border border-yellow-100 cursor-pointer">
+                                <div class="flex justify-between items-start">
+                                    <h3 class="font-bold text-slate-800 text-sm">{{ $lead->name }}</h3>
+                                    @if($lead->priority > 0)
+                                        <div class="text-yellow-400 text-xs flex mt-0.5">
+                                            @for($i = 0; $i < $lead->priority; $i++)
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                                            @endfor
+                                        </div>
+                                    @endif
+                                </div>
+                                <p class="text-xs text-slate-500 mt-1 font-sans flex items-center gap-1">
+                                    <span>🕒</span> {{ $lead->created_at->format('d M, H:i') }}
+                                </p>
+                                <div class="mt-2.5 text-[10px] font-bold text-yellow-700 bg-yellow-100 inline-block px-2 py-0.5 rounded">
+                                    {{ $lead->waAccount->name ?? 'Default Account' }}
+                                </div>
+                            </div>
+                            @endforeach
+                            @if($leads->where('stage', 'Kirim Penawaran')->isEmpty())
+                                <p class="text-xs text-slate-400 text-center py-6 italic">Belum ada penawaran.</p>
+                            @endif
+                        </div>
+                    </div>
+
+                    <!-- 4. Deal Column -->
+                    <div class="flex-1 bg-white rounded-2xl shadow-sm p-4 border-t-4 border-green-500 border-x border-b border-slate-200/80">
+                        <h2 class="text-base font-bold border-b border-slate-100 pb-3 mb-4 text-green-600 flex justify-between items-center">
+                            <span>4. Deal</span>
+                            <span class="bg-green-100 text-green-800 text-xs py-0.5 px-2.5 rounded-full font-bold">{{ $totalDeal }}</span>
+                        </h2>
+                        <div class="space-y-3">
+                            @foreach($leads->where('stage', 'Deal') as $lead)
+                            <div onclick="openLeadDetailModal({{ $lead->id }})" class="bg-green-50/70 hover:bg-green-100/80 transition duration-150 p-4 rounded-xl shadow-sm border border-green-100 cursor-pointer">
+                                <div class="flex justify-between items-start">
+                                    <h3 class="font-bold text-slate-800 text-sm">{{ $lead->name }}</h3>
+                                    @if($lead->priority > 0)
+                                        <div class="text-yellow-400 text-xs flex mt-0.5">
+                                            @for($i = 0; $i < $lead->priority; $i++)
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                                            @endfor
+                                        </div>
+                                    @endif
+                                </div>
+                                <p class="text-xs text-slate-500 mt-1 font-sans flex items-center gap-1">
+                                    <span>🕒</span> {{ $lead->created_at->format('d M, H:i') }}
+                                </p>
+                                <div class="mt-2.5 text-[10px] font-bold text-green-700 bg-green-100 inline-block px-2 py-0.5 rounded">
+                                    {{ $lead->waAccount->name ?? 'Default Account' }}
+                                </div>
+                            </div>
+                            @endforeach
+                            @if($leads->where('stage', 'Deal')->isEmpty())
+                                <p class="text-xs text-slate-400 text-center py-6 italic">Belum ada deal.</p>
+                            @endif
+                        </div>
+                    </div>
+                </div>
+            </section>
+
         </div>
-        
-        <!-- Kanban Board (Clickable Lead Cards for Pop-up Details & Chat History) -->
-        <h2 class="text-xl font-bold text-gray-800 mb-4">
-            Kanban Board {{ $activeAccount ? '(' . $activeAccount->name . ')' : '(Semua Pipeline)' }}
-        </h2>
-        <div class="flex flex-col md:flex-row gap-6">
-            <!-- 1. Lead Masuk Column -->
-            <div class="flex-1 bg-white rounded-lg shadow p-4 border-t-4 border-purple-500">
-                <h2 class="text-lg font-semibold border-b pb-2 mb-4 text-purple-600 flex justify-between items-center">
-                    Lead Masuk
-                    <span class="bg-purple-100 text-purple-800 text-xs py-1 px-2 rounded-full">{{ $totalLeadMasuk }}</span>
-                </h2>
-                <div class="space-y-4">
-                    @foreach($leads->where('stage', 'Lead Masuk') as $lead)
-                    <div onclick="openLeadDetailModal({{ $lead->id }})" class="bg-purple-50 hover:bg-purple-100 transition duration-150 ease-in-out p-4 rounded-xl shadow-sm border border-purple-100 cursor-pointer">
-                        <div class="flex justify-between items-start">
-                            <h3 class="font-bold text-gray-800">{{ $lead->name }}</h3>
-                            @if($lead->priority > 0)
-                                <div class="text-yellow-400 text-xs flex mt-1">
-                                    @for($i = 0; $i < $lead->priority; $i++)
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
-                                    @endfor
-                                </div>
-                            @endif
-                        </div>
-                        <p class="text-xs text-gray-500 mt-1 font-sans flex items-center gap-1">
-                            <span>🕒</span> {{ $lead->created_at->format('d M, H:i') }}
-                        </p>
-                        <div class="mt-2 text-xs text-purple-700 bg-purple-100 inline-block px-2 py-0.5 rounded">
-                            {{ $lead->waAccount->name ?? 'Default Account' }}
-                        </div>
-                    </div>
-                    @endforeach
-                    @if($leads->where('stage', 'Lead Masuk')->isEmpty())
-                        <p class="text-sm text-gray-500 text-center py-4 italic">Belum ada lead masuk.</p>
-                    @endif
-                </div>
-            </div>
-
-            <!-- 2. Meeting Call Column -->
-            <div class="flex-1 bg-white rounded-lg shadow p-4 border-t-4 border-blue-500">
-                <h2 class="text-lg font-semibold border-b pb-2 mb-4 text-blue-600 flex justify-between items-center">
-                    Meeting Call
-                    <span class="bg-blue-100 text-blue-800 text-xs py-1 px-2 rounded-full">{{ $totalMeetingCall }}</span>
-                </h2>
-                <div class="space-y-4">
-                    @foreach($leads->where('stage', 'Meeting Call') as $lead)
-                    <div onclick="openLeadDetailModal({{ $lead->id }})" class="bg-blue-50 hover:bg-blue-100 transition duration-150 ease-in-out p-4 rounded-xl shadow-sm border border-blue-100 cursor-pointer">
-                        <div class="flex justify-between items-start">
-                            <h3 class="font-bold text-gray-800">{{ $lead->name }}</h3>
-                            @if($lead->priority > 0)
-                                <div class="text-yellow-400 text-xs flex mt-1">
-                                    @for($i = 0; $i < $lead->priority; $i++)
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
-                                    @endfor
-                                </div>
-                            @endif
-                        </div>
-                        <p class="text-xs text-gray-500 mt-1 font-sans flex items-center gap-1">
-                            <span>🕒</span> {{ $lead->created_at->format('d M, H:i') }}
-                        </p>
-                        <div class="mt-2 text-xs text-blue-700 bg-blue-100 inline-block px-2 py-0.5 rounded">
-                            {{ $lead->waAccount->name ?? 'Default Account' }}
-                        </div>
-                    </div>
-                    @endforeach
-                    @if($leads->where('stage', 'Meeting Call')->isEmpty())
-                        <p class="text-sm text-gray-500 text-center py-4 italic">Belum ada meeting call.</p>
-                    @endif
-                </div>
-            </div>
-
-            <!-- 3. Kirim Penawaran Column -->
-            <div class="flex-1 bg-white rounded-lg shadow p-4 border-t-4 border-yellow-500">
-                <h2 class="text-lg font-semibold border-b pb-2 mb-4 text-yellow-600 flex justify-between items-center">
-                    Kirim Penawaran
-                    <span class="bg-yellow-100 text-yellow-800 text-xs py-1 px-2 rounded-full">{{ $totalKirimPenawaran }}</span>
-                </h2>
-                <div class="space-y-4">
-                    @foreach($leads->where('stage', 'Kirim Penawaran') as $lead)
-                    <div onclick="openLeadDetailModal({{ $lead->id }})" class="bg-yellow-50 hover:bg-yellow-100 transition duration-150 ease-in-out p-4 rounded-xl shadow-sm border border-yellow-100 cursor-pointer">
-                        <div class="flex justify-between items-start">
-                            <h3 class="font-bold text-gray-800">{{ $lead->name }}</h3>
-                            @if($lead->priority > 0)
-                                <div class="text-yellow-400 text-xs flex mt-1">
-                                    @for($i = 0; $i < $lead->priority; $i++)
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
-                                    @endfor
-                                </div>
-                            @endif
-                        </div>
-                        <p class="text-xs text-gray-500 mt-1 font-sans flex items-center gap-1">
-                            <span>🕒</span> {{ $lead->created_at->format('d M, H:i') }}
-                        </p>
-                        <div class="mt-2 text-xs text-yellow-700 bg-yellow-100 inline-block px-2 py-0.5 rounded">
-                            {{ $lead->waAccount->name ?? 'Default Account' }}
-                        </div>
-                    </div>
-                    @endforeach
-                    @if($leads->where('stage', 'Kirim Penawaran')->isEmpty())
-                        <p class="text-sm text-gray-500 text-center py-4 italic">Belum ada penawaran.</p>
-                    @endif
-                </div>
-            </div>
-
-            <!-- 4. Deal Column -->
-            <div class="flex-1 bg-white rounded-lg shadow p-4 border-t-4 border-green-500">
-                <h2 class="text-lg font-semibold border-b pb-2 mb-4 text-green-600 flex justify-between items-center">
-                    Deal
-                    <span class="bg-green-100 text-green-800 text-xs py-1 px-2 rounded-full">{{ $totalDeal }}</span>
-                </h2>
-                <div class="space-y-4">
-                    @foreach($leads->where('stage', 'Deal') as $lead)
-                    <div onclick="openLeadDetailModal({{ $lead->id }})" class="bg-green-50 hover:bg-green-100 transition duration-150 ease-in-out p-4 rounded-xl shadow-sm border border-green-100 cursor-pointer">
-                        <div class="flex justify-between items-start">
-                            <h3 class="font-bold text-gray-800">{{ $lead->name }}</h3>
-                            @if($lead->priority > 0)
-                                <div class="text-yellow-400 text-xs flex mt-1">
-                                    @for($i = 0; $i < $lead->priority; $i++)
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
-                                    @endfor
-                                </div>
-                            @endif
-                        </div>
-                        <p class="text-xs text-gray-500 mt-1 font-sans flex items-center gap-1">
-                            <span>🕒</span> {{ $lead->created_at->format('d M, H:i') }}
-                        </p>
-                        <div class="mt-2 text-xs text-green-700 bg-green-100 inline-block px-2 py-0.5 rounded">
-                            {{ $lead->waAccount->name ?? 'Default Account' }}
-                        </div>
-                    </div>
-                    @endforeach
-                    @if($leads->where('stage', 'Deal')->isEmpty())
-                        <p class="text-sm text-gray-500 text-center py-4 italic">Belum ada deal.</p>
-                    @endif
-                </div>
-            </div>
-        </div>
-    </div>
+    </main>
 
     <!-- Lead Detail & WA Chat History Pop-up Modal -->
-    <div id="leadDetailModal" class="fixed inset-0 bg-gray-900 bg-opacity-60 hidden flex items-center justify-center z-50 p-4">
+    <div id="leadDetailModal" class="fixed inset-0 bg-slate-950/70 hidden flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]">
-            
-            <!-- Modal Header -->
-            <div class="px-6 py-4 bg-gray-900 text-white flex justify-between items-center">
+            <div class="px-6 py-4 bg-slate-900 text-white flex justify-between items-center">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center font-bold text-lg text-white">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center font-bold text-lg text-white">
                         👤
                     </div>
                     <div>
                         <h3 class="text-lg font-bold" id="detailLeadName">Memuat...</h3>
-                        <p class="text-xs text-gray-300 font-mono" id="detailLeadPhone">-</p>
+                        <p class="text-xs text-slate-300 font-mono" id="detailLeadPhone">-</p>
                     </div>
                 </div>
-                <button onclick="closeLeadDetailModal()" class="text-gray-400 hover:text-white text-2xl font-bold">&times;</button>
+                <button onclick="closeLeadDetailModal()" class="text-slate-400 hover:text-white text-2xl font-bold">&times;</button>
             </div>
 
-            <!-- Modal Content Grid -->
             <div class="flex flex-col md:flex-row flex-1 overflow-hidden">
-                
-                <!-- Left Column: Lead Settings & Controls -->
-                <div class="w-full md:w-1/2 p-6 border-b md:border-b-0 md:border-r border-gray-200 overflow-y-auto space-y-4">
-                    <h4 class="font-bold text-gray-800 text-sm border-b pb-2">⚙️ Pengaturan & Status Lead</h4>
+                <div class="w-full md:w-1/2 p-6 border-b md:border-b-0 md:border-r border-slate-200 overflow-y-auto space-y-4">
+                    <h4 class="font-bold text-slate-800 text-sm border-b pb-2">⚙️ Pengaturan & Status Lead</h4>
 
                     <form id="leadForm" method="POST" action="">
                         @csrf
                         <div class="mb-3">
-                            <label class="block text-xs font-semibold text-gray-600 mb-1">Nama Lead</label>
-                            <input type="text" name="name" id="modalName" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Lead</label>
+                            <input type="text" name="name" id="modalName" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
                         </div>
 
                         <div class="mb-3">
-                            <label class="block text-xs font-semibold text-gray-600 mb-1">Tahapan / Stage Pipeline</label>
-                            <select name="stage" id="modalStage" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Tahapan / Stage Pipeline</label>
+                            <select name="stage" id="modalStage" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
                                 <option value="Lead Masuk">1. Lead Masuk</option>
                                 <option value="Meeting Call">2. Meeting Call</option>
                                 <option value="Kirim Penawaran">3. Kirim Penawaran</option>
@@ -397,8 +498,8 @@
                         </div>
 
                         <div class="mb-3">
-                            <label class="block text-xs font-semibold text-gray-600 mb-1">Prioritas Prospek (Bintang)</label>
-                            <select name="priority" id="modalPriority" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Prioritas Prospek (Bintang)</label>
+                            <select name="priority" id="modalPriority" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
                                 <option value="0">0 Bintang (Normal)</option>
                                 <option value="1">1 Bintang ⭐</option>
                                 <option value="2">2 Bintang ⭐⭐</option>
@@ -409,34 +510,32 @@
                         </div>
 
                         <div class="mb-4">
-                            <label class="block text-xs font-semibold text-gray-600 mb-1">Catatan Internal Sales</label>
-                            <textarea name="notes" id="modalNotes" rows="3" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none placeholder-gray-400" placeholder="Tambahkan catatan khusus mengenai prospek ini..."></textarea>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Catatan Internal Sales</label>
+                            <textarea name="notes" id="modalNotes" rows="3" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none placeholder-slate-400" placeholder="Tambahkan catatan khusus mengenai prospek ini..."></textarea>
                         </div>
 
-                        <button type="submit" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-lg shadow transition">
+                        <button type="submit" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl shadow transition">
                             💾 Simpan Perubahan
                         </button>
                     </form>
                 </div>
 
-                <!-- Right Column: WhatsApp Chat History -->
                 <div class="w-full md:w-1/2 p-6 flex flex-col bg-slate-100 overflow-hidden">
                     <div class="flex justify-between items-center mb-3 border-b pb-2 border-slate-200">
-                        <h4 class="font-bold text-gray-800 text-sm flex items-center gap-1.5">
+                        <h4 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
                             💬 Riwayat Percakapan WhatsApp
                         </h4>
-                        <span class="text-xs text-gray-500 bg-white px-2 py-0.5 rounded border" id="modalAccountTag">-</span>
+                        <span class="text-xs text-slate-500 bg-white px-2 py-0.5 rounded border" id="modalAccountTag">-</span>
                     </div>
 
                     <div id="chatHistoryContainer" class="flex-1 overflow-y-auto space-y-3 p-2 bg-slate-50 rounded-xl border border-slate-200">
-                        <div class="text-center py-10 text-gray-400 text-xs">Memuat percakapan WhatsApp...</div>
+                        <div class="text-center py-10 text-slate-400 text-xs">Memuat percakapan WhatsApp...</div>
                     </div>
                 </div>
-
             </div>
 
-            <div class="px-6 py-3 bg-gray-50 border-t border-gray-200 flex justify-end">
-                <button onclick="closeLeadDetailModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium text-xs rounded-lg transition">
+            <div class="px-6 py-3 bg-slate-50 border-t border-slate-200 flex justify-end">
+                <button onclick="closeLeadDetailModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium text-xs rounded-xl transition">
                     Tutup
                 </button>
             </div>
@@ -444,7 +543,7 @@
     </div>
 
     <!-- Device & Multi-Account Manager Modal -->
-    <div id="deviceModal" class="fixed inset-0 bg-gray-900 bg-opacity-60 hidden flex items-center justify-center z-50 p-4">
+    <div id="deviceModal" class="fixed inset-0 bg-slate-950/70 hidden flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div class="px-6 py-5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white flex justify-between items-center">
                 <div>
@@ -457,7 +556,7 @@
             </div>
 
             <div class="p-6 overflow-y-auto flex-1 space-y-6">
-                <!-- Add New Account Bar -->
+                @if($user->isCeo())
                 <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-center gap-3">
                     <div>
                         <h4 class="font-bold text-emerald-900 text-sm">Tambah Akun WA / CS Baru</h4>
@@ -470,24 +569,23 @@
                         </button>
                     </div>
                 </div>
+                @endif
 
-                <!-- Accounts List -->
                 <div>
-                    <h4 class="font-semibold text-gray-800 text-sm mb-3">Daftar Akun WA Terdaftar</h4>
+                    <h4 class="font-semibold text-slate-800 text-sm mb-3">Daftar Akun WA Terdaftar</h4>
                     <div id="accountsListContainer" class="space-y-3">
-                        <div class="text-center py-6 text-gray-400 text-sm">Memuat data akun...</div>
+                        <div class="text-center py-6 text-slate-400 text-sm">Memuat data akun...</div>
                     </div>
                 </div>
 
-                <!-- QR Scanner Area -->
-                <div id="qrSection" class="hidden border-t pt-6 text-center bg-gray-50 p-6 rounded-xl border border-gray-200">
-                    <h4 class="font-bold text-gray-800 text-base flex items-center justify-center gap-2">
+                <div id="qrSection" class="hidden border-t pt-6 text-center bg-slate-50 p-6 rounded-xl border border-slate-200">
+                    <h4 class="font-bold text-slate-800 text-base flex items-center justify-center gap-2">
                         📲 Scan Barcode QR Code
                     </h4>
-                    <p class="text-xs text-gray-500 mt-1 mb-4" id="qrSubtitle">Buka WhatsApp > Tautkan Perangkat (Link a Device)</p>
+                    <p class="text-xs text-slate-500 mt-1 mb-4" id="qrSubtitle">Buka WhatsApp > Tautkan Perangkat (Link a Device)</p>
 
                     <div class="flex justify-center items-center my-4 min-h-[220px]">
-                        <div id="qrLoading" class="text-gray-400 text-sm flex flex-col items-center gap-2">
+                        <div id="qrLoading" class="text-slate-400 text-sm flex flex-col items-center gap-2">
                             <svg class="animate-spin h-8 w-8 text-emerald-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
@@ -505,26 +603,127 @@
                         <button onclick="startScanQr(currentScanningSession)" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium rounded-lg shadow">
                             🔄 Regenerate / Scan Ulang QR
                         </button>
-                        <button onclick="closeQrSection()" class="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-medium rounded-lg">
+                        <button onclick="closeQrSection()" class="px-3 py-1.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-medium rounded-lg">
                             Tutup Scanner
                         </button>
                     </div>
                 </div>
             </div>
 
-            <div class="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end">
-                <button onclick="closeDeviceModal()" class="px-5 py-2 bg-gray-200 text-gray-700 font-medium text-sm rounded-lg hover:bg-gray-300 transition">
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+                <button onclick="closeDeviceModal()" class="px-5 py-2 bg-slate-200 text-slate-700 font-medium text-sm rounded-lg hover:bg-slate-300 transition">
                     Tutup
                 </button>
             </div>
         </div>
     </div>
 
+    <!-- CEO User Approval & Management Modal -->
+    @if($user->isCeo())
+    <div id="userManagementModal" class="fixed inset-0 bg-slate-950/70 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="px-6 py-5 bg-gradient-to-r from-purple-900 to-indigo-900 text-white flex justify-between items-center">
+                <div>
+                    <h3 class="text-xl font-bold flex items-center gap-2">
+                        👥 User Approval & Sales Admin Management
+                    </h3>
+                    <p class="text-xs text-purple-200 mt-0.5">Persetujuan Registrasi User Baru & Alokasi WA Pipeline Sales</p>
+                </div>
+                <button onclick="closeUserManagementModal()" class="text-purple-200 hover:text-white text-2xl font-bold">&times;</button>
+            </div>
+
+            <div class="p-6 overflow-y-auto flex-1 space-y-4">
+                <h4 class="font-bold text-slate-800 text-sm border-b pb-2">Daftar Pendaftaran User & Akses Admin</h4>
+                <div id="userListContainer" class="space-y-3">
+                    <div class="text-center py-8 text-slate-400 text-sm">Memuat data pendaftaran user...</div>
+                </div>
+            </div>
+
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+                <button onclick="closeUserManagementModal()" class="px-5 py-2 bg-slate-200 text-slate-700 font-medium text-sm rounded-lg hover:bg-slate-300 transition">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <script>
         let isModalOpen = false;
         let activeQrPollInterval = null;
         let currentScanningSession = 'default';
+        let inquiryChartInstance = null;
+        let currentChartPeriod = 'daily';
 
+        // Chart.js Trend Analytics Initialization
+        document.addEventListener('DOMContentLoaded', function() {
+            initInquiryChart();
+            loadPendingBadgeCount();
+        });
+
+        function initInquiryChart() {
+            const ctx = document.getElementById('inquiryChart').getContext('2d');
+            inquiryChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Jumlah Lead / Inquiry Masuk',
+                        data: [],
+                        borderColor: '#059669',
+                        backgroundColor: 'rgba(5, 150, 105, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.35,
+                        fill: true,
+                        pointBackgroundColor: '#059669',
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: { precision: 0 }
+                        }
+                    }
+                }
+            });
+            fetchChartData(currentChartPeriod);
+        }
+
+        function updateChartPeriod(period) {
+            currentChartPeriod = period;
+            ['btn-daily', 'btn-weekly', 'btn-monthly'].forEach(id => {
+                const btn = document.getElementById(id);
+                if (id === 'btn-' + period) {
+                    btn.className = "px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 text-white shadow-sm transition";
+                } else {
+                    btn.className = "px-3 py-1.5 text-xs font-semibold rounded-lg text-slate-600 hover:bg-slate-200 transition";
+                }
+            });
+            fetchChartData(period);
+        }
+
+        function fetchChartData(period) {
+            const currentParams = new URLSearchParams(window.location.search);
+            const accountId = currentParams.get('account_id') || 'all';
+
+            fetch('/api/analytics/chart-data?period=' + period + '&account_id=' + accountId)
+                .then(res => res.json())
+                .then(res => {
+                    inquiryChartInstance.data.labels = res.labels;
+                    inquiryChartInstance.data.datasets[0].data = res.data;
+                    inquiryChartInstance.update();
+                });
+        }
+
+        // Lead Modal Logic
         function openLeadDetailModal(leadId) {
             isModalOpen = true;
             document.getElementById('leadDetailModal').classList.remove('hidden');
@@ -541,19 +740,18 @@
                     document.getElementById('modalNotes').value = lead.notes || '';
                     document.getElementById('modalAccountTag').textContent = lead.wa_account ? lead.wa_account.name : 'Default Account';
 
-                    // Render Chat History
                     const chatContainer = document.getElementById('chatHistoryContainer');
                     if (!lead.messages || lead.messages.length === 0) {
                         chatContainer.innerHTML = `
-                            <div class="text-center py-10 text-gray-400 text-xs italic">
+                            <div class="text-center py-10 text-slate-400 text-xs italic">
                                 Belum ada riwayat pesan tercatat untuk prospek ini.
                             </div>`;
                     } else {
                         chatContainer.innerHTML = lead.messages.map(m => `
                             <div class="flex flex-col ${m.is_from_me ? 'items-end' : 'items-start'}">
-                                <div class="max-w-[80%] p-3 rounded-xl text-xs shadow-sm ${m.is_from_me ? 'bg-emerald-600 text-white rounded-br-none' : 'bg-white text-gray-800 rounded-bl-none border border-gray-200'}">
+                                <div class="max-w-[80%] p-3 rounded-xl text-xs shadow-sm ${m.is_from_me ? 'bg-emerald-600 text-white rounded-br-none' : 'bg-white text-slate-800 rounded-bl-none border border-slate-200'}">
                                     <p class="whitespace-pre-wrap">${escapeHtml(m.message)}</p>
-                                    <span class="text-[10px] block mt-1 text-right ${m.is_from_me ? 'text-emerald-100' : 'text-gray-400'}">
+                                    <span class="text-[10px] block mt-1 text-right ${m.is_from_me ? 'text-emerald-100' : 'text-slate-400'}">
                                         ${new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                                     </span>
                                 </div>
@@ -574,6 +772,7 @@
             return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
         }
 
+        // Device Modal Logic
         function openDeviceModal() {
             isModalOpen = true;
             document.getElementById('deviceModal').classList.remove('hidden');
@@ -593,33 +792,34 @@
                     const container = document.getElementById('accountsListContainer');
                     if (accounts.length === 0) {
                         container.innerHTML = `
-                            <div class="p-4 bg-gray-50 rounded-xl text-center text-gray-500 text-sm">
+                            <div class="p-4 bg-slate-50 rounded-xl text-center text-slate-500 text-sm">
                                 Belum ada akun WA. Klik "Tambah" di atas untuk menambahkan.
                             </div>`;
                         return;
                     }
 
                     container.innerHTML = accounts.map(acc => `
-                        <div class="p-4 bg-white border border-gray-200 rounded-xl flex flex-col sm:flex-row justify-between items-center gap-3 hover:border-emerald-300 transition">
+                        <div class="p-4 bg-white border border-slate-200 rounded-xl flex flex-col sm:flex-row justify-between items-center gap-3 hover:border-emerald-300 transition">
                             <div>
-                                <div class="font-bold text-gray-800 text-sm flex items-center gap-2">
+                                <div class="font-bold text-slate-800 text-sm flex items-center gap-2">
                                     ${acc.name}
                                     <span class="px-2 py-0.5 text-xs rounded-full ${acc.status === 'CONNECTED' ? 'bg-emerald-100 text-emerald-700' : 'bg-yellow-100 text-yellow-700'} font-semibold">
                                         ${acc.status === 'CONNECTED' ? '🟢 Terhubung (' + (acc.phone || '') + ')' : '🟡 Terputus / Scan QR'}
                                     </span>
                                 </div>
-                                <div class="text-xs text-gray-400 mt-1 font-mono">Session ID: ${acc.session_id}</div>
+                                <div class="text-xs text-slate-400 mt-1 font-mono">Session ID: ${acc.session_id}</div>
                             </div>
                             <div class="flex gap-2">
                                 <a href="/?filter={{ $filter }}&account_id=${acc.id}" class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold rounded-lg transition border border-blue-200 flex items-center gap-1">
                                     📊 Lihat Pipeline
                                 </a>
-                                <button onclick="startScanQr('${acc.session_id}')" class="px-3 py-1.5 ${acc.status === 'CONNECTED' ? 'bg-gray-100 text-gray-700 hover:bg-gray-200' : 'bg-emerald-600 text-white hover:bg-emerald-700'} text-xs font-semibold rounded-lg transition shadow-sm">
+                                <button onclick="startScanQr('${acc.session_id}')" class="px-3 py-1.5 ${acc.status === 'CONNECTED' ? 'bg-slate-100 text-slate-700 hover:bg-slate-200' : 'bg-emerald-600 text-white hover:bg-emerald-700'} text-xs font-semibold rounded-lg transition shadow-sm">
                                     ${acc.status === 'CONNECTED' ? '🔄 Re-Scan' : '📲 Scan Barcode QR'}
                                 </button>
+                                ${'{{ $user->isCeo() }}' ? `
                                 <button onclick="deleteAccount(${acc.id})" class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold rounded-lg transition">
                                     Hapus
-                                </button>
+                                </button>` : ''}
                             </div>
                         </div>
                     `).join('');
@@ -706,6 +906,116 @@
             if (activeQrPollInterval) clearInterval(activeQrPollInterval);
         }
 
+        // CEO User Approval Logic
+        function openUserManagementModal() {
+            isModalOpen = true;
+            document.getElementById('userManagementModal').classList.remove('hidden');
+            loadUserList();
+        }
+
+        function closeUserManagementModal() {
+            isModalOpen = false;
+            document.getElementById('userManagementModal').classList.add('hidden');
+        }
+
+        function loadPendingBadgeCount() {
+            fetch('/users')
+                .then(res => res.json())
+                .then(res => {
+                    const pending = res.users.filter(u => u.status === 'PENDING').length;
+                    const badge = document.getElementById('pendingBadge');
+                    if (badge) {
+                        if (pending > 0) {
+                            badge.textContent = pending;
+                            badge.classList.remove('hidden');
+                        } else {
+                            badge.classList.add('hidden');
+                        }
+                    }
+                })
+                .catch(() => {});
+        }
+
+        function loadUserList() {
+            fetch('/users')
+                .then(res => res.json())
+                .then(res => {
+                    const container = document.getElementById('userListContainer');
+                    const users = res.users;
+                    const waAccounts = res.waAccounts;
+
+                    if (users.length === 0) {
+                        container.innerHTML = `<div class="p-6 bg-slate-50 text-center text-slate-500 text-sm rounded-xl">Belum ada user terdaftar.</div>`;
+                        return;
+                    }
+
+                    container.innerHTML = users.map(u => `
+                        <div class="p-4 bg-white border border-slate-200 rounded-xl flex flex-col md:flex-row justify-between items-center gap-3">
+                            <div>
+                                <div class="font-bold text-slate-900 text-sm flex items-center gap-2">
+                                    ${u.name}
+                                    <span class="px-2 py-0.5 text-[10px] font-bold rounded-full ${u.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-800' : (u.status === 'PENDING' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800')}">
+                                        ${u.status}
+                                    </span>
+                                </div>
+                                <div class="text-xs text-slate-500 mt-0.5">${u.email}</div>
+                                <div class="text-xs text-purple-700 mt-1 font-semibold">
+                                    Alokasi Pipeline: ${u.wa_account ? u.wa_account.name : 'Belum Ada (Semua/Locked)'}
+                                </div>
+                            </div>
+
+                            <div class="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
+                                ${u.status === 'PENDING' ? `
+                                    <select id="assign_wa_${u.id}" class="px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg outline-none bg-slate-50">
+                                        <option value="">Pilih Pipeline WA CS...</option>
+                                        ${waAccounts.map(acc => `<option value="${acc.id}">${acc.name}</option>`).join('')}
+                                    </select>
+                                    <button onclick="approveUser(${u.id})" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition shadow-sm whitespace-nowrap">
+                                        ✅ Approve
+                                    </button>
+                                    <button onclick="rejectUser(${u.id})" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-lg transition whitespace-nowrap">
+                                        ❌ Reject
+                                    </button>
+                                ` : `
+                                    <span class="text-xs font-bold text-slate-400">Status ${u.status}</span>
+                                `}
+                            </div>
+                        </div>
+                    `).join('');
+                });
+        }
+
+        function approveUser(userId) {
+            const waSelect = document.getElementById('assign_wa_' + userId);
+            const waAccountId = waSelect ? waSelect.value : null;
+
+            fetch('/users/' + userId + '/approve', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                body: JSON.stringify({ wa_account_id: waAccountId })
+            })
+            .then(res => res.json())
+            .then(res => {
+                alert(res.message);
+                loadUserList();
+                loadPendingBadgeCount();
+            });
+        }
+
+        function rejectUser(userId) {
+            if (!confirm('Yakin ingin menolak pendaftaran akun ini?')) return;
+            fetch('/users/' + userId + '/reject', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+            })
+            .then(res => res.json())
+            .then(res => {
+                loadUserList();
+                loadPendingBadgeCount();
+            });
+        }
+
+        // Auto-refresh content
         function fetchLeads() {
             if (isModalOpen) return;
             const currentParams = window.location.search;
