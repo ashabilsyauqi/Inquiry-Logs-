@@ -149,75 +149,75 @@
             </div>
             @endif
 
-            <!-- 1. CEO EXECUTIVE LANDING PAGE (DRAGGABLE BRAND CARDS ONLY) -->
+            <!-- 1. CEO EXECUTIVE LANDING PAGE (MINI WIDGETS WITH "LIHAT DETAIL →" LINK TEXT) -->
             @if($user->isCeo() && $accountId == 'all')
             <section class="space-y-6">
                 <div class="flex justify-between items-center">
                     <div>
-                        <h3 class="text-xl font-bold text-slate-900">🏢 Portfolio Running Brands (Pipelines)</h3>
-                        <p class="text-xs text-slate-500 mt-0.5">Posisi kartu dapat di-geser (drag & drop). Klik nama brand untuk masuk ke Dashboard khusus.</p>
+                        <h3 class="text-xl font-bold text-slate-900">🏢 Running Brands Overview</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Ringkasan mini widget per brand. Klik "Lihat Detail →" untuk masuk ke dashboard brand tersebut.</p>
                     </div>
-                    <span class="text-xs font-semibold text-slate-400 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
+                    <span class="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
                         Total Brand: {{ $waAccounts->count() }}
                     </span>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="brandCardsContainer">
+                <!-- SLEEK MINI WIDGETS GRID -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="brandCardsContainer">
                     @foreach($waAccounts as $acc)
                     @php
                         $accLeads = $acc->leads;
                         $totalAccLeads = $accLeads->count();
                         $todayLeads = $accLeads->where('created_at', '>=', \Carbon\Carbon::today())->count();
-                        $monthLeads = $accLeads->where('created_at', '>=', \Carbon\Carbon::now()->startOfMonth())->count();
                         $dealsCount = $accLeads->where('stage', 'Deal')->count();
                     @endphp
-                    <div draggable="true" ondragstart="dragCard(event)" ondragover="allowDropCard(event)" ondrop="dropCard(event)" class="draggable-card bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm hover:shadow-md transition flex flex-col justify-between cursor-pointer" onclick="window.location.href='/?filter={{ $filter }}&account_id={{ $acc->id }}'">
+                    <div draggable="true" ondragstart="dragCard(event)" ondragover="allowDropCard(event)" ondrop="dropCard(event)" class="draggable-card bg-white rounded-2xl p-4 border border-slate-200 shadow-sm hover:shadow-md hover:border-emerald-300 transition flex flex-col justify-between">
                         <div>
-                            <div class="flex justify-between items-start mb-4">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xl shadow-sm">
+                            <!-- Header Mini Widget -->
+                            <div class="flex justify-between items-start mb-3">
+                                <div class="flex items-center gap-2.5">
+                                    <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-sm">
                                         📱
                                     </div>
-                                    <div>
-                                        <h4 class="font-bold text-slate-900 text-base leading-tight hover:text-emerald-600 transition">{{ $acc->name }}</h4>
-                                        <p class="text-xs text-slate-400 font-mono mt-0.5">{{ $acc->phone ?: 'Session: ' . $acc->session_id }}</p>
+                                    <div class="truncate">
+                                        <h4 class="font-bold text-slate-900 text-sm truncate leading-tight">{{ $acc->name }}</h4>
+                                        <p class="text-[10px] text-slate-400 font-mono truncate">{{ $acc->phone ?: 'Disconnected' }}</p>
                                     </div>
                                 </div>
-                                <span class="px-2.5 py-1 text-[10px] font-bold rounded-full {{ $acc->status == 'CONNECTED' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800' }}">
-                                    {{ $acc->status == 'CONNECTED' ? '🟢 Online' : '🔴 Terputus' }}
-                                </span>
+                                <span class="w-2.5 h-2.5 rounded-full {{ $acc->status == 'CONNECTED' ? 'bg-emerald-500' : 'bg-amber-400' }} flex-shrink-0" title="{{ $acc->status == 'CONNECTED' ? 'Online' : 'Terputus' }}"></span>
                             </div>
 
-                            <!-- Metrics Summary Grid -->
-                            <div class="grid grid-cols-3 gap-2 mb-6 bg-slate-50 p-3 rounded-xl border border-slate-100 text-center">
+                            <!-- Mini Stats Bar -->
+                            <div class="grid grid-cols-3 gap-1 bg-slate-50 p-2 rounded-xl border border-slate-100 text-center mb-3">
                                 <div>
-                                    <span class="text-[9px] font-bold text-slate-400 uppercase">Hari Ini</span>
-                                    <p class="text-base font-bold text-slate-800 mt-0.5">{{ $todayLeads }}</p>
+                                    <span class="text-[8px] font-bold text-slate-400 uppercase">Total</span>
+                                    <p class="text-xs font-bold text-slate-800">{{ $totalAccLeads }}</p>
                                 </div>
                                 <div>
-                                    <span class="text-[9px] font-bold text-slate-400 uppercase">Bulan Ini</span>
-                                    <p class="text-base font-bold text-blue-600 mt-0.5">{{ $monthLeads }}</p>
+                                    <span class="text-[8px] font-bold text-slate-400 uppercase">Hari Ini</span>
+                                    <p class="text-xs font-bold text-blue-600">{{ $todayLeads }}</p>
                                 </div>
                                 <div>
-                                    <span class="text-[9px] font-bold text-slate-400 uppercase">Closing</span>
-                                    <p class="text-base font-bold text-emerald-600 mt-0.5">{{ $dealsCount }}</p>
+                                    <span class="text-[8px] font-bold text-slate-400 uppercase">Deal</span>
+                                    <p class="text-xs font-bold text-emerald-600">{{ $dealsCount }}</p>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="flex items-center gap-2" onclick="event.stopPropagation()">
-                            <a href="/?filter={{ $filter }}&account_id={{ $acc->id }}" class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow transition text-center">
-                                📊 Buka Dashboard Brand
-                            </a>
-                            <button onclick="openBrandSettingsModal({{ $acc->id }})" class="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-xl transition border border-slate-200">
+                        <!-- Sleek Link Text "Lihat Detail →" -->
+                        <div class="flex justify-between items-center pt-2 border-t border-slate-100">
+                            <button onclick="openBrandSettingsModal({{ $acc->id }})" class="text-slate-400 hover:text-slate-600 text-xs">
                                 ⚙️
                             </button>
+                            <a href="/?filter={{ $filter }}&account_id={{ $acc->id }}" class="text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:underline flex items-center gap-1">
+                                Lihat Detail &rarr;
+                            </a>
                         </div>
                     </div>
                     @endforeach
                     @if($waAccounts->isEmpty())
-                    <div class="col-span-3 bg-white p-8 rounded-2xl border border-slate-200 text-center text-slate-400 text-sm">
-                        Belum ada Running Brand / Akun WA CS. Klik "WA Device Manager" untuk menambahkan.
+                    <div class="col-span-4 bg-white p-6 rounded-2xl border border-slate-200 text-center text-slate-400 text-xs">
+                        Belum ada Running Brand. Klik "WA Device Manager" untuk menambahkan.
                     </div>
                     @endif
                 </div>
@@ -1143,7 +1143,7 @@
                             </div>
                             <div class="flex gap-2">
                                 <a href="/?filter={{ $filter }}&account_id=${acc.id}" class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold rounded-lg transition border border-blue-200 flex items-center gap-1">
-                                    📊 Lihat Dashboard Brand
+                                    Lihat Detail &rarr;
                                 </a>
                                 <button onclick="startScanQr('${acc.session_id}')" class="px-3 py-1.5 ${acc.status === 'CONNECTED' ? 'bg-slate-100 text-slate-700 hover:bg-slate-200' : 'bg-emerald-600 text-white hover:bg-emerald-700'} text-xs font-semibold rounded-lg transition shadow-sm">
                                     ${acc.status === 'CONNECTED' ? '🔄 Re-Scan' : '📲 Scan Barcode QR'}
