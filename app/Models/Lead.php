@@ -13,5 +13,14 @@ class Lead extends Model
         'name',
         'phone',
         'stage',
+        'notes',
+        'priority',
+        'wa_account_id',
     ];
+
+    public function waAccount()
+    {
+        return $this->belongsTo(WaAccount::class);
+    }
 }
+

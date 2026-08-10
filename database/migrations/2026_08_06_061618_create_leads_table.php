@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('phone')->unique()->index();
-            $table->enum('stage', ['Follow Up', 'Payment', 'Closed'])->default('Follow Up');
+            $table->string('stage')->default('Inquiries');
             $table->timestamps();
         });
     }
