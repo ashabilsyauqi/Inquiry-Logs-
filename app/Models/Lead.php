@@ -22,5 +22,9 @@ class Lead extends Model
     {
         return $this->belongsTo(WaAccount::class);
     }
-}
 
+    public function messages()
+    {
+        return $this->hasMany(LeadMessage::class);
+    }
+}

@@ -42,7 +42,7 @@
         <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
             <div>
                 <h1 class="text-3xl font-bold text-gray-900">CRM Admin Panel</h1>
-                <p class="text-sm text-gray-500 mt-1">Multi-Account WhatsApp & Custom Sales Pipeline System</p>
+                <p class="text-sm text-gray-500 mt-1">Multi-Account WhatsApp & Interactive Chat Tracking System</p>
             </div>
             
             <div class="flex flex-wrap items-center gap-3">
@@ -103,7 +103,7 @@
         </div>
         @endif
         
-        <!-- Stat Cards (Updated Stages) -->
+        <!-- Stat Cards -->
         <div class="grid grid-cols-1 md:grid-cols-5 gap-6 mb-8">
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-center justify-between">
                 <div>
@@ -158,13 +158,13 @@
                             <th class="px-6 py-3 font-medium">No. WhatsApp</th>
                             <th class="px-6 py-3 font-medium">Akun WA CS</th>
                             <th class="px-6 py-3 font-medium">Stage</th>
-                            <th class="px-6 py-3 font-medium">Tanggal Dibuat</th>
+                            <th class="px-6 py-3 font-medium">Waktu Dibuat</th>
                             <th class="px-6 py-3 font-medium text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-gray-100 text-sm">
                         @foreach($leads as $lead)
-                        <tr class="hover:bg-gray-50 transition">
+                        <tr class="hover:bg-gray-50 cursor-pointer transition" onclick="openLeadDetailModal({{ $lead->id }})">
                             <td class="px-6 py-4">
                                 <div class="font-medium text-gray-800 flex items-center gap-2">
                                     {{ $lead->name }}
@@ -197,10 +197,10 @@
                                     <span class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">Deal</span>
                                 @endif
                             </td>
-                            <td class="px-6 py-4 text-gray-500">{{ $lead->created_at->format('d M Y, H:i') }}</td>
-                            <td class="px-6 py-4 text-center">
-                                <button onclick="openEditModal({{ $lead->id }}, '{{ addslashes($lead->name) }}', `{{ addslashes($lead->notes) }}`, {{ $lead->priority }}, '{{ $lead->stage }}')" class="text-blue-600 hover:text-blue-800 font-medium text-sm transition">
-                                    ✏️ Edit
+                            <td class="px-6 py-4 text-gray-500 text-xs">{{ $lead->created_at->format('d M, H:i') }}</td>
+                            <td class="px-6 py-4 text-center" onclick="event.stopPropagation()">
+                                <button onclick="openLeadDetailModal({{ $lead->id }})" class="text-blue-600 hover:text-blue-800 font-medium text-sm transition">
+                                    💬 Detail & Chat
                                 </button>
                             </td>
                         </tr>
@@ -215,7 +215,7 @@
             </div>
         </div>
         
-        <!-- Kanban Board (Updated 4 Stages) -->
+        <!-- Kanban Board (Clickable Lead Cards for Pop-up Details & Chat History) -->
         <h2 class="text-xl font-bold text-gray-800 mb-4">
             Kanban Board {{ $activeAccount ? '(' . $activeAccount->name . ')' : '(Semua Pipeline)' }}
         </h2>
@@ -228,7 +228,7 @@
                 </h2>
                 <div class="space-y-4">
                     @foreach($leads->where('stage', 'Lead Masuk') as $lead)
-                    <div class="bg-purple-50 hover:bg-purple-100 transition duration-150 ease-in-out p-4 rounded shadow-sm border border-purple-100">
+                    <div onclick="openLeadDetailModal({{ $lead->id }})" class="bg-purple-50 hover:bg-purple-100 transition duration-150 ease-in-out p-4 rounded-xl shadow-sm border border-purple-100 cursor-pointer">
                         <div class="flex justify-between items-start">
                             <h3 class="font-bold text-gray-800">{{ $lead->name }}</h3>
                             @if($lead->priority > 0)
@@ -239,7 +239,9 @@
                                 </div>
                             @endif
                         </div>
-                        <p class="text-sm text-gray-600 mt-1 font-mono">{{ $lead->phone }}</p>
+                        <p class="text-xs text-gray-500 mt-1 font-sans flex items-center gap-1">
+                            <span>🕒</span> {{ $lead->created_at->format('d M, H:i') }}
+                        </p>
                         <div class="mt-2 text-xs text-purple-700 bg-purple-100 inline-block px-2 py-0.5 rounded">
                             {{ $lead->waAccount->name ?? 'Default Account' }}
                         </div>
@@ -259,7 +261,7 @@
                 </h2>
                 <div class="space-y-4">
                     @foreach($leads->where('stage', 'Meeting Call') as $lead)
-                    <div class="bg-blue-50 hover:bg-blue-100 transition duration-150 ease-in-out p-4 rounded shadow-sm border border-blue-100">
+                    <div onclick="openLeadDetailModal({{ $lead->id }})" class="bg-blue-50 hover:bg-blue-100 transition duration-150 ease-in-out p-4 rounded-xl shadow-sm border border-blue-100 cursor-pointer">
                         <div class="flex justify-between items-start">
                             <h3 class="font-bold text-gray-800">{{ $lead->name }}</h3>
                             @if($lead->priority > 0)
@@ -270,7 +272,9 @@
                                 </div>
                             @endif
                         </div>
-                        <p class="text-sm text-gray-600 mt-1 font-mono">{{ $lead->phone }}</p>
+                        <p class="text-xs text-gray-500 mt-1 font-sans flex items-center gap-1">
+                            <span>🕒</span> {{ $lead->created_at->format('d M, H:i') }}
+                        </p>
                         <div class="mt-2 text-xs text-blue-700 bg-blue-100 inline-block px-2 py-0.5 rounded">
                             {{ $lead->waAccount->name ?? 'Default Account' }}
                         </div>
@@ -290,7 +294,7 @@
                 </h2>
                 <div class="space-y-4">
                     @foreach($leads->where('stage', 'Kirim Penawaran') as $lead)
-                    <div class="bg-yellow-50 hover:bg-yellow-100 transition duration-150 ease-in-out p-4 rounded shadow-sm border border-yellow-100">
+                    <div onclick="openLeadDetailModal({{ $lead->id }})" class="bg-yellow-50 hover:bg-yellow-100 transition duration-150 ease-in-out p-4 rounded-xl shadow-sm border border-yellow-100 cursor-pointer">
                         <div class="flex justify-between items-start">
                             <h3 class="font-bold text-gray-800">{{ $lead->name }}</h3>
                             @if($lead->priority > 0)
@@ -301,7 +305,9 @@
                                 </div>
                             @endif
                         </div>
-                        <p class="text-sm text-gray-600 mt-1 font-mono">{{ $lead->phone }}</p>
+                        <p class="text-xs text-gray-500 mt-1 font-sans flex items-center gap-1">
+                            <span>🕒</span> {{ $lead->created_at->format('d M, H:i') }}
+                        </p>
                         <div class="mt-2 text-xs text-yellow-700 bg-yellow-100 inline-block px-2 py-0.5 rounded">
                             {{ $lead->waAccount->name ?? 'Default Account' }}
                         </div>
@@ -321,7 +327,7 @@
                 </h2>
                 <div class="space-y-4">
                     @foreach($leads->where('stage', 'Deal') as $lead)
-                    <div class="bg-green-50 hover:bg-green-100 transition duration-150 ease-in-out p-4 rounded shadow-sm border border-green-100">
+                    <div onclick="openLeadDetailModal({{ $lead->id }})" class="bg-green-50 hover:bg-green-100 transition duration-150 ease-in-out p-4 rounded-xl shadow-sm border border-green-100 cursor-pointer">
                         <div class="flex justify-between items-start">
                             <h3 class="font-bold text-gray-800">{{ $lead->name }}</h3>
                             @if($lead->priority > 0)
@@ -332,7 +338,9 @@
                                 </div>
                             @endif
                         </div>
-                        <p class="text-sm text-gray-600 mt-1 font-mono">{{ $lead->phone }}</p>
+                        <p class="text-xs text-gray-500 mt-1 font-sans flex items-center gap-1">
+                            <span>🕒</span> {{ $lead->created_at->format('d M, H:i') }}
+                        </p>
                         <div class="mt-2 text-xs text-green-700 bg-green-100 inline-block px-2 py-0.5 rounded">
                             {{ $lead->waAccount->name ?? 'Default Account' }}
                         </div>
@@ -346,52 +354,92 @@
         </div>
     </div>
 
-    <!-- Edit Lead Modal -->
-    <div id="editModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 hidden flex items-center justify-center z-50">
-        <div class="bg-white rounded-xl shadow-lg w-full max-w-md mx-4 overflow-hidden">
-            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
-                <h3 class="text-lg font-bold text-gray-800">Edit Lead & Stage</h3>
-                <button onclick="closeEditModal()" class="text-gray-400 hover:text-gray-600 transition">&times;</button>
+    <!-- Lead Detail & WA Chat History Pop-up Modal -->
+    <div id="leadDetailModal" class="fixed inset-0 bg-gray-900 bg-opacity-60 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]">
+            
+            <!-- Modal Header -->
+            <div class="px-6 py-4 bg-gray-900 text-white flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-emerald-600 flex items-center justify-center font-bold text-lg text-white">
+                        👤
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold" id="detailLeadName">Memuat...</h3>
+                        <p class="text-xs text-gray-300 font-mono" id="detailLeadPhone">-</p>
+                    </div>
+                </div>
+                <button onclick="closeLeadDetailModal()" class="text-gray-400 hover:text-white text-2xl font-bold">&times;</button>
             </div>
-            <form id="editForm" method="POST" action="" class="p-6">
-                @csrf
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Nama Lead</label>
-                    <input type="text" name="name" id="editName" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+
+            <!-- Modal Content Grid -->
+            <div class="flex flex-col md:flex-row flex-1 overflow-hidden">
+                
+                <!-- Left Column: Lead Settings & Controls -->
+                <div class="w-full md:w-1/2 p-6 border-b md:border-b-0 md:border-r border-gray-200 overflow-y-auto space-y-4">
+                    <h4 class="font-bold text-gray-800 text-sm border-b pb-2">⚙️ Pengaturan & Status Lead</h4>
+
+                    <form id="leadForm" method="POST" action="">
+                        @csrf
+                        <div class="mb-3">
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">Nama Lead</label>
+                            <input type="text" name="name" id="modalName" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">Tahapan / Stage Pipeline</label>
+                            <select name="stage" id="modalStage" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                                <option value="Lead Masuk">1. Lead Masuk</option>
+                                <option value="Meeting Call">2. Meeting Call</option>
+                                <option value="Kirim Penawaran">3. Kirim Penawaran</option>
+                                <option value="Deal">4. Deal</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">Prioritas Prospek (Bintang)</label>
+                            <select name="priority" id="modalPriority" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                                <option value="0">0 Bintang (Normal)</option>
+                                <option value="1">1 Bintang ⭐</option>
+                                <option value="2">2 Bintang ⭐⭐</option>
+                                <option value="3">3 Bintang ⭐⭐⭐</option>
+                                <option value="4">4 Bintang ⭐⭐⭐⭐</option>
+                                <option value="5">5 Bintang ⭐⭐⭐⭐⭐ (Hot Lead)</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">Catatan Internal Sales</label>
+                            <textarea name="notes" id="modalNotes" rows="3" class="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none placeholder-gray-400" placeholder="Tambahkan catatan khusus mengenai prospek ini..."></textarea>
+                        </div>
+
+                        <button type="submit" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-lg shadow transition">
+                            💾 Simpan Perubahan
+                        </button>
+                    </form>
                 </div>
 
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Tahapan / Stage Pipeline</label>
-                    <select name="stage" id="editStage" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="Lead Masuk">1. Lead Masuk</option>
-                        <option value="Meeting Call">2. Meeting Call</option>
-                        <option value="Kirim Penawaran">3. Kirim Penawaran</option>
-                        <option value="Deal">4. Deal</option>
-                    </select>
-                </div>
-                
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Catatan</label>
-                    <textarea name="notes" id="editNotes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400" placeholder="Ketik catatan di sini..."></textarea>
+                <!-- Right Column: WhatsApp Chat History -->
+                <div class="w-full md:w-1/2 p-6 flex flex-col bg-slate-100 overflow-hidden">
+                    <div class="flex justify-between items-center mb-3 border-b pb-2 border-slate-200">
+                        <h4 class="font-bold text-gray-800 text-sm flex items-center gap-1.5">
+                            💬 Riwayat Percakapan WhatsApp
+                        </h4>
+                        <span class="text-xs text-gray-500 bg-white px-2 py-0.5 rounded border" id="modalAccountTag">-</span>
+                    </div>
+
+                    <div id="chatHistoryContainer" class="flex-1 overflow-y-auto space-y-3 p-2 bg-slate-50 rounded-xl border border-slate-200">
+                        <div class="text-center py-10 text-gray-400 text-xs">Memuat percakapan WhatsApp...</div>
+                    </div>
                 </div>
 
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Prioritas (Bintang)</label>
-                    <select name="priority" id="editPriority" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="0">0 Bintang (Normal)</option>
-                        <option value="1">1 Bintang ⭐</option>
-                        <option value="2">2 Bintang ⭐⭐</option>
-                        <option value="3">3 Bintang ⭐⭐⭐</option>
-                        <option value="4">4 Bintang ⭐⭐⭐⭐</option>
-                        <option value="5">5 Bintang ⭐⭐⭐⭐⭐ (Hot)</option>
-                    </select>
-                </div>
-                
-                <div class="flex justify-end gap-3">
-                    <button type="button" onclick="closeEditModal()" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition font-medium text-sm">Batal</button>
-                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition font-medium text-sm">Simpan</button>
-                </div>
-            </form>
+            </div>
+
+            <div class="px-6 py-3 bg-gray-50 border-t border-gray-200 flex justify-end">
+                <button onclick="closeLeadDetailModal()" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-medium text-xs rounded-lg transition">
+                    Tutup
+                </button>
+            </div>
         </div>
     </div>
 
@@ -477,19 +525,53 @@
         let activeQrPollInterval = null;
         let currentScanningSession = 'default';
 
-        function openEditModal(id, name, notes, priority, stage) {
+        function openLeadDetailModal(leadId) {
             isModalOpen = true;
-            document.getElementById('editForm').action = '/leads/' + id + '/update';
-            document.getElementById('editName').value = name;
-            document.getElementById('editNotes').value = notes || '';
-            document.getElementById('editPriority').value = priority;
-            if (stage) document.getElementById('editStage').value = stage;
-            document.getElementById('editModal').classList.remove('hidden');
+            document.getElementById('leadDetailModal').classList.remove('hidden');
+            document.getElementById('leadForm').action = '/leads/' + leadId + '/update';
+
+            fetch('/leads/' + leadId + '/detail')
+                .then(res => res.json())
+                .then(lead => {
+                    document.getElementById('detailLeadName').textContent = lead.name;
+                    document.getElementById('detailLeadPhone').textContent = lead.phone;
+                    document.getElementById('modalName').value = lead.name;
+                    document.getElementById('modalStage').value = lead.stage;
+                    document.getElementById('modalPriority').value = lead.priority;
+                    document.getElementById('modalNotes').value = lead.notes || '';
+                    document.getElementById('modalAccountTag').textContent = lead.wa_account ? lead.wa_account.name : 'Default Account';
+
+                    // Render Chat History
+                    const chatContainer = document.getElementById('chatHistoryContainer');
+                    if (!lead.messages || lead.messages.length === 0) {
+                        chatContainer.innerHTML = `
+                            <div class="text-center py-10 text-gray-400 text-xs italic">
+                                Belum ada riwayat pesan tercatat untuk prospek ini.
+                            </div>`;
+                    } else {
+                        chatContainer.innerHTML = lead.messages.map(m => `
+                            <div class="flex flex-col ${m.is_from_me ? 'items-end' : 'items-start'}">
+                                <div class="max-w-[80%] p-3 rounded-xl text-xs shadow-sm ${m.is_from_me ? 'bg-emerald-600 text-white rounded-br-none' : 'bg-white text-gray-800 rounded-bl-none border border-gray-200'}">
+                                    <p class="whitespace-pre-wrap">${escapeHtml(m.message)}</p>
+                                    <span class="text-[10px] block mt-1 text-right ${m.is_from_me ? 'text-emerald-100' : 'text-gray-400'}">
+                                        ${new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                    </span>
+                                </div>
+                            </div>
+                        `).join('');
+                        chatContainer.scrollTop = chatContainer.scrollHeight;
+                    }
+                });
         }
 
-        function closeEditModal() {
+        function closeLeadDetailModal() {
             isModalOpen = false;
-            document.getElementById('editModal').classList.add('hidden');
+            document.getElementById('leadDetailModal').classList.add('hidden');
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
         }
 
         function openDeviceModal() {

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\Lead;
 use App\Models\WaAccount;
+use App\Models\LeadMessage;
 use Illuminate\Support\Facades\Log;
 
 class WebhookController extends Controller
@@ -49,6 +50,7 @@ class WebhookController extends Controller
         $lowerMessage = strtolower($message);
 
         $isFromMe = $request->input('isFromMe') || ($senderPhone === $myNumber);
+        $lead = null;
 
         if ($isFromMe) {
             $leadPhone = $receiverPhone;
@@ -108,6 +110,16 @@ class WebhookController extends Controller
                 }
                 $lead->save();
             }
+        }
+
+        // Store chat log in LeadMessage
+        if ($lead) {
+            LeadMessage::create([
+                'lead_id' => $lead->id,
+                'sender' => $senderPhone,
+                'message' => $message,
+                'is_from_me' => $isFromMe,
+            ]);
         }
 
         return response()->json([

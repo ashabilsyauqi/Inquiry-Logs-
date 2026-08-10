@@ -42,6 +42,14 @@ Route::get('/', function (Request $request) {
     ));
 });
 
+Route::get('/leads/{id}/detail', function ($id) {
+    $lead = Lead::with(['messages' => function($q) {
+        $q->orderBy('created_at', 'asc');
+    }, 'waAccount'])->findOrFail($id);
+
+    return response()->json($lead);
+});
+
 Route::post('/leads/{id}/update', function (Request $request, $id) {
     $lead = Lead::findOrFail($id);
 
