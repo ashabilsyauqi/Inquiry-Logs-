@@ -149,21 +149,14 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/wa-accounts', function () {
         $user = Auth::user();
         if ($user->isCeo()) {
-            return response()->json(WaAccount::with(['pipelineStages.triggers'])->where('approval_status', 'APPROVED')->get());
+            return response()->json(WaAccount::with(['pipelineStages.triggers', 'csTeam'])->where('approval_status', 'APPROVED')->get());
         }
 
-        if (!$user->wa_account_id) {
-            $waAccount = WaAccount::create([
-                'name' => 'WA ' . $user->name,
-                'session_id' => 'session_user_' . $user->id,
-                'status' => 'DISCONNECTED'
-            ]);
-            $waAccount->ensureDefaultStages();
-            $user->wa_account_id = $waAccount->id;
-            $user->save();
+        if ($user->role === 'SUPERVISOR') {
+            return response()->json(WaAccount::with(['pipelineStages.triggers', 'csTeam'])->where('id', $user->wa_account_id)->get());
         }
 
-        return response()->json(WaAccount::with(['pipelineStages.triggers'])->where('id', $user->wa_account_id)->get());
+        return response()->json(WaAccount::where('id', $user->wa_account_id)->get());
     });
 
     Route::post('/wa-accounts', function (Request $request) {

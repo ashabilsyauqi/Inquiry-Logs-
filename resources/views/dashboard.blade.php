@@ -782,6 +782,17 @@
             </div>
 
             <div class="p-6 overflow-y-auto flex-1 space-y-6">
+                <!-- Status List of Brand WA Devices & CS Team Accounts -->
+                <div class="space-y-3">
+                    <h4 class="font-bold text-slate-800 text-sm flex items-center justify-between">
+                        <span>📱 Status Perangkat WA & Tim CS</span>
+                    </h4>
+                    <div id="accountsListContainer" class="space-y-2.5">
+                        <div class="p-4 bg-slate-50 rounded-xl text-center text-slate-400 text-xs">
+                            Memuat daftar perangkat WA...
+                        </div>
+                    </div>
+                </div>
                 @if($user->isCeo())
                 <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex flex-col sm:flex-row justify-between items-center gap-3">
                     <div>
@@ -1736,39 +1747,51 @@
                 .then(res => res.json())
                 .then(accounts => {
                     const container = document.getElementById('accountsListContainer');
+                    if (!container) return;
                     if (accounts.length === 0) {
                         container.innerHTML = `
-                            <div class="p-4 bg-slate-50 rounded-xl text-center text-slate-500 text-sm">
-                                Belum ada akun WA. Klik "Tambah" di atas untuk menambahkan.
+                            <div class="p-4 bg-slate-50 rounded-xl text-center text-slate-500 text-xs">
+                                Belum ada perangkat WA terhubung untuk brand ini.
                             </div>`;
                         return;
                     }
 
-                    container.innerHTML = accounts.map(acc => `
-                        <div class="p-4 bg-white border border-slate-200 rounded-xl flex flex-col sm:flex-row justify-between items-center gap-3 hover:border-emerald-300 transition">
-                            <div>
-                                <div class="font-bold text-slate-800 text-sm flex items-center gap-2">
-                                    ${acc.name}
-                                    <span class="px-2 py-0.5 text-xs rounded-full ${acc.status === 'CONNECTED' ? 'bg-emerald-100 text-emerald-700' : 'bg-yellow-100 text-yellow-700'} font-semibold">
-                                        ${acc.status === 'CONNECTED' ? '🟢 Terhubung (' + (acc.phone || '') + ')' : '🟡 Terputus / Scan QR'}
-                                    </span>
+                    container.innerHTML = accounts.map(acc => {
+                        const csListHtml = acc.cs_team && acc.cs_team.length > 0
+                            ? `<div class="mt-2.5 pt-2.5 border-t border-slate-100 space-y-1">
+                                <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Tim Admin CS (${acc.cs_team.length}):</div>
+                                <div class="flex flex-wrap gap-1.5">
+                                    ${acc.cs_team.map(cs => `
+                                        <span class="inline-flex items-center gap-1.5 px-2 py-1 bg-slate-100 text-slate-700 rounded-lg text-[11px] font-semibold">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                            ${cs.name} (${cs.email})
+                                        </span>
+                                    `).join('')}
                                 </div>
-                                <div class="text-xs text-slate-400 mt-1 font-mono">Session ID: ${acc.session_id}</div>
+                               </div>`
+                            : `<div class="mt-1 text-[11px] text-slate-400">Belum ada Admin CS terdaftar di tim.</div>`;
+
+                        return `
+                        <div class="p-4 bg-white border border-slate-200 rounded-xl space-y-2 hover:border-emerald-300 transition shadow-sm">
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                                <div>
+                                    <div class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                                        🏢 ${acc.name}
+                                        <span class="px-2.5 py-0.5 text-xs rounded-full ${acc.status === 'CONNECTED' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-amber-100 text-amber-800 border border-amber-300'} font-bold">
+                                            ${acc.status === 'CONNECTED' ? '🟢 Online ' + (acc.phone ? '(+' + acc.phone + ')' : '') : '🔴 Terputus / Scan QR'}
+                                        </span>
+                                    </div>
+                                    <div class="text-[11px] text-slate-400 mt-0.5 font-mono">Session ID: ${acc.session_id}</div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <button onclick="startScanQr('${acc.session_id}', ${acc.id})" class="px-3.5 py-1.5 ${acc.status === 'CONNECTED' ? 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300' : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm'} text-xs font-bold rounded-lg transition whitespace-nowrap">
+                                        ${acc.status === 'CONNECTED' ? '🔄 Re-Scan QR' : '📲 Scan / Connect WA'}
+                                    </button>
+                                </div>
                             </div>
-                            <div class="flex gap-2">
-                                <a href="/?filter={{ $filter }}&account_id=${acc.id}" class="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-semibold rounded-lg transition border border-blue-200 flex items-center gap-1">
-                                    Lihat Detail &rarr;
-                                </a>
-                                <button onclick="startScanQr('${acc.session_id}')" class="px-3 py-1.5 ${acc.status === 'CONNECTED' ? 'bg-slate-100 text-slate-700 hover:bg-slate-200' : 'bg-emerald-600 text-white hover:bg-emerald-700'} text-xs font-semibold rounded-lg transition shadow-sm">
-                                    ${acc.status === 'CONNECTED' ? '🔄 Re-Scan' : '📲 Scan Barcode QR'}
-                                </button>
-                                ${'{{ $user->isCeo() }}' ? `
-                                <button onclick="deleteAccount(${acc.id})" class="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 text-xs font-semibold rounded-lg transition">
-                                    Hapus
-                                </button>` : ''}
-                            </div>
+                            ${csListHtml}
                         </div>
-                    `).join('');
+                    `}).join('');
                 });
         }
 
