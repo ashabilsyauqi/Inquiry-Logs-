@@ -352,7 +352,7 @@
                                 <th class="px-6 py-3 font-semibold">Nama Lead</th>
                                 <th class="px-6 py-3 font-semibold">No. WhatsApp</th>
                                 <th class="px-6 py-3 font-semibold">Akun WA CS</th>
-                                <th class="px-6 py-3 font-semibold">Stage</th>
+                                <th class="px-6 py-3 font-semibold">Stage Status</th>
                                 <th class="px-6 py-3 font-semibold">Waktu Dibuat</th>
                                 <th class="px-6 py-3 font-semibold text-center">Aksi</th>
                             </tr>
@@ -389,7 +389,7 @@
                                 <td class="px-6 py-4 text-slate-500 text-xs">{{ $lead->created_at->format('d M, H:i') }}</td>
                                 <td class="px-6 py-4 text-center" onclick="event.stopPropagation()">
                                     <button onclick="openLeadDetailModal({{ $lead->id }})" class="text-blue-600 hover:text-blue-800 font-semibold text-xs bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition border border-blue-200">
-                                        💬 Detail & Chat
+                                        ⚙️ Detail Lead
                                     </button>
                                 </td>
                             </tr>
@@ -487,9 +487,9 @@
         </div>
     </main>
 
-    <!-- Lead Detail & WA Chat History Pop-up Modal -->
+    <!-- SIMPLIFIED CLEAN LEAD DETAIL MODAL (FEATURING NO LIVE CHAT CONTAINER) -->
     <div id="leadDetailModal" class="fixed inset-0 bg-slate-950/70 hidden flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[90vh]">
             <div class="px-6 py-4 bg-slate-900 text-white flex justify-between items-center">
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center font-bold text-lg text-white">
@@ -503,65 +503,53 @@
                 <button onclick="closeLeadDetailModal()" class="text-slate-400 hover:text-white text-2xl font-bold">&times;</button>
             </div>
 
-            <div class="flex flex-col md:flex-row flex-1 overflow-hidden">
-                <div class="w-full md:w-1/2 p-6 border-b md:border-b-0 md:border-r border-slate-200 overflow-y-auto space-y-4">
-                    <h4 class="font-bold text-slate-800 text-sm border-b pb-2">⚙️ Pengaturan & Status Lead</h4>
-
-                    <form id="leadForm" method="POST" action="">
-                        @csrf
-                        <div class="mb-3">
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Lead</label>
-                            <input type="text" name="name" id="modalName" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Tahapan / Stage Pipeline</label>
-                            <select name="stage" id="modalStage" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                @foreach($stages as $st)
-                                    <option value="{{ $st->name }}">{{ $st->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Prioritas Prospek (Bintang)</label>
-                            <select name="priority" id="modalPriority" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
-                                <option value="0">0 Bintang (Normal)</option>
-                                <option value="1">1 Bintang ⭐</option>
-                                <option value="2">2 Bintang ⭐⭐</option>
-                                <option value="3">3 Bintang ⭐⭐⭐</option>
-                                <option value="4">4 Bintang ⭐⭐⭐⭐</option>
-                                <option value="5">5 Bintang ⭐⭐⭐⭐⭐ (Hot Lead)</option>
-                            </select>
-                        </div>
-
-                        <div class="mb-4">
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Catatan Internal Sales</label>
-                            <textarea name="notes" id="modalNotes" rows="3" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none placeholder-slate-400" placeholder="Tambahkan catatan khusus mengenai prospek ini..."></textarea>
-                        </div>
-
-                        <button type="submit" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm rounded-xl shadow transition">
-                            💾 Simpan Perubahan
-                        </button>
-                    </form>
+            <div class="p-6 overflow-y-auto space-y-4">
+                <div class="flex justify-between items-center border-b pb-2">
+                    <h4 class="font-bold text-slate-800 text-sm">⚙️ Pengaturan Status Lead</h4>
+                    <span class="text-xs text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md border font-medium" id="modalAccountTag">-</span>
                 </div>
 
-                <div class="w-full md:w-1/2 p-6 flex flex-col bg-slate-100 overflow-hidden">
-                    <div class="flex justify-between items-center mb-3 border-b pb-2 border-slate-200">
-                        <h4 class="font-bold text-slate-800 text-sm flex items-center gap-1.5">
-                            💬 Riwayat Percakapan WhatsApp
-                        </h4>
-                        <span class="text-xs text-slate-500 bg-white px-2 py-0.5 rounded border" id="modalAccountTag">-</span>
+                <form id="leadForm" method="POST" action="">
+                    @csrf
+                    <div class="mb-3">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Lead / Pelanggan</label>
+                        <input type="text" name="name" id="modalName" class="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold">
                     </div>
 
-                    <div id="chatHistoryContainer" class="flex-1 overflow-y-auto space-y-3 p-2 bg-slate-50 rounded-xl border border-slate-200">
-                        <div class="text-center py-10 text-slate-400 text-xs">Memuat percakapan WhatsApp...</div>
+                    <div class="mb-3">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Tahapan / Stage Pipeline</label>
+                        <select name="stage" id="modalStage" class="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white font-medium">
+                            @foreach($stages as $st)
+                                <option value="{{ $st->name }}">{{ $st->name }}</option>
+                            @endforeach
+                        </select>
                     </div>
-                </div>
+
+                    <div class="mb-3">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Prioritas Prospek (Bintang)</label>
+                        <select name="priority" id="modalPriority" class="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white font-medium">
+                            <option value="0">0 Bintang (Normal)</option>
+                            <option value="1">1 Bintang ⭐</option>
+                            <option value="2">2 Bintang ⭐⭐</option>
+                            <option value="3">3 Bintang ⭐⭐⭐</option>
+                            <option value="4">4 Bintang ⭐⭐⭐⭐</option>
+                            <option value="5">5 Bintang ⭐⭐⭐⭐⭐ (Hot Lead)</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Catatan Internal Sales / CS</label>
+                        <textarea name="notes" id="modalNotes" rows="4" class="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none placeholder-slate-400" placeholder="Tambahkan catatan khusus mengenai prospek ini..."></textarea>
+                    </div>
+
+                    <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow transition">
+                        💾 Simpan Perubahan Status
+                    </button>
+                </form>
             </div>
 
             <div class="px-6 py-3 bg-slate-50 border-t border-slate-200 flex justify-end">
-                <button onclick="closeLeadDetailModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-medium text-xs rounded-xl transition">
+                <button onclick="closeLeadDetailModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-xs rounded-xl transition">
                     Tutup
                 </button>
             </div>
@@ -1071,26 +1059,6 @@
                     document.getElementById('modalPriority').value = lead.priority;
                     document.getElementById('modalNotes').value = lead.notes || '';
                     document.getElementById('modalAccountTag').textContent = lead.wa_account ? lead.wa_account.name : 'Default Account';
-
-                    const chatContainer = document.getElementById('chatHistoryContainer');
-                    if (!lead.messages || lead.messages.length === 0) {
-                        chatContainer.innerHTML = `
-                            <div class="text-center py-10 text-slate-400 text-xs italic">
-                                Belum ada riwayat pesan tercatat untuk prospek ini.
-                            </div>`;
-                    } else {
-                        chatContainer.innerHTML = lead.messages.map(m => `
-                            <div class="flex flex-col ${m.is_from_me ? 'items-end' : 'items-start'}">
-                                <div class="max-w-[80%] p-3 rounded-xl text-xs shadow-sm ${m.is_from_me ? 'bg-emerald-600 text-white rounded-br-none' : 'bg-white text-slate-800 rounded-bl-none border border-slate-200'}">
-                                    <p class="whitespace-pre-wrap">${escapeHtml(m.message)}</p>
-                                    <span class="text-[10px] block mt-1 text-right ${m.is_from_me ? 'text-emerald-100' : 'text-slate-400'}">
-                                        ${new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                                    </span>
-                                </div>
-                            </div>
-                        `).join('');
-                        chatContainer.scrollTop = chatContainer.scrollHeight;
-                    }
                 });
         }
 

@@ -115,13 +115,43 @@ function createSession(sessionId = 'default') {
                 // Ignore contact fetching error
             }
 
+            const isSlashCommand = msg.body && msg.body.trim().startsWith('/');
+
+            // INTERNAL ADMIN SLASH COMMAND INTERCEPTOR
+            if (msg.fromMe && isSlashCommand) {
+                console.log(`[WA Bridge] Intercepted Internal Admin Command: "${msg.body}" to ${receiver}`);
+
+                // Send payload to Laravel webhook as Admin Command
+                const payload = {
+                    sessionId,
+                    sender: sender.replace('@c.us', '').replace('@s.whatsapp.net', '').replace('@lid', ''),
+                    receiver: receiver.replace('@c.us', '').replace('@s.whatsapp.net', '').replace('@lid', ''),
+                    senderName,
+                    message: msg.body.trim(),
+                    isFromMe: true,
+                    isAdminCommand: true
+                };
+
+                await axios.post(WEBHOOK_URL, payload).catch(e => {});
+
+                // Delete command message for everyone so customer never sees the raw slash command!
+                try {
+                    await msg.delete(true);
+                } catch (delErr) {
+                    // Fallback to delete for me
+                    try { await msg.delete(false); } catch (e) {}
+                }
+                return;
+            }
+
             const payload = {
                 sessionId,
                 sender: sender.replace('@c.us', '').replace('@s.whatsapp.net', '').replace('@lid', ''),
                 receiver: receiver.replace('@c.us', '').replace('@s.whatsapp.net', '').replace('@lid', ''),
                 senderName,
                 message: msg.body,
-                isFromMe: msg.fromMe
+                isFromMe: msg.fromMe,
+                isAdminCommand: false
             };
 
             await axios.post(WEBHOOK_URL, payload);
