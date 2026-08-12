@@ -1,32 +1,29 @@
-// CRM MVP WHATSAPP WEB CONTENT SCRIPT (ENHANCED V1.0.1)
+// CRM MVP WHATSAPP WEB CONTENT SCRIPT (ENHANCED BRAND-SPECIFIC STAGES V1.0.2)
 (function() {
     console.log("🚀 CRM MVP WhatsApp Web Stage Switcher Extension Loaded!");
 
     const SERVER_URL = 'http://127.0.0.1:8000';
-    let availableStages = ['Inquiry Masuk', 'Pitching', 'Meeting Call', 'Deal', 'Lost'];
+    let accountsData = [];
+    let selectedAccountId = null;
     let currentCustomerPhone = null;
     let currentCustomerName = null;
 
-    // Fetch dynamic stages from CRM MVP Backend
+    // Fetch dynamic brand accounts & their exact custom pipeline stages
     async function loadDynamicStages() {
         try {
             const res = await fetch(`${SERVER_URL}/api/extension/stages`);
             const data = await res.json();
-            if (data.status === 'success' && data.accounts) {
-                const stageSet = new Set();
-                data.accounts.forEach(acc => {
-                    if (acc.pipeline_stages) {
-                        acc.pipeline_stages.forEach(s => stageSet.add(s.name));
-                    }
-                });
-                if (stageSet.size > 0) {
-                    availableStages = Array.from(stageSet);
+            if (data.status === 'success' && data.accounts && data.accounts.length > 0) {
+                accountsData = data.accounts;
+                if (!selectedAccountId && accountsData.length > 0) {
+                    selectedAccountId = accountsData[0].id;
                 }
             }
         } catch (err) {
-            console.log('CRM API offline or CORS, using default stages');
+            console.log('CRM API offline, using fallback data');
         }
-        populateDropdown();
+        populateBrandDropdown();
+        populateStageDropdown();
     }
 
     // Create & Inject Floating Bar and Floating Action Button (FAB)
@@ -36,16 +33,27 @@
             bar.id = 'crm-wa-floating-bar';
             bar.innerHTML = `
                 <div class="crm-bar-title">🚀 CRM MVP</div>
-                <div class="crm-phone-badge" id="crm-active-lead-phone">Pilih Chat Customer...</div>
-                <select class="crm-stage-select" id="crm-stage-dropdown">
+                <div class="crm-phone-badge" id="crm-active-lead-phone">Pilih Chat...</div>
+                <select class="crm-stage-select" id="crm-brand-dropdown" title="Pilih Brand Pipeline">
+                    <option value="">Pilih Brand...</option>
+                </select>
+                <select class="crm-stage-select" id="crm-stage-dropdown" title="Pilih Stage Custom">
                     <option value="">Pilih Target Stage...</option>
                 </select>
                 <button class="crm-save-btn" id="crm-btn-update-stage">💾 Update Stage</button>
             `;
 
             (document.body || document.documentElement).appendChild(bar);
+
+            document.getElementById('crm-brand-dropdown').addEventListener('change', (e) => {
+                selectedAccountId = e.target.value;
+                populateStageDropdown();
+            });
+
             document.getElementById('crm-btn-update-stage').addEventListener('click', updateCurrentLeadStage);
-            populateDropdown();
+            
+            populateBrandDropdown();
+            populateStageDropdown();
         }
 
         if (!document.getElementById('crm-floating-fab-btn')) {
@@ -63,15 +71,41 @@
         }
     }
 
-    function populateDropdown() {
+    function populateBrandDropdown() {
+        const select = document.getElementById('crm-brand-dropdown');
+        if (!select) return;
+
+        select.innerHTML = '';
+        accountsData.forEach(acc => {
+            const opt = document.createElement('option');
+            opt.value = acc.id;
+            opt.textContent = `🏢 ${acc.name}`;
+            if (acc.id == selectedAccountId) opt.selected = true;
+            select.appendChild(opt);
+        });
+    }
+
+    function populateStageDropdown() {
         const select = document.getElementById('crm-stage-dropdown');
         if (!select) return;
 
         select.innerHTML = '<option value="">Pilih Target Stage...</option>';
-        availableStages.forEach(st => {
+
+        const currentAcc = accountsData.find(a => a.id == selectedAccountId) || accountsData[0];
+        const stages = (currentAcc && currentAcc.pipeline_stages) 
+            ? currentAcc.pipeline_stages 
+            : [
+                { name: 'Inquiry Masuk', order: 1 },
+                { name: 'Pitching', order: 2 },
+                { name: 'Meeting Call', order: 3 },
+                { name: 'Deal', order: 4 },
+                { name: 'Lost', order: 5 }
+            ];
+
+        stages.forEach(s => {
             const opt = document.createElement('option');
-            opt.value = st;
-            opt.textContent = st;
+            opt.value = s.name;
+            opt.textContent = `${s.order ? s.order + '. ' : ''}${s.name}`;
             select.appendChild(opt);
         });
     }
@@ -80,7 +114,6 @@
     function detectActiveChat() {
         injectFloatingUI();
 
-        // Query active chat title / header in WA Web DOM
         const headerContainer = document.querySelector('#main header');
         const phoneBadge = document.getElementById('crm-active-lead-phone');
 
@@ -100,7 +133,7 @@
                 }
             }
         } else {
-            if (phoneBadge && phoneBadge.textContent === 'Pilih Chat Customer...') {
+            if (phoneBadge && phoneBadge.textContent === 'Pilih Chat...') {
                 phoneBadge.textContent = 'Buka Chat Customer...';
             }
         }
@@ -111,7 +144,7 @@
         const select = document.getElementById('crm-stage-dropdown');
         const targetStage = select ? select.value : '';
 
-        if (!currentCustomerPhone || currentCustomerPhone === 'Pilih Chat Customer...') {
+        if (!currentCustomerPhone || currentCustomerPhone === 'Pilih Chat...') {
             return showToast('⚠️ Buka chat customer di WhatsApp Web dulu!');
         }
         if (!targetStage) {

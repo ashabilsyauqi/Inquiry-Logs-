@@ -279,7 +279,29 @@ Route::middleware(['auth'])->group(function () {
 
     // Extension API Endpoints
     Route::get('/api/extension/stages', function (Request $request) {
-        $waAccounts = WaAccount::with('pipelineStages')->get();
+        $phone = $request->input('phone');
+        $accountId = $request->input('account_id');
+
+        $query = WaAccount::with(['pipelineStages' => function ($q) {
+            $q->orderBy('order', 'asc');
+        }]);
+
+        if ($accountId) {
+            $query->where('id', $accountId);
+        } elseif ($phone) {
+            $sanitized = preg_replace('/[^0-9]/', '', $phone);
+            $query->where('phone', $sanitized)->orWhere('phone', 'LIKE', '%' . substr($sanitized, -8) . '%');
+        }
+
+        $waAccounts = $query->get();
+
+        // Fallback: If no account matched, return all accounts with ordered stages
+        if ($waAccounts->isEmpty()) {
+            $waAccounts = WaAccount::with(['pipelineStages' => function ($q) {
+                $q->orderBy('order', 'asc');
+            }])->get();
+        }
+
         return response()->json(['status' => 'success', 'accounts' => $waAccounts]);
     });
 
