@@ -343,6 +343,11 @@ Route::middleware(['auth'])->group(function () {
         return $webhookCtrl->handleDisconnectAlert($testRequest);
     });
 
+    // Supervisor CS Team Management Routes
+    Route::get('/brand/cs-team', [UserController::class, 'getCsTeam']);
+    Route::post('/brand/cs-team', [UserController::class, 'storeCsMember']);
+    Route::delete('/brand/cs-team/{id}', [UserController::class, 'destroyCsMember']);
+
     // CEO Dynamic SMTP Settings Routes
     Route::get('/admin/smtp-settings', function () {
         if (!Auth::user() || !Auth::user()->isCeo()) {

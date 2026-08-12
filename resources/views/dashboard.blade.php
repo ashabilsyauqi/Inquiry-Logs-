@@ -92,6 +92,14 @@
                             </span>
                             <span id="pendingBrandBadge" class="bg-[#da3633] text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-full hidden">0</span>
                         </button>
+                        @if(!$user->isCeo() || $accountId != 'all')
+                        <button onclick="openCsTeamModal()" class="w-full flex items-center justify-between px-2.5 py-2 rounded-md text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc] transition text-left">
+                            <span class="flex items-center gap-2.5">
+                                <svg class="w-4 h-4 fill-current text-[#79c0ff]" viewBox="0 0 16 16"><path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7zm4-6a3 3 0 100-6 3 3 0 000 6zm-5.784 6A2.238 2.238 0 015 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 005 9c-4 0-5 3-5 4 0 1 1 1 1 1h5.216zM4.5 8a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"></path></svg>
+                                <span>Kelola Tim & Admin CS</span>
+                            </span>
+                            <span id="csTeamBadge" class="bg-[#1f6feb]/20 text-[#58a6ff] text-[10px] font-bold px-1.5 py-0.5 rounded-full font-mono">0 CS</span>
+                        </button>
                         @endif
 
                         <button onclick="openDeviceModal()" class="w-full flex items-center justify-between px-2.5 py-2 rounded-md text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc] transition text-left">
@@ -311,7 +319,7 @@
                             </div>
 
                             <!-- Mini Stats Bar -->
-                            <div class="grid grid-cols-3 gap-1 bg-slate-50 p-2 rounded-xl border border-slate-100 text-center mb-3">
+                            <div class="grid grid-cols-4 gap-1 bg-slate-50 p-2 rounded-xl border border-slate-100 text-center mb-3">
                                 <div>
                                     <span class="text-[8px] font-bold text-slate-400 uppercase">Total</span>
                                     <p class="text-xs font-bold text-slate-800">{{ $totalAccLeads }}</p>
@@ -323,6 +331,10 @@
                                 <div>
                                     <span class="text-[8px] font-bold text-slate-400 uppercase">Deal</span>
                                     <p class="text-xs font-bold text-emerald-600">{{ $dealsCount }}</p>
+                                </div>
+                                <div>
+                                    <span class="text-[8px] font-bold text-slate-400 uppercase">Tim CS</span>
+                                    <p class="text-xs font-bold text-purple-600">{{ $acc->csTeam->count() }} CS</p>
                                 </div>
                             </div>
                         </div>
@@ -1061,9 +1073,86 @@
                     </button>
                 </div>
             </div>
+    <!-- Supervisor CS Team & Admin WA Recruitment Modal -->
+    <div id="csTeamManagementModal" class="fixed inset-0 bg-slate-950/70 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden border border-slate-100 animate-in fade-in duration-200">
+            <!-- Modal Header -->
+            <div class="px-6 py-4 bg-gradient-to-r from-blue-700 to-indigo-800 text-white flex justify-between items-center">
+                <div>
+                    <h3 class="font-bold text-lg flex items-center gap-2">
+                        👥 Kelola Tim & Admin CS WhatsApp
+                    </h3>
+                    <p class="text-xs text-blue-100">Rekrut dan kelola akun staff CS yang mengelola lead masuk brand ini</p>
+                </div>
+                <button onclick="closeCsTeamModal()" class="text-blue-100 hover:text-white text-2xl font-bold">&times;</button>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
+                <!-- Add New CS Form -->
+                <div class="bg-slate-50 border border-slate-200 p-5 rounded-2xl">
+                    <h4 class="font-bold text-slate-800 text-sm mb-3 flex items-center gap-2">
+                        <span>➕ Rekrut Admin CS Baru</span>
+                        <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">Langsung Aktif</span>
+                    </h4>
+                    <form id="createCsForm" onsubmit="submitCreateCsMember(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Nama Admin CS *</label>
+                            <input type="text" id="cs_name" required placeholder="Contoh: Wijaya CS 1" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 outline-none font-semibold">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Email Login CS *</label>
+                            <input type="email" id="cs_email" required placeholder="cs1@difitech.co.id" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">No. WhatsApp (Opsional)</label>
+                            <input type="text" id="cs_phone" placeholder="628123456789" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 outline-none font-mono">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Password CS *</label>
+                            <input type="password" id="cs_password" required placeholder="••••••••" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+                        <div class="sm:col-span-2 lg:col-span-4 flex justify-end">
+                            <button type="submit" id="btnSubmitCs" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-sm transition flex items-center gap-2">
+                                🚀 Simpan & Rekrut Admin CS
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- CS Team List Table -->
+                <div>
+                    <h4 class="font-bold text-slate-800 text-sm mb-3 flex items-center justify-between">
+                        <span>Daftar Tim Admin CS Terdaftar</span>
+                        <span id="csTeamTableCount" class="text-xs text-slate-500 font-normal">0 Data</span>
+                    </h4>
+                    <div class="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-100 text-slate-600 font-bold uppercase tracking-wider border-b border-slate-200">
+                                <tr>
+                                    <th class="p-3">Nama Admin CS</th>
+                                    <th class="p-3">Email Login</th>
+                                    <th class="p-3">No. WhatsApp</th>
+                                    <th class="p-3">Role Status</th>
+                                    <th class="p-3 text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="csTeamTableBody" class="divide-y divide-slate-100 text-slate-700">
+                                <tr><td colspan="5" class="p-6 text-center text-slate-400">Memuat data tim CS...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+                <button onclick="closeCsTeamModal()" class="px-5 py-2 bg-slate-200 text-slate-700 font-medium text-xs rounded-xl hover:bg-slate-300 transition">
+                    Tutup
+                </button>
+            </div>
         </div>
     </div>
-    @endif
 
     <script>
         let isModalOpen = false;
@@ -1158,13 +1247,147 @@
             if (secKanban) secKanban.classList.toggle('hidden', tabName !== 'all' && tabName !== 'kanban');
         }
 
-        // Chart.js Trend Analytics Initialization
         document.addEventListener('DOMContentLoaded', function() {
             if (document.getElementById('inquiryChart')) {
                 initInquiryChart();
             }
             loadPendingBadgeCount();
+            loadCsTeamCount();
         });
+
+        function loadCsTeamCount() {
+            const badge = document.getElementById('csTeamBadge');
+            if (!badge) return;
+            const accId = '{{ $accountId }}';
+            fetch('/brand/cs-team?account_id=' + accId)
+                .then(res => res.json())
+                .then(data => {
+                    const list = data.csTeam || [];
+                    badge.innerText = list.length + ' CS';
+                })
+                .catch(err => {});
+        }
+
+        function openCsTeamModal() {
+            isModalOpen = true;
+            document.getElementById('csTeamManagementModal').classList.remove('hidden');
+            loadCsTeamList();
+        }
+
+        function closeCsTeamModal() {
+            isModalOpen = false;
+            document.getElementById('csTeamManagementModal').classList.add('hidden');
+        }
+
+        function loadCsTeamList() {
+            const tbody = document.getElementById('csTeamTableBody');
+            const badge = document.getElementById('csTeamBadge');
+            const countLabel = document.getElementById('csTeamTableCount');
+            if (!tbody) return;
+
+            const accId = '{{ $accountId }}';
+            fetch('/brand/cs-team?account_id=' + accId)
+                .then(res => res.json())
+                .then(data => {
+                    const list = data.csTeam || [];
+                    if (badge) badge.innerText = list.length + ' CS';
+                    if (countLabel) countLabel.innerText = list.length + ' Data Admin CS';
+
+                    if (list.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400 font-medium">Belum ada Admin CS terdaftar. Gunakan form di atas untuk merekrut Admin CS baru.</td></tr>`;
+                        return;
+                    }
+
+                    tbody.innerHTML = list.map(cs => `
+                        <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+                            <td class="p-3 font-bold text-slate-800 flex items-center gap-2">
+                                👤 ${cs.name}
+                            </td>
+                            <td class="p-3 text-slate-600 font-mono">
+                                ${cs.email}
+                            </td>
+                            <td class="p-3 text-slate-600 font-mono">
+                                ${cs.phone ? '+' + cs.phone : '<span class="text-slate-400 font-sans italic">-</span>'}
+                            </td>
+                            <td class="p-3">
+                                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                                    🎧 Sales Admin CS
+                                </span>
+                            </td>
+                            <td class="p-3 text-right">
+                                <button onclick="deleteCsMember(${cs.id}, '${cs.name}')" class="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-600 font-semibold text-xs rounded-lg transition border border-red-200">
+                                    🗑️ Hapus
+                                </button>
+                            </td>
+                        </tr>
+                    `).join('');
+                })
+                .catch(err => {
+                    tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-rose-500 font-semibold">Gagal memuat daftar tim CS.</td></tr>`;
+                });
+        }
+
+        function submitCreateCsMember(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSubmitCs');
+            const name = document.getElementById('cs_name').value;
+            const email = document.getElementById('cs_email').value;
+            const phone = document.getElementById('cs_phone').value;
+            const password = document.getElementById('cs_password').value;
+            const wa_account_id = '{{ $accountId }}';
+
+            btn.disabled = true;
+            btn.innerText = 'Memproses...';
+
+            fetch('/brand/cs-team', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ name, email, phone, password, wa_account_id })
+            })
+            .then(res => res.json())
+            .then(data => {
+                btn.disabled = false;
+                btn.innerText = '🚀 Simpan & Rekrut Admin CS';
+                if (data.status === 'success') {
+                    showToastNotification('✅ ' + data.message);
+                    document.getElementById('createCsForm').reset();
+                    loadCsTeamList();
+                } else {
+                    alert('Gagal: ' + (data.message || data.error || 'Terjadi kesalahan'));
+                }
+            })
+            .catch(err => {
+                btn.disabled = false;
+                btn.innerText = '🚀 Simpan & Rekrut Admin CS';
+                alert('Gagal merekrut Admin CS. Pastikan email belum pernah terdaftar.');
+            });
+        }
+
+        function deleteCsMember(id, name) {
+            if (!confirm('Apakah Anda yakin ingin menghapus Admin CS "' + name + '" dari tim brand ini?')) return;
+
+            fetch('/brand/cs-team/' + id, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showToastNotification('✅ ' + data.message);
+                    loadCsTeamList();
+                } else {
+                    alert('Gagal: ' + (data.message || data.error));
+                }
+            })
+            .catch(err => {
+                alert('Gagal menghapus Admin CS.');
+            });
+        }
 
         function initInquiryChart() {
             const ctx = document.getElementById('inquiryChart').getContext('2d');

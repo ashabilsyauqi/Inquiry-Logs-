@@ -27,6 +27,11 @@ class WaAccount extends Model
         return $this->belongsTo(User::class, 'supervisor_id');
     }
 
+    public function csTeam()
+    {
+        return $this->hasMany(User::class, 'wa_account_id');
+    }
+
     public function leads()
     {
         return $this->hasMany(Lead::class);
