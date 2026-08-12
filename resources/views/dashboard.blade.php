@@ -1073,6 +1073,10 @@
                     </button>
                 </div>
             </div>
+        </div>
+    </div>
+    @endif
+
     <!-- Supervisor CS Team & Admin WA Recruitment Modal -->
     <div id="csTeamManagementModal" class="fixed inset-0 bg-slate-950/70 hidden flex items-center justify-center z-50 p-4">
         <div class="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden border border-slate-100 animate-in fade-in duration-200">
