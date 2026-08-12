@@ -58,7 +58,14 @@
                 </button>
 
                 @if($user->isCeo())
-                <button onclick="openUserManagementModal()" class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-gradient-to-r from-purple-900/40 to-indigo-900/40 text-purple-200 border border-purple-700/50 hover:bg-purple-800/50 transition text-left mt-4">
+                <button onclick="openBrandManagementModal()" class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-900/40 to-teal-900/40 text-emerald-200 border border-emerald-700/50 hover:bg-emerald-800/50 transition text-left mt-3">
+                    <span class="flex items-center gap-3 font-semibold">
+                        <span class="text-base">🏢</span> Brand Management
+                    </span>
+                    <span class="bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">CRUD</span>
+                </button>
+
+                <button onclick="openUserManagementModal()" class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-gradient-to-r from-purple-900/40 to-indigo-900/40 text-purple-200 border border-purple-700/50 hover:bg-purple-800/50 transition text-left mt-2">
                     <span class="flex items-center gap-3 font-semibold">
                         <span class="text-base">👥</span> User Approval
                     </span>
@@ -721,6 +728,101 @@
         </div>
     </div>
 
+    <!-- CEO Brand Management Modal (Full CRUD) -->
+    @if($user->isCeo())
+    <div id="brandManagementModal" class="fixed inset-0 bg-slate-950/70 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="px-6 py-5 bg-gradient-to-r from-emerald-800 to-teal-800 text-white flex justify-between items-center">
+                <div>
+                    <h3 class="text-xl font-bold flex items-center gap-2">
+                        🏢 Brand & Account Management (CEO)
+                    </h3>
+                    <p class="text-xs text-emerald-100 mt-0.5">Kelola Akun Brand, Nomor WA Terhubung, & Fitur CRUD</p>
+                </div>
+                <button onclick="closeBrandManagementModal()" class="text-emerald-100 hover:text-white text-2xl font-bold">&times;</button>
+            </div>
+
+            <div class="p-6 overflow-y-auto flex-1 space-y-6">
+                <!-- Create New Brand Section -->
+                <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 space-y-3">
+                    <h4 class="font-bold text-emerald-900 text-sm flex items-center gap-2">
+                        ➕ Tambah Brand Baru
+                    </h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-5 gap-3">
+                        <div class="sm:col-span-2">
+                            <input type="text" id="newBrandNameInput" placeholder="Nama Brand (Contoh: Skincare CS 1)" class="w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
+                        </div>
+                        <div class="sm:col-span-2">
+                            <input type="text" id="newBrandPhoneInput" placeholder="Nomor WA (Opsional: 628123...)" class="w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
+                        </div>
+                        <div class="sm:col-span-1">
+                            <button onclick="createNewBrandSubmit()" class="w-full px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg transition shadow-sm">
+                                + Simpan
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Brand Accounts Table List -->
+                <div>
+                    <h4 class="font-bold text-slate-800 text-sm mb-3">Daftar Brand & Akun WA Terdaftar</h4>
+                    <div class="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-100 text-slate-600 font-bold border-b border-slate-200">
+                                <tr>
+                                    <th class="p-3">Nama Brand</th>
+                                    <th class="p-3">Nomor WA</th>
+                                    <th class="p-3">Status Device</th>
+                                    <th class="p-3">Session ID</th>
+                                    <th class="p-3 text-right">Aksi (CRUD)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="brandManagementTableBody" class="divide-y divide-slate-100 bg-white">
+                                <tr>
+                                    <td colspan="5" class="p-6 text-center text-slate-400">Memuat data brand...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end">
+                <button onclick="closeBrandManagementModal()" class="px-5 py-2 bg-slate-200 text-slate-700 font-medium text-sm rounded-lg hover:bg-slate-300 transition">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Brand Modal -->
+    <div id="editBrandModal" class="fixed inset-0 bg-slate-950/70 hidden flex items-center justify-center z-[60] p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h4 class="font-bold text-slate-900 text-base">✏️ Edit Data Brand</h4>
+                <button onclick="closeEditBrandModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+            </div>
+            <input type="hidden" id="editBrandId">
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Brand</label>
+                <input type="text" id="editBrandName" class="w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1">Nomor WA Terhubung</label>
+                <input type="text" id="editBrandPhone" placeholder="628123456789" class="w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
+            </div>
+            <div class="flex justify-end gap-2 pt-3">
+                <button onclick="closeEditBrandModal()" class="px-4 py-2 bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg hover:bg-slate-300">
+                    Batal
+                </button>
+                <button onclick="saveBrandEditSubmit()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg shadow-sm">
+                    💾 Simpan Perubahan
+                </button>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <!-- CEO User Approval & Management Modal -->
     @if($user->isCeo())
     <div id="userManagementModal" class="fixed inset-0 bg-slate-950/70 hidden flex items-center justify-center z-50 p-4">
@@ -1264,6 +1366,148 @@
         function closeQrSection() {
             document.getElementById('qrSection').classList.add('hidden');
             if (activeQrPollInterval) clearInterval(activeQrPollInterval);
+        }
+
+        // --- BRAND MANAGEMENT (CEO FULL CRUD) ---
+        let allBrandsCache = [];
+
+        function openBrandManagementModal() {
+            const modal = document.getElementById('brandManagementModal');
+            if (modal) modal.classList.remove('hidden');
+            loadBrandManagementTable();
+        }
+
+        function closeBrandManagementModal() {
+            const modal = document.getElementById('brandManagementModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function loadBrandManagementTable() {
+            const tbody = document.getElementById('brandManagementTableBody');
+            if (!tbody) return;
+
+            fetch('/wa-accounts')
+                .then(res => res.json())
+                .then(data => {
+                    allBrandsCache = data;
+                    if (!data || data.length === 0) {
+                        tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">Belum ada brand terdaftar. Klik "+ Tambah Brand Baru" di atas.</td></tr>`;
+                        return;
+                    }
+
+                    tbody.innerHTML = data.map(b => `
+                        <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+                            <td class="p-3 font-bold text-slate-800 flex items-center gap-2">
+                                🏢 ${b.name}
+                            </td>
+                            <td class="p-3 text-slate-600 font-mono">
+                                ${b.phone ? '+' + b.phone : '<span class="text-slate-400 font-sans italic">Belum di-set</span>'}
+                            </td>
+                            <td class="p-3">
+                                <span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${b.status === 'CONNECTED' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">
+                                    ${b.status === 'CONNECTED' ? '🟢 TERHUBUNG' : '🔴 TERPUTUS'}
+                                </span>
+                            </td>
+                            <td class="p-3 text-slate-400 font-mono text-[11px]">
+                                ${b.session_id}
+                            </td>
+                            <td class="p-3 text-right">
+                                <div class="flex justify-end gap-1.5">
+                                    <a href="/?filter={{ $filter }}&account_id=${b.id}" class="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold rounded-lg border border-blue-200 transition">
+                                        📊 Dashboard
+                                    </a>
+                                    <button onclick="openEditBrandModal(${b.id})" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 font-semibold rounded-lg border border-amber-200 transition">
+                                        ✏️ Edit
+                                    </button>
+                                    <button onclick="deleteBrandSubmit(${b.id}, '${b.name}')" class="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-600 font-semibold rounded-lg transition">
+                                        🗑️ Hapus
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `).join('');
+                });
+        }
+
+        function createNewBrandSubmit() {
+            const nameInput = document.getElementById('newBrandNameInput');
+            const phoneInput = document.getElementById('newBrandPhoneInput');
+            const name = nameInput ? nameInput.value.trim() : '';
+            const phone = phoneInput ? phoneInput.value.trim() : '';
+
+            if (!name) return alert('Silakan ketik Nama Brand terlebih dahulu.');
+
+            fetch('/wa-accounts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                body: JSON.stringify({ name, phone })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    if (nameInput) nameInput.value = '';
+                    if (phoneInput) phoneInput.value = '';
+                    showToastNotification('✅ Brand Baru Berhasil Dibuat!');
+                    loadBrandManagementTable();
+                    loadWaAccounts();
+                } else {
+                    alert('Gagal membuat brand baru.');
+                }
+            });
+        }
+
+        function openEditBrandModal(brandId) {
+            const brand = allBrandsCache.find(b => b.id == brandId);
+            if (!brand) return;
+
+            document.getElementById('editBrandId').value = brand.id;
+            document.getElementById('editBrandName').value = brand.name || '';
+            document.getElementById('editBrandPhone').value = brand.phone || '';
+            document.getElementById('editBrandModal').classList.remove('hidden');
+        }
+
+        function closeEditBrandModal() {
+            document.getElementById('editBrandModal').classList.add('hidden');
+        }
+
+        function saveBrandEditSubmit() {
+            const id = document.getElementById('editBrandId').value;
+            const name = document.getElementById('editBrandName').value.trim();
+            const phone = document.getElementById('editBrandPhone').value.trim();
+
+            if (!name) return alert('Nama Brand tidak boleh kosong.');
+
+            fetch('/wa-accounts/' + id + '/update', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                body: JSON.stringify({ name, phone })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    closeEditBrandModal();
+                    showToastNotification('✅ Data Brand Berhasil Diperbarui!');
+                    loadBrandManagementTable();
+                    loadWaAccounts();
+                } else {
+                    alert('Gagal memperbarui brand.');
+                }
+            });
+        }
+
+        function deleteBrandSubmit(id, name) {
+            if (!confirm(`Yakin ingin menghapus Brand "${name}"? Seluruh stage & lead terkait akan terhapus!`)) return;
+
+            fetch('/wa-accounts/' + id + '/delete', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                showToastNotification('🗑️ Brand Berhasil Dihapus.');
+                loadBrandManagementTable();
+                loadWaAccounts();
+            });
         }
 
         // CEO User Approval Logic

@@ -162,17 +162,40 @@ Route::middleware(['auth'])->group(function () {
     });
 
     Route::post('/wa-accounts', function (Request $request) {
-        $name = $request->input('name', 'New WA Account');
+        $name = $request->input('name', 'New Brand Account');
+        $phoneInput = $request->input('phone');
+        $phone = $phoneInput ? preg_replace('/[^0-9]/', '', $phoneInput) : null;
         $sessionId = 'session_' . time();
 
         $account = WaAccount::create([
             'name' => $name,
+            'phone' => $phone,
             'session_id' => $sessionId,
             'status' => 'DISCONNECTED'
         ]);
         $account->ensureDefaultStages();
 
         return response()->json(['status' => 'success', 'account' => $account]);
+    });
+
+    Route::post('/wa-accounts/{id}/update', function (Request $request, $id) {
+        $account = WaAccount::findOrFail($id);
+        if ($request->has('name')) {
+            $account->name = $request->input('name');
+        }
+        if ($request->has('phone')) {
+            $phone = preg_replace('/[^0-9]/', '', $request->input('phone'));
+            $account->phone = $phone ?: null;
+        }
+        if ($request->has('session_id')) {
+            $account->session_id = $request->input('session_id');
+        }
+        if ($request->has('status')) {
+            $account->status = $request->input('status');
+        }
+        $account->save();
+
+        return response()->json(['status' => 'success', 'message' => 'Data Brand Berhasil Diperbarui!', 'account' => $account]);
     });
 
     Route::post('/wa-accounts/{id}/delete', function ($id) {
