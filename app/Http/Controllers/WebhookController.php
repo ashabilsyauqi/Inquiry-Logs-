@@ -282,10 +282,13 @@ class WebhookController extends Controller
                 ]);
             }
 
-            // Send Email Notification Alert to Brand Supervisor (To:) and CC to CEO Users
+            // Send Email Notification Alert to Admin CS Team & Brand Supervisor (To:) and CC to CEO Users
             $supervisor = $waAccount->supervisor;
             $supervisorEmail = $supervisor ? $supervisor->email : null;
             $supervisorName = $supervisor ? $supervisor->name : 'Supervisor Brand';
+
+            // Get Admin CS Emails assigned to this brand
+            $csEmails = $waAccount->csTeam ? $waAccount->csTeam->pluck('email')->filter()->toArray() : [];
 
             // Get CEO Emails for CC
             $ceoEmails = User::where('role', 'CEO')->pluck('email')->toArray();
@@ -293,9 +296,13 @@ class WebhookController extends Controller
                 $ceoEmails = ['ashabil@difitech.id'];
             }
 
-            // Primary Recipient: Supervisor email if available, otherwise fall back to CEO
-            $primaryTo = $supervisorEmail ?: implode(', ', $ceoEmails);
+            // Combine primary recipients: Admin CS Team + Supervisor
+            $toRecipients = array_values(array_unique(array_filter(array_merge($csEmails, [$supervisorEmail]))));
+            if (empty($toRecipients)) {
+                $toRecipients = $ceoEmails;
+            }
 
+            $primaryToText = implode(', ', $toRecipients);
             $accountName = $waAccount->name;
             $phone = $waAccount->phone ?: 'Belum Terhubung';
             $intervalText = ($intervalSeconds < 60) ? "{$intervalSeconds} Detik (Testing Mode)" : ($intervalSeconds / 60) . " Menit";
@@ -310,13 +317,13 @@ class WebhookController extends Controller
                         <h2 style='color: #dc2626; margin: 0;'>⚠️ PERINGATAN WA BRAND TERPUTUS</h2>
                         <p style='color: #64748b; font-size: 13px;'>Sistem Deteksi Otomatis CRM MVP</p>
                     </div>
-                    <p>Halo <strong>{$supervisorName}</strong> (Supervisor Brand {$accountName}),</p>
+                    <p>Halo <strong>Tim CS & Supervisor Brand {$accountName}</strong>,</p>
                     <p>Perangkat WhatsApp untuk brand <strong>{$accountName}</strong> (No: <code>{$phone}</code>) saat ini dalam status <span style='color: #dc2626; font-weight: bold;'>TERPUTUS (DISCONNECTED)</span>.</p>
                     
                     <div style='background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 14px; margin: 15px 0; border-radius: 6px;'>
                         <strong>Detail Peringatan:</strong><br/>
                         • <strong>Brand / Device:</strong> {$accountName}<br/>
-                        • <strong>Supervisor:</strong> {$supervisorName} ({$primaryTo})<br/>
+                        • <strong>Penerima Alert:</strong> {$primaryToText}<br/>
                         • <strong>CC CEO:</strong> " . implode(', ', $ceoEmails) . "<br/>
                         • <strong>Alasan:</strong> {$reason}<br/>
                         • <strong>Waktu Kejadian:</strong> " . now()->format('d M Y - H:i:s') . " WIB<br/>
@@ -331,7 +338,7 @@ class WebhookController extends Controller
                         </a>
                     </p>
                     <hr style='border: none; border-top: 1px solid #e2e8f0; margin-top: 30px;' />
-                    <p style='font-size: 11px; color: #94a3b8; text-align: center;'>Pesan notifikasi otomatis ini dikirimkan ke Supervisor Brand & CC ke CEO ({$ceoEmails[0]}).</p>
+                    <p style='font-size: 11px; color: #94a3b8; text-align: center;'>Pesan notifikasi darurat ini dikirimkan otomatis ke Admin CS, Supervisor Brand & CC ke CEO ({$ceoEmails[0]}).</p>
                 </div>
             </body>
             </html>
@@ -341,8 +348,8 @@ class WebhookController extends Controller
             \App\Models\SmtpSetting::applyConfig();
 
             try {
-                \Illuminate\Support\Facades\Mail::html($htmlBody, function ($message) use ($primaryTo, $ceoEmails, $subject) {
-                    $message->to($primaryTo)
+                \Illuminate\Support\Facades\Mail::html($htmlBody, function ($message) use ($toRecipients, $ceoEmails, $subject) {
+                    $message->to($toRecipients)
                         ->subject($subject);
                     if (!empty($ceoEmails)) {
                         $message->cc($ceoEmails);
@@ -358,13 +365,13 @@ class WebhookController extends Controller
                 if (!empty($ceoEmails)) {
                     $headers .= "Cc: " . implode(', ', $ceoEmails) . "\r\n";
                 }
-                @mail($primaryTo, $subject, $htmlBody, $headers);
+                @mail($primaryToText, $subject, $htmlBody, $headers);
             }
 
             $waAccount->last_disconnect_email_sent_at = now();
             $waAccount->save();
 
-            Log::warning("⚠️ DISCONNECTION EMAIL ALERT DISPATCHED to Supervisor ({$primaryTo}) & CC CEO for Account {$accountName} ({$sessionId})");
+            Log::warning("⚠️ DISCONNECTION EMAIL ALERT DISPATCHED to Admin CS & Supervisor ({$primaryToText}) & CC CEO for Account {$accountName} ({$sessionId})");
         }
 
         return response()->json(['status' => 'success', 'message' => 'Disconnection alert processed & emails dispatched']);
