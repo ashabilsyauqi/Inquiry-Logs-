@@ -11,13 +11,21 @@ class WaAccount extends Model
 
     protected $fillable = [
         'name',
+        'category',
         'phone',
         'session_id',
         'status',
+        'approval_status',
+        'supervisor_id',
         'disconnect_email_enabled',
         'disconnect_email_interval',
         'last_disconnect_email_sent_at',
     ];
+
+    public function supervisor()
+    {
+        return $this->belongsTo(User::class, 'supervisor_id');
+    }
 
     public function leads()
     {

@@ -295,10 +295,10 @@ Route::middleware(['auth'])->group(function () {
         return response()->json(['status' => 'success']);
     });
 
-    // CEO User Approval Routes
-    Route::get('/users', [UserController::class, 'index']);
-    Route::post('/users/{id}/approve', [UserController::class, 'approve']);
-    Route::post('/users/{id}/reject', [UserController::class, 'reject']);
+    // CEO Brand & Supervisor Approval Routes
+    Route::get('/brand-approvals', [UserController::class, 'index']);
+    Route::post('/brand-approvals/{id}/approve', [UserController::class, 'approveBrand']);
+    Route::post('/brand-approvals/{id}/reject', [UserController::class, 'rejectBrand']);
 
     // WA Disconnect Email Alert Settings & Testing Routes
     Route::post('/wa-accounts/{id}/update-disconnect-settings', function (Request $request, $id) {

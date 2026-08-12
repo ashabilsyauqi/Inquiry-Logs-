@@ -30,12 +30,12 @@ class AuthController extends Controller
             return back()->withErrors(['email' => 'Email atau password salah.'])->withInput();
         }
 
-        if ($user->status === 'PENDING') {
-            return back()->withErrors(['email' => '⏳ Akun Anda masih dalam proses peninjauan oleh CEO/Owner. Silakan hubungi CEO untuk persetujuan (Approval).'])->withInput();
+        if ($user->status === 'PENDING' || ($user->waAccount && $user->waAccount->approval_status === 'PENDING')) {
+            return back()->withErrors(['email' => '⏳ Pendaftaran Brand & Akun Supervisor Anda masih dalam proses peninjauan & persetujuan (Approval) oleh CEO/Owner.'])->withInput();
         }
 
-        if ($user->status === 'REJECTED') {
-            return back()->withErrors(['email' => '❌ Pendaftaran akun Anda ditolak oleh CEO/Owner.'])->withInput();
+        if ($user->status === 'REJECTED' || ($user->waAccount && $user->waAccount->approval_status === 'REJECTED')) {
+            return back()->withErrors(['email' => '❌ Pendaftaran Brand / Akun Supervisor Anda ditolak oleh CEO/Owner.'])->withInput();
         }
 
         Auth::login($user, $request->has('remember'));
@@ -58,17 +58,40 @@ class AuthController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:6|confirmed',
+            'brand_name' => 'required|string|max:255',
+            'category' => 'nullable|string|max:255',
+            'brand_phone' => 'nullable|string|max:50',
+            'supervisor_phone' => 'nullable|string|max:50',
         ]);
 
-        User::create([
+        $brandPhone = $request->brand_phone ? preg_replace('/[^0-9]/', '', $request->brand_phone) : null;
+        $supervisorPhone = $request->supervisor_phone ? preg_replace('/[^0-9]/', '', $request->supervisor_phone) : null;
+
+        // 1. Create Pending Brand
+        $waAccount = WaAccount::create([
+            'name' => $request->brand_name,
+            'category' => $request->category ?: 'General Business',
+            'phone' => $brandPhone,
+            'session_id' => 'session_brand_' . time(),
+            'status' => 'DISCONNECTED',
+            'approval_status' => 'PENDING',
+        ]);
+
+        // 2. Create Pending Supervisor User
+        $supervisor = User::create([
             'name' => $request->name,
             'email' => $request->email,
+            'phone' => $supervisorPhone,
             'password' => Hash::make($request->password),
-            'role' => 'ADMIN',
+            'role' => 'SUPERVISOR',
             'status' => 'PENDING',
+            'wa_account_id' => $waAccount->id,
         ]);
 
-        return redirect('/login')->with('status', 'Pendaftaran berhasil! Akun Anda telah dikirim ke CEO/Owner untuk persetujuan (Approval).');
+        $waAccount->supervisor_id = $supervisor->id;
+        $waAccount->save();
+
+        return redirect('/login')->with('status', '✅ Pendaftaran Brand "' . $request->brand_name . '" & Akun Supervisor Berhasil! Pengajuan telah dikirim ke CEO/Owner untuk persetujuan (Approval).');
     }
 
     public function logout(Request $request)

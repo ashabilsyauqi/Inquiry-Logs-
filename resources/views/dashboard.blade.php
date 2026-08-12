@@ -85,12 +85,12 @@
                             <span class="bg-[#1f6feb]/15 text-[#58a6ff] border border-[#1f6feb]/30 text-[9px] font-semibold px-1.5 py-0.5 rounded">CRUD</span>
                         </button>
 
-                        <button onclick="openUserManagementModal()" class="w-full flex items-center justify-between px-2.5 py-2 rounded-md text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc] transition text-left">
+                        <button onclick="openBrandApprovalModal()" class="w-full flex items-center justify-between px-2.5 py-2 rounded-md text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc] transition text-left">
                             <span class="flex items-center gap-2.5">
                                 <svg class="w-4 h-4 fill-current text-[#d2a8ff]" viewBox="0 0 16 16"><path d="M5.5 5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zm5 6c0-1.5-3-2.25-5-2.25S.5 9.5.5 11V12h10v-1zM11.5 5a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5zm2.25 6c0-.85-.92-1.63-2.25-2.02.58.45 1 1.05 1 1.77V12h3.25v-1z"></path></svg>
-                                <span>User Approvals</span>
+                                <span>Brand Approvals</span>
                             </span>
-                            <span id="pendingBadge" class="bg-[#da3633] text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-full hidden">0</span>
+                            <span id="pendingBrandBadge" class="bg-[#da3633] text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-full hidden">0</span>
                         </button>
                         @endif
 
@@ -951,29 +951,29 @@
     </div>
     @endif
 
-    <!-- CEO User Approval & Management Modal -->
+    <!-- CEO Brand & Supervisor Approval Modal -->
     @if($user->isCeo())
-    <div id="userManagementModal" class="fixed inset-0 bg-slate-950/70 hidden flex items-center justify-center z-50 p-4">
-        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col max-h-[90vh]">
+    <div id="brandApprovalModal" class="fixed inset-0 bg-slate-950/70 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]">
             <div class="px-6 py-5 bg-gradient-to-r from-purple-900 to-indigo-900 text-white flex justify-between items-center">
                 <div>
                     <h3 class="text-xl font-bold flex items-center gap-2">
-                        👥 User Approval & Sales Admin Management
+                        🏢 Brand & Supervisor Approvals (CEO)
                     </h3>
-                    <p class="text-xs text-purple-200 mt-0.5">Persetujuan Registrasi User Baru & Alokasi WA Pipeline Sales</p>
+                    <p class="text-xs text-purple-200 mt-0.5">Persetujuan Pendaftaran Brand Baru & Alokasi Supervisor Penanggung Jawab</p>
                 </div>
-                <button onclick="closeUserManagementModal()" class="text-purple-200 hover:text-white text-2xl font-bold">&times;</button>
+                <button onclick="closeBrandApprovalModal()" class="text-purple-200 hover:text-white text-2xl font-bold">&times;</button>
             </div>
 
             <div class="p-6 overflow-y-auto flex-1 space-y-4">
-                <h4 class="font-bold text-slate-800 text-sm border-b pb-2">Daftar Pendaftaran User & Akses Admin</h4>
-                <div id="userListContainer" class="space-y-3">
-                    <div class="text-center py-8 text-slate-400 text-sm">Memuat data pendaftaran user...</div>
+                <h4 class="font-bold text-slate-800 text-sm border-b pb-2">Daftar Pengajuan Pendaftaran Brand & Supervisor</h4>
+                <div id="brandApprovalListContainer" class="space-y-3">
+                    <div class="text-center py-8 text-slate-400 text-sm">Memuat pengajuan pendaftaran brand...</div>
                 </div>
             </div>
 
             <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex justify-end">
-                <button onclick="closeUserManagementModal()" class="px-5 py-2 bg-slate-200 text-slate-700 font-medium text-sm rounded-lg hover:bg-slate-300 transition">
+                <button onclick="closeBrandApprovalModal()" class="px-5 py-2 bg-slate-200 text-slate-700 font-medium text-sm rounded-lg hover:bg-slate-300 transition">
                     Tutup
                 </button>
             </div>
@@ -1638,27 +1638,27 @@
             });
         }
 
-        // CEO User Approval Logic
-        function openUserManagementModal() {
-            isModalOpen = true;
-            document.getElementById('userManagementModal').classList.remove('hidden');
-            loadUserList();
+        // --- CEO BRAND & SUPERVISOR APPROVAL LOGIC ---
+        function openBrandApprovalModal() {
+            const modal = document.getElementById('brandApprovalModal');
+            if (modal) modal.classList.remove('hidden');
+            loadBrandApprovalList();
         }
 
-        function closeUserManagementModal() {
-            isModalOpen = false;
-            document.getElementById('userManagementModal').classList.add('hidden');
+        function closeBrandApprovalModal() {
+            const modal = document.getElementById('brandApprovalModal');
+            if (modal) modal.classList.add('hidden');
         }
 
-        function loadPendingBadgeCount() {
-            fetch('/users')
+        function loadPendingBrandBadgeCount() {
+            fetch('/brand-approvals')
                 .then(res => res.json())
                 .then(res => {
-                    const pending = res.users.filter(u => u.status === 'PENDING').length;
-                    const badge = document.getElementById('pendingBadge');
+                    const pendingCount = res.pendingBrands ? res.pendingBrands.length : 0;
+                    const badge = document.getElementById('pendingBrandBadge');
                     if (badge) {
-                        if (pending > 0) {
-                            badge.textContent = pending;
+                        if (pendingCount > 0) {
+                            badge.textContent = pendingCount;
                             badge.classList.remove('hidden');
                         } else {
                             badge.classList.add('hidden');
@@ -1668,83 +1668,103 @@
                 .catch(() => {});
         }
 
-        function loadUserList() {
-            fetch('/users')
+        function loadBrandApprovalList() {
+            fetch('/brand-approvals')
                 .then(res => res.json())
                 .then(res => {
-                    const container = document.getElementById('userListContainer');
-                    const users = res.users;
-                    const waAccounts = res.waAccounts;
+                    const container = document.getElementById('brandApprovalListContainer');
+                    if (!container) return;
 
-                    if (users.length === 0) {
-                        container.innerHTML = `<div class="p-6 bg-slate-50 text-center text-slate-500 text-sm rounded-xl">Belum ada user terdaftar.</div>`;
+                    const pending = res.pendingBrands || [];
+                    const approved = res.approvedBrands || [];
+
+                    if (pending.length === 0 && approved.length === 0) {
+                        container.innerHTML = `<div class="p-6 bg-slate-50 text-center text-slate-500 text-sm rounded-xl">Belum ada pengajuan pendaftaran brand.</div>`;
                         return;
                     }
 
-                    container.innerHTML = users.map(u => `
-                        <div class="p-4 bg-white border border-slate-200 rounded-xl flex flex-col md:flex-row justify-between items-center gap-3">
-                            <div>
-                                <div class="font-bold text-slate-900 text-sm flex items-center gap-2">
-                                    ${u.name}
-                                    <span class="px-2 py-0.5 text-[10px] font-bold rounded-full ${u.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-800' : (u.status === 'PENDING' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800')}">
-                                        ${u.status}
-                                    </span>
+                    let html = '';
+                    if (pending.length > 0) {
+                        html += `<div class="mb-3"><h5 class="text-xs font-bold text-amber-700 uppercase tracking-wider mb-2">⏳ Menunggu Persetujuan CEO (${pending.length})</h5></div>`;
+                        html += pending.map(b => `
+                            <div class="p-4 bg-amber-50/70 border border-amber-200 rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                                <div>
+                                    <div class="font-extrabold text-slate-900 text-sm flex items-center gap-2">
+                                        🏢 ${b.name}
+                                        <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-amber-100 text-amber-800">
+                                            PENDING APPROVAL
+                                        </span>
+                                    </div>
+                                    <p class="text-xs text-slate-600 mt-1">
+                                        <strong>Supervisor:</strong> ${b.supervisor ? b.supervisor.name : '-'} (${b.supervisor ? b.supervisor.email : '-'})
+                                    </p>
+                                    <p class="text-[11px] text-slate-500 mt-0.5">
+                                        Industri: <span class="font-semibold text-slate-700">${b.category || 'General'}</span> | WA Brand: <span class="font-mono text-slate-700">${b.phone ? '+' + b.phone : 'Belum di-set'}</span>
+                                    </p>
                                 </div>
-                                <div class="text-xs text-slate-500 mt-0.5">${u.email}</div>
-                                <div class="text-xs text-purple-700 mt-1 font-semibold">
-                                    Alokasi Pipeline: ${u.wa_account ? u.wa_account.name : 'Belum Ada (Semua/Locked)'}
+                                <div class="flex items-center gap-2 w-full md:w-auto">
+                                    <button onclick="approveBrandSubmit(${b.id}, '${b.name}')" class="flex-1 md:flex-none px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg transition shadow-sm whitespace-nowrap">
+                                        ✅ Setujui Brand
+                                    </button>
+                                    <button onclick="rejectBrandSubmit(${b.id}, '${b.name}')" class="flex-1 md:flex-none px-3 py-2 bg-rose-100 hover:bg-rose-200 text-rose-700 font-bold text-xs rounded-lg transition whitespace-nowrap">
+                                        ❌ Tolak
+                                    </button>
                                 </div>
                             </div>
+                        `).join('');
+                    }
 
-                            <div class="flex flex-col sm:flex-row items-center gap-2 w-full md:w-auto">
-                                ${u.status === 'PENDING' ? `
-                                    <select id="assign_wa_${u.id}" class="px-2.5 py-1.5 text-xs border border-slate-300 rounded-lg outline-none bg-slate-50">
-                                        <option value="">Pilih Pipeline WA CS...</option>
-                                        ${waAccounts.map(acc => `<option value="${acc.id}">${acc.name}</option>`).join('')}
-                                    </select>
-                                    <button onclick="approveUser(${u.id})" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition shadow-sm whitespace-nowrap">
-                                        ✅ Approve
-                                    </button>
-                                    <button onclick="rejectUser(${u.id})" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-lg transition whitespace-nowrap">
-                                        ❌ Reject
-                                    </button>
-                                ` : `
-                                    <span class="text-xs font-bold text-slate-400">Status ${u.status}</span>
-                                `}
+                    if (approved.length > 0) {
+                        html += `<div class="mt-6 mb-2"><h5 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">✅ Brand Disetujui (${approved.length})</h5></div>`;
+                        html += approved.map(b => `
+                            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl flex justify-between items-center text-xs">
+                                <div>
+                                    <span class="font-bold text-slate-800">🏢 ${b.name}</span>
+                                    <span class="text-slate-400 ml-2">Supervisor: ${b.supervisor ? b.supervisor.name : '-'} (${b.supervisor ? b.supervisor.email : '-'})</span>
+                                </div>
+                                <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-full">APPROVED</span>
                             </div>
-                        </div>
-                    `).join('');
+                        `).join('');
+                    }
+
+                    container.innerHTML = html;
                 });
         }
 
-        function approveUser(userId) {
-            const waSelect = document.getElementById('assign_wa_' + userId);
-            const waAccountId = waSelect ? waSelect.value : null;
+        function approveBrandSubmit(brandId, brandName) {
+            if (!confirm(`Setujui pendaftaran Brand "${brandName}" dan akun Supervisornya?`)) return;
 
-            fetch('/users/' + userId + '/approve', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                body: JSON.stringify({ wa_account_id: waAccountId })
-            })
-            .then(res => res.json())
-            .then(res => {
-                alert(res.message);
-                loadUserList();
-                loadPendingBadgeCount();
-            });
-        }
-
-        function rejectUser(userId) {
-            if (!confirm('Yakin ingin menolak pendaftaran akun ini?')) return;
-            fetch('/users/' + userId + '/reject', {
+            fetch('/brand-approvals/' + brandId + '/approve', {
                 method: 'POST',
                 headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
             })
             .then(res => res.json())
-            .then(res => {
-                loadUserList();
-                loadPendingBadgeCount();
+            .then(data => {
+                showToastNotification('✅ ' + data.message);
+                loadBrandApprovalList();
+                loadPendingBrandBadgeCount();
+                if (typeof loadWaAccounts === 'function') loadWaAccounts();
             });
+        }
+
+        function rejectBrandSubmit(brandId, brandName) {
+            if (!confirm(`Yakin ingin MENOLAK pengajuan Brand "${brandName}"?`)) return;
+
+            fetch('/brand-approvals/' + brandId + '/reject', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                showToastNotification('❌ ' + data.message);
+                loadBrandApprovalList();
+                loadPendingBrandBadgeCount();
+            });
+        }
+
+        if (document.getElementById('pendingBrandBadge')) {
+            loadPendingBrandBadgeCount();
+            setInterval(loadPendingBrandBadgeCount, 15000);
         }
 
         // Auto-refresh content

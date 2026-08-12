@@ -15,51 +15,57 @@ class UserController extends Controller
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
-        $users = User::with('waAccount')->where('id', '!=', Auth::id())->latest()->get();
-        $waAccounts = WaAccount::all();
+        $pendingBrands = WaAccount::with('supervisor')
+            ->where('approval_status', 'PENDING')
+            ->latest()
+            ->get();
+
+        $allApprovedBrands = WaAccount::with('supervisor')
+            ->where('approval_status', 'APPROVED')
+            ->latest()
+            ->get();
 
         return response()->json([
-            'users' => $users,
-            'waAccounts' => $waAccounts,
+            'pendingBrands' => $pendingBrands,
+            'approvedBrands' => $allApprovedBrands,
         ]);
     }
 
-    public function approve(Request $request, $id)
+    public function approveBrand(Request $request, $id)
     {
         if (!Auth::user() || !Auth::user()->isCeo()) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
-        $user = User::findOrFail($id);
-        $waAccountId = $request->input('wa_account_id');
+        $brand = WaAccount::findOrFail($id);
+        $brand->approval_status = 'APPROVED';
+        $brand->save();
 
-        // If no WA Account selected, automatically create a dedicated WA Account for this Sales Admin
-        if (!$waAccountId) {
-            $waAccount = WaAccount::create([
-                'name' => 'WA ' . $user->name,
-                'session_id' => 'session_user_' . $user->id,
-                'status' => 'DISCONNECTED'
-            ]);
-            $waAccountId = $waAccount->id;
+        $brand->ensureDefaultStages();
+
+        if ($brand->supervisor) {
+            $brand->supervisor->status = 'APPROVED';
+            $brand->supervisor->save();
         }
 
-        $user->status = 'APPROVED';
-        $user->wa_account_id = $waAccountId;
-        $user->save();
-
-        return response()->json(['status' => 'success', 'message' => 'Akun berhasil disetujui! Perangkat WA & Pipeline khusus telah dibuatkan.']);
+        return response()->json(['status' => 'success', 'message' => '✅ Brand "' . $brand->name . '" & Akun Supervisor berhasil disetujui (APPROVED)!']);
     }
 
-    public function reject($id)
+    public function rejectBrand($id)
     {
         if (!Auth::user() || !Auth::user()->isCeo()) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
-        $user = User::findOrFail($id);
-        $user->status = 'REJECTED';
-        $user->save();
+        $brand = WaAccount::findOrFail($id);
+        $brand->approval_status = 'REJECTED';
+        $brand->save();
 
-        return response()->json(['status' => 'success', 'message' => 'Akun ditolak.']);
+        if ($brand->supervisor) {
+            $brand->supervisor->status = 'REJECTED';
+            $brand->supervisor->save();
+        }
+
+        return response()->json(['status' => 'success', 'message' => '❌ Pengajuan Brand "' . $brand->name . '" ditolak.']);
     }
 }
