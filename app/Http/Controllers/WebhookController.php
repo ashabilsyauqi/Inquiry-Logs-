@@ -282,65 +282,75 @@ class WebhookController extends Controller
                 ]);
             }
 
-            // Send Email Notification Alert to CEO Users
-            $ceos = User::where('role', 'CEO')->get();
-            if ($ceos->isEmpty()) {
-                $ceos = User::where('role', 'admin')->get();
+            // Send Email Notification Alert to Brand Supervisor (To:) and CC to CEO Users
+            $supervisor = $waAccount->supervisor;
+            $supervisorEmail = $supervisor ? $supervisor->email : null;
+            $supervisorName = $supervisor ? $supervisor->name : 'Supervisor Brand';
+
+            // Get CEO Emails for CC
+            $ceoEmails = User::where('role', 'CEO')->pluck('email')->toArray();
+            if (empty($ceoEmails)) {
+                $ceoEmails = ['ashabil@difitech.id'];
             }
+
+            // Primary Recipient: Supervisor email if available, otherwise fall back to CEO
+            $primaryTo = $supervisorEmail ?: implode(', ', $ceoEmails);
 
             $accountName = $waAccount->name;
             $phone = $waAccount->phone ?: 'Belum Terhubung';
             $intervalText = ($intervalSeconds < 60) ? "{$intervalSeconds} Detik (Testing Mode)" : ($intervalSeconds / 60) . " Menit";
 
-            foreach ($ceos as $ceo) {
-                $to = $ceo->email;
-                $subject = "⚠️ PERINGATAN DARURAT: WhatsApp CS {$accountName} Terputus!";
-                
-                $htmlBody = "
-                <html>
-                <body style='font-family: Arial, sans-serif; color: #333; line-height: 1.6; background-color: #f8fafc; padding: 20px;'>
-                    <div style='max-width: 600px; margin: 0 auto; background: #ffffff; padding: 25px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.05);'>
-                        <div style='text-align: center; margin-bottom: 20px;'>
-                            <h2 style='color: #dc2626; margin: 0;'>⚠️ PERINGATAN DARURAT WA TERPUTUS</h2>
-                            <p style='color: #64748b; font-size: 13px;'>Sistem Deteksi Otomatis CRM MVP</p>
-                        </div>
-                        <p>Halo <strong>{$ceo->name}</strong>,</p>
-                        <p>Perangkat WhatsApp untuk brand <strong>{$accountName}</strong> (No: <code>{$phone}</code>) saat ini dalam status <span style='color: #dc2626; font-weight: bold;'>TERPUTUS (DISCONNECTED)</span>.</p>
-                        
-                        <div style='background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 14px; margin: 15px 0; border-radius: 6px;'>
-                            <strong>Detail Peringatan:</strong><br/>
-                            • <strong>Brand / Device:</strong> {$accountName}<br/>
-                            • <strong>Alasan:</strong> {$reason}<br/>
-                            • <strong>Waktu Kejadian:</strong> " . now()->format('d M Y - H:i:s') . " WIB<br/>
-                            • <strong>Mode Interval:</strong> {$intervalText}
-                        </div>
-
-                        <p>Silakan segera lakukan scan ulang QR code di dashboard CRM Anda agar pesan dari customer tetap masuk:</p>
-
-                        <p style='text-align: center; margin: 25px 0;'>
-                            <a href='http://127.0.0.1:8000/dashboard' style='background-color: #059669; color: white; padding: 14px 28px; text-decoration: none; border-radius: 10px; font-weight: bold; display: inline-block; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);'>
-                                📲 Scan QR Code Ulang Sekarang
-                            </a>
-                        </p>
-                        <hr style='border: none; border-top: 1px solid #e2e8f0; margin-top: 30px;' />
-                        <p style='font-size: 11px; color: #94a3b8; text-align: center;'>Pesan notifikasi otomatis ini dikirimkan oleh CRM MVP Difitech System.</p>
+            $subject = "⚠️ PERINGATAN DARURAT: WhatsApp CS Brand {$accountName} Terputus!";
+            
+            $htmlBody = "
+            <html>
+            <body style='font-family: Arial, sans-serif; color: #333; line-height: 1.6; background-color: #f8fafc; padding: 20px;'>
+                <div style='max-width: 600px; margin: 0 auto; background: #ffffff; padding: 25px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.05);'>
+                    <div style='text-align: center; margin-bottom: 20px;'>
+                        <h2 style='color: #dc2626; margin: 0;'>⚠️ PERINGATAN WA BRAND TERPUTUS</h2>
+                        <p style='color: #64748b; font-size: 13px;'>Sistem Deteksi Otomatis CRM MVP</p>
                     </div>
-                </body>
-                </html>
-                ";
+                    <p>Halo <strong>{$supervisorName}</strong> (Supervisor Brand {$accountName}),</p>
+                    <p>Perangkat WhatsApp untuk brand <strong>{$accountName}</strong> (No: <code>{$phone}</code>) saat ini dalam status <span style='color: #dc2626; font-weight: bold;'>TERPUTUS (DISCONNECTED)</span>.</p>
+                    
+                    <div style='background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 14px; margin: 15px 0; border-radius: 6px;'>
+                        <strong>Detail Peringatan:</strong><br/>
+                        • <strong>Brand / Device:</strong> {$accountName}<br/>
+                        • <strong>Supervisor:</strong> {$supervisorName} ({$primaryTo})<br/>
+                        • <strong>CC CEO:</strong> " . implode(', ', $ceoEmails) . "<br/>
+                        • <strong>Alasan:</strong> {$reason}<br/>
+                        • <strong>Waktu Kejadian:</strong> " . now()->format('d M Y - H:i:s') . " WIB<br/>
+                        • <strong>Mode Interval:</strong> {$intervalText}
+                    </div>
 
-                $headers  = "MIME-Version: 1.0\r\n";
-                $headers .= "Content-type: text/html; charset=UTF-8\r\n";
-                $headers .= "From: CRM Alert <no-reply@difitech.id>\r\n";
-                $headers .= "Reply-To: no-reply@difitech.id\r\n";
+                    <p>Silakan segera lakukan scan ulang QR code di dashboard CRM Anda agar pesan dari customer tetap dapat terlayani:</p>
 
-                @mail($to, $subject, $htmlBody, $headers);
+                    <p style='text-align: center; margin: 25px 0;'>
+                        <a href='http://127.0.0.1:8000/dashboard' style='background-color: #059669; color: white; padding: 14px 28px; text-decoration: none; border-radius: 10px; font-weight: bold; display: inline-block; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);'>
+                            📲 Scan QR Code Ulang Sekarang
+                        </a>
+                    </p>
+                    <hr style='border: none; border-top: 1px solid #e2e8f0; margin-top: 30px;' />
+                    <p style='font-size: 11px; color: #94a3b8; text-align: center;'>Pesan notifikasi otomatis ini dikirimkan ke Supervisor Brand & CC ke CEO ({$ceoEmails[0]}).</p>
+                </div>
+            </body>
+            </html>
+            ";
+
+            $headers  = "MIME-Version: 1.0\r\n";
+            $headers .= "Content-type: text/html; charset=UTF-8\r\n";
+            $headers .= "From: CRM Alert <no-reply@difitech.id>\r\n";
+            $headers .= "Reply-To: no-reply@difitech.id\r\n";
+            if (!empty($ceoEmails)) {
+                $headers .= "Cc: " . implode(', ', $ceoEmails) . "\r\n";
             }
+
+            @mail($primaryTo, $subject, $htmlBody, $headers);
 
             $waAccount->last_disconnect_email_sent_at = now();
             $waAccount->save();
 
-            Log::warning("⚠️ DISCONNECTION EMAIL ALERT DISPATCHED to CEOs for Account {$accountName} ({$sessionId})");
+            Log::warning("⚠️ DISCONNECTION EMAIL ALERT DISPATCHED to Supervisor ({$primaryTo}) & CC CEO for Account {$accountName} ({$sessionId})");
         }
 
         return response()->json(['status' => 'success', 'message' => 'Disconnection alert processed & emails dispatched']);

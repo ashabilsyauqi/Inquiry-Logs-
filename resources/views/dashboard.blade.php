@@ -194,7 +194,7 @@
                     <div>
                         <h4 class="font-bold text-amber-900 text-sm">Perhatian: {{ $disconnectedAccounts->count() }} Perangkat WA Terputus!</h4>
                         <p class="text-xs text-amber-700 mt-0.5">
-                            Akun terputus: <strong>{{ $disconnectedAccounts->pluck('name')->join(', ') }}</strong>. Email peringatan darurat otomatis dikirim ke CEO.
+                            Akun terputus: <strong>{{ $disconnectedAccounts->pluck('name')->join(', ') }}</strong>. Email peringatan darurat otomatis dikirim ke Supervisor Brand & CC ke CEO (ashabil@difitech.id).
                         </p>
                     </div>
                 </div>
@@ -794,7 +794,7 @@
                             <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
                                 📧 Pengaturan Email Notifikasi Disconnect
                             </h4>
-                            <p class="text-xs text-slate-500">Kirim email darurat otomatis ke CEO jika koneksi WA terputus</p>
+                            <p class="text-xs text-slate-500">Kirim email darurat otomatis ke Supervisor Brand (CC ke CEO ashabil@difitech.id) jika WA terputus</p>
                         </div>
                         <label class="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" id="disconnectEmailToggle" class="sr-only peer" onchange="saveDisconnectSettings()" {{ ($activeAccount && $activeAccount->disconnect_email_enabled) ? 'checked' : '' }}>
