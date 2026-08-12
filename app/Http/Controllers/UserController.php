@@ -58,14 +58,14 @@ class UserController extends Controller
         }
 
         $brand = WaAccount::findOrFail($id);
-        $brand->approval_status = 'REJECTED';
-        $brand->save();
+        $brandName = $brand->name;
 
         if ($brand->supervisor) {
-            $brand->supervisor->status = 'REJECTED';
-            $brand->supervisor->save();
+            $brand->supervisor->delete();
         }
 
-        return response()->json(['status' => 'success', 'message' => '❌ Pengajuan Brand "' . $brand->name . '" ditolak.']);
+        $brand->delete();
+
+        return response()->json(['status' => 'success', 'message' => '🗑️ Pengajuan Brand "' . $brandName . '" & Akun Supervisor telah ditolak dan dihapus dari sistem.']);
     }
 }

@@ -55,6 +55,17 @@ class AuthController extends Controller
 
     public function register(Request $request)
     {
+        // Purge any previously rejected user with this email to allow seamless re-registration
+        if ($request->filled('email')) {
+            $rejectedUser = User::where('email', $request->email)->where('status', 'REJECTED')->first();
+            if ($rejectedUser) {
+                if ($rejectedUser->waAccount) {
+                    $rejectedUser->waAccount->delete();
+                }
+                $rejectedUser->delete();
+            }
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
