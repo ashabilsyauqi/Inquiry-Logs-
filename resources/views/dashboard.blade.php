@@ -14,142 +14,159 @@
 </head>
 <body class="text-slate-800 flex h-screen overflow-hidden">
 
-    <!-- LEFT SIDEBAR NAVIGATION -->
+    <!-- LEFT SIDEBAR NAVIGATION (ENTERPRISE CORPORATE STYLING) -->
     <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between hidden md:flex flex-shrink-0 border-r border-slate-800">
         <div>
             <!-- Sidebar Header / Logo -->
-            <div class="p-6 border-b border-slate-800 flex items-center gap-3">
-                <div class="w-10 h-10 bg-emerald-600 rounded-xl flex items-center justify-center text-white text-xl font-bold shadow-lg shadow-emerald-900/50">
-                    🚀
+            <div class="px-5 py-5 border-b border-slate-800 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 bg-emerald-600 rounded-lg flex items-center justify-center text-white text-lg font-bold shadow-md shadow-emerald-900/50">
+                        🏢
+                    </div>
+                    <div>
+                        <h2 class="font-extrabold text-white text-sm tracking-tight leading-tight">DIFITECH CRM</h2>
+                        <p class="text-[10px] text-slate-400 font-medium">Enterprise Suite</p>
+                    </div>
                 </div>
-                <div>
-                    <h2 class="font-bold text-white text-base leading-tight">CRM MVP</h2>
-                    <span class="text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded {{ $user->isCeo() ? 'bg-purple-900/80 text-purple-300 border border-purple-700' : 'bg-blue-900/80 text-blue-300 border border-blue-700' }}">
-                        {{ $user->role }}
-                    </span>
-                </div>
+                <span class="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800/80">
+                    v2.4
+                </span>
             </div>
 
             <!-- Nav Links -->
-            <nav class="p-4 space-y-1.5 text-sm font-medium">
-                @if($user->isCeo())
-                <a href="/?account_id=all" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl {{ $accountId == 'all' ? 'bg-slate-800 text-white font-semibold shadow-sm' : 'text-slate-400 hover:bg-slate-800 hover:text-white' }} transition text-left">
-                    <span class="text-base">🏢</span> Running Brands (CEO)
-                </a>
-                @endif
+            <nav class="p-3 space-y-4 text-xs font-medium">
+                <!-- Section 1: Core Navigation -->
+                <div>
+                    <p class="px-3 text-[10px] font-extrabold uppercase tracking-wider text-slate-500 mb-1.5">NAVIGATION</p>
+                    <div class="space-y-1">
+                        @if($user->isCeo())
+                        <a href="/?account_id=all" class="w-full flex items-center justify-between px-3 py-2.5 rounded-lg {{ $accountId == 'all' ? 'bg-slate-800 text-white font-bold border-l-4 border-emerald-500 shadow-sm' : 'text-slate-400 hover:bg-slate-800/60 hover:text-white' }} transition text-left">
+                            <span class="flex items-center gap-2.5">
+                                <span class="text-sm">🏢</span> Running Brands
+                            </span>
+                            <span class="text-[10px] bg-slate-700/80 text-slate-300 px-1.5 py-0.5 rounded font-mono">{{ $waAccounts->count() }}</span>
+                        </a>
+                        @endif
 
-                @if(!$user->isCeo() || $accountId != 'all')
-                <button onclick="switchTab('all')" id="nav-all" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-800 text-white font-semibold shadow-sm transition text-left">
-                    <span class="text-base">🌐</span> Semua Tampilan
-                </button>
-                <button onclick="switchTab('analytics')" id="nav-analytics" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition text-left">
-                    <span class="text-base">📊</span> Analytics & Chart
-                </button>
-                <button onclick="switchTab('kanban')" id="nav-kanban" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition text-left">
-                    <span class="text-base">📋</span> Kanban Board
-                </button>
-                <button onclick="switchTab('table')" id="nav-table" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition text-left">
-                    <span class="text-base">📑</span> Daftar Leads
-                </button>
-                @endif
+                        @if(!$user->isCeo() || $accountId != 'all')
+                        <button onclick="switchTab('all')" id="nav-all" class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-slate-800 text-white font-bold border-l-4 border-emerald-500 shadow-sm transition text-left">
+                            <span class="text-sm">🌐</span> Overview All
+                        </button>
+                        <button onclick="switchTab('analytics')" id="nav-analytics" class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-slate-400 hover:bg-slate-800/60 hover:text-white transition text-left">
+                            <span class="text-sm">📊</span> Analytics & KPI
+                        </button>
+                        <button onclick="switchTab('kanban')" id="nav-kanban" class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-slate-400 hover:bg-slate-800/60 hover:text-white transition text-left">
+                            <span class="text-sm">📋</span> Kanban Pipeline
+                        </button>
+                        <button onclick="switchTab('table')" id="nav-table" class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-slate-400 hover:bg-slate-800/60 hover:text-white transition text-left">
+                            <span class="text-sm">📑</span> Lead Master List
+                        </button>
+                        @endif
+                    </div>
+                </div>
 
-                <button onclick="openDeviceModal()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition text-left">
-                    <span class="text-base">📱</span> Perangkat WA & QR
-                </button>
+                <!-- Section 2: Management Suite -->
+                <div>
+                    <p class="px-3 text-[10px] font-extrabold uppercase tracking-wider text-slate-500 mb-1.5">ADMIN SUITE</p>
+                    <div class="space-y-1">
+                        @if($user->isCeo())
+                        <button onclick="openBrandManagementModal()" class="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition text-left">
+                            <span class="flex items-center gap-2.5">
+                                <span class="text-sm">⚙️</span> Brand Management
+                            </span>
+                            <span class="bg-emerald-950 text-emerald-400 border border-emerald-800/60 text-[9px] font-bold px-1.5 py-0.5 rounded">CRUD</span>
+                        </button>
 
-                @if($user->isCeo())
-                <button onclick="openBrandManagementModal()" class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-gradient-to-r from-emerald-900/40 to-teal-900/40 text-emerald-200 border border-emerald-700/50 hover:bg-emerald-800/50 transition text-left mt-3">
-                    <span class="flex items-center gap-3 font-semibold">
-                        <span class="text-base">🏢</span> Brand Management
-                    </span>
-                    <span class="bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">CRUD</span>
-                </button>
+                        <button onclick="openUserManagementModal()" class="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition text-left">
+                            <span class="flex items-center gap-2.5">
+                                <span class="text-sm">👥</span> User Approval
+                            </span>
+                            <span id="pendingBadge" class="bg-rose-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
+                        </button>
+                        @endif
 
-                <button onclick="openUserManagementModal()" class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-gradient-to-r from-purple-900/40 to-indigo-900/40 text-purple-200 border border-purple-700/50 hover:bg-purple-800/50 transition text-left mt-2">
-                    <span class="flex items-center gap-3 font-semibold">
-                        <span class="text-base">👥</span> User Approval
-                    </span>
-                    <span id="pendingBadge" class="bg-rose-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full hidden">0</span>
-                </button>
-                @endif
+                        <button onclick="openDeviceModal()" class="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-slate-400 hover:bg-slate-800/60 hover:text-white transition text-left">
+                            <span class="flex items-center gap-2.5">
+                                <span class="text-sm">📱</span> WA Devices & QR
+                            </span>
+                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        </button>
+                    </div>
+                </div>
             </nav>
         </div>
 
         <!-- DYNAMIC LOGGED-IN USER PROFILE & LOGOUT FOOTER -->
-        <div class="p-4 border-t border-slate-800/80 bg-slate-950/70 backdrop-blur-md">
-            <div class="p-3 bg-slate-900/90 border border-slate-800 rounded-xl mb-3 shadow-inner">
-                <div class="flex items-center gap-3">
+        <div class="p-3 border-t border-slate-800 bg-slate-950/80">
+            <div class="p-2.5 bg-slate-900 border border-slate-800 rounded-xl mb-2.5">
+                <div class="flex items-center gap-2.5">
                     <div class="relative flex-shrink-0">
-                        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 via-teal-500 to-indigo-600 text-white flex items-center justify-center font-extrabold text-sm shadow-md shadow-emerald-900/40">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-700 text-white flex items-center justify-center font-bold text-xs shadow-inner">
                             {{ strtoupper(substr($user->name, 0, 1)) }}
                         </div>
-                        <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-slate-900 rounded-full" title="Status: Online"></span>
+                        <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-slate-900 rounded-full" title="Online"></span>
                     </div>
                     <div class="truncate flex-1 min-w-0">
-                        <div class="flex items-center gap-1.5 mb-0.5">
-                            <p class="text-xs font-bold text-white truncate leading-tight">{{ $user->name }}</p>
-                        </div>
-                        <p class="text-[10px] text-slate-400 truncate font-mono mb-1.5">{{ $user->email }}</p>
-                        <div>
-                            @if($user->isCeo())
-                            <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[9px] font-extrabold rounded-full uppercase tracking-wider">
-                                👑 CEO / Owner
-                            </span>
-                            @elseif($user->role == 'supervisor')
-                            <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[9px] font-extrabold rounded-full uppercase tracking-wider">
-                                🛡️ Supervisor
-                            </span>
-                            @else
-                            <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] font-extrabold rounded-full uppercase tracking-wider">
-                                ⚡ Sales Admin
-                            </span>
-                            @endif
-                        </div>
+                        <p class="text-xs font-bold text-white truncate leading-tight">{{ $user->name }}</p>
+                        <p class="text-[10px] text-slate-400 truncate font-mono mt-0.5">{{ $user->email }}</p>
                     </div>
+                </div>
+                <div class="mt-2 pt-2 border-t border-slate-800/80 flex items-center justify-between">
+                    <span class="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded {{ $user->isCeo() ? 'bg-purple-950 text-purple-300 border border-purple-800' : 'bg-blue-950 text-blue-300 border border-blue-800' }}">
+                        {{ $user->isCeo() ? '👑 Executive CEO' : ($user->role == 'supervisor' ? '🛡️ Supervisor' : '⚡ Sales Admin') }}
+                    </span>
+                    <span class="text-[9px] text-slate-500 font-mono">ID: #{{ $user->id }}</span>
                 </div>
             </div>
 
             <form method="POST" action="/logout">
                 @csrf
-                <button type="submit" class="w-full py-2.5 bg-slate-900 hover:bg-rose-950/80 hover:text-rose-300 hover:border-rose-800/80 text-slate-300 font-bold text-xs rounded-xl transition-all duration-200 border border-slate-800 flex items-center justify-center gap-2 shadow-sm group">
-                    <span class="group-hover:translate-x-0.5 transition-transform">🚪</span> Logout System
+                <button type="submit" class="w-full py-2 bg-slate-900 hover:bg-rose-950 hover:text-rose-300 hover:border-rose-800/80 text-slate-400 font-bold text-xs rounded-lg transition border border-slate-800 flex items-center justify-center gap-2">
+                    <span>🚪</span> Logout System
                 </button>
             </form>
         </div>
     </aside>
 
     <!-- MAIN CONTENT AREA -->
-    <main class="flex-1 overflow-y-auto" id="main-scroll-area">
+    <main class="flex-1 overflow-y-auto bg-slate-50" id="main-scroll-area">
         
         <!-- Top Header Bar -->
-        <header class="bg-white border-b border-slate-200 px-6 py-4 sticky top-0 z-30 flex justify-between items-center">
-            <div>
-                <h2 class="text-xl font-bold text-slate-900">
-                    {{ $user->isCeo() ? ($accountId == 'all' ? 'Executive Dashboard CEO' : 'Dashboard Brand: ' . ($activeAccount->name ?? '')) : 'Dashboard Brand: ' . ($user->waAccount->name ?? 'Default Account') }}
-                </h2>
-                <p class="text-xs text-slate-500">
-                    {{ $user->isCeo() ? ($accountId == 'all' ? 'Portfolio Overview Seluruh Running Brands (Pipelines)' : 'Analisis & Pipeline Khusus Brand ' . ($activeAccount->name ?? '')) : 'Pipeline Sales Khusus: ' . ($user->waAccount->name ?? 'Default Account') }}
-                </p>
+        <header class="bg-white border-b border-slate-200 px-6 py-3.5 sticky top-0 z-30 flex justify-between items-center shadow-sm">
+            <div class="flex items-center gap-3">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h2 class="text-lg font-extrabold text-slate-900 tracking-tight">
+                            {{ $user->isCeo() ? ($accountId == 'all' ? 'Executive Brand Portfolio' : 'Dashboard Brand: ' . ($activeAccount->name ?? '')) : 'Dashboard Brand: ' . ($user->waAccount->name ?? 'Default Account') }}
+                        </h2>
+                        @if($user->isCeo() && $accountId == 'all')
+                        <span class="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase">CEO View</span>
+                        @endif
+                    </div>
+                    <p class="text-xs text-slate-500 mt-0.5">
+                        {{ $user->isCeo() ? ($accountId == 'all' ? ' Ringkasan real-time performa seluruh running brands & pipeline WA.' : 'Analisis & Pipeline Khusus Brand ' . ($activeAccount->name ?? '')) : 'Pipeline Sales Khusus: ' . ($user->waAccount->name ?? 'Default Account') }}
+                    </p>
+                </div>
             </div>
 
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2.5">
                 @if($activeAccount)
-                <button onclick="openBrandSettingsModal({{ $activeAccount->id }})" class="px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white text-xs font-semibold rounded-xl shadow-sm transition flex items-center gap-2">
-                    ⚙️ Custom Stage & Trigger
+                <button onclick="openBrandSettingsModal({{ $activeAccount->id }})" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 text-xs font-bold rounded-xl transition flex items-center gap-2">
+                    ⚙️ Stage & Trigger
                 </button>
                 @endif
 
-                <button onclick="openDeviceModal()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-xl shadow-sm transition flex items-center gap-2">
+                <button onclick="openDeviceModal()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm transition flex items-center gap-2">
                     📱 WA Device Manager
                 </button>
                 <form method="POST" action="/logout" class="md:hidden">
                     @csrf
-                    <button type="submit" class="px-3 py-2 bg-slate-100 text-slate-700 text-xs font-semibold rounded-xl">Logout</button>
+                    <button type="submit" class="px-3 py-2 bg-slate-100 text-slate-700 text-xs font-bold rounded-xl">Logout</button>
                 </form>
             </div>
         </header>
 
-        <div class="max-w-7xl mx-auto px-6 py-6 space-y-8" id="dashboard-content">
+        <div class="max-w-7xl mx-auto px-6 py-6 space-y-6" id="dashboard-content">
 
             <!-- Disconnection Alert Banner -->
             @php
@@ -157,37 +174,96 @@
             @endphp
 
             @if($disconnectedAccounts->isNotEmpty())
-            <div class="bg-amber-50 border-l-4 border-amber-500 p-4 rounded-r-xl shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="bg-amber-50 border border-amber-300 p-4 rounded-2xl shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
                 <div class="flex items-center gap-3">
-                    <div class="p-2 bg-amber-100 rounded-full text-amber-700">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
+                    <div class="p-2 bg-amber-100 rounded-xl text-amber-800 font-bold text-sm">
+                        ⚠️
                     </div>
                     <div>
-                        <h4 class="font-bold text-amber-900 text-sm">Peringatan: Perangkat WA Terputus! Email Alert Telah Dikirim!</h4>
+                        <h4 class="font-bold text-amber-900 text-sm">Perhatian: {{ $disconnectedAccounts->count() }} Perangkat WA Terputus!</h4>
                         <p class="text-xs text-amber-700 mt-0.5">
-                            Ada {{ $disconnectedAccounts->count() }} Akun WA terputus ({{ $disconnectedAccounts->pluck('name')->join(', ') }}). Pesan baru akan otomatis tersinkron saat tersambung kembali.
+                            Akun terputus: <strong>{{ $disconnectedAccounts->pluck('name')->join(', ') }}</strong>. Email peringatan darurat otomatis dikirim ke CEO.
                         </p>
                     </div>
                 </div>
-                <button onclick="openDeviceModal();" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs rounded-lg transition whitespace-nowrap shadow-sm">
+                <button onclick="openDeviceModal();" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl transition whitespace-nowrap shadow-sm">
                     📲 Scan Ulang Barcode
                 </button>
             </div>
             @endif
 
-            <!-- 1. CEO EXECUTIVE LANDING PAGE (MINI WIDGETS WITH "LIHAT DETAIL →" LINK TEXT) -->
+            <!-- 1. CEO EXECUTIVE LANDING PAGE (MINI WIDGETS & EXECUTIVE SUMMARY) -->
             @if($user->isCeo() && $accountId == 'all')
             <section class="space-y-6">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <h3 class="text-xl font-bold text-slate-900">🏢 Running Brands Overview</h3>
-                        <p class="text-xs text-slate-500 mt-0.5">Ringkasan mini widget per brand. Klik "Lihat Detail →" untuk masuk ke dashboard brand tersebut.</p>
+                <!-- Corporate Executive KPI Summary Strip -->
+                @php
+                    $allLeads = \App\Models\Lead::all();
+                    $totalLeadsCount = $allLeads->count();
+                    $todayLeadsCount = $allLeads->where('created_at', '>=', \Carbon\Carbon::today())->count();
+                    $dealsTotalCount = $allLeads->where('stage', 'Deal')->count();
+                    $connectedCount = $waAccounts->where('status', 'CONNECTED')->count();
+                @endphp
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                        <div class="flex justify-between items-center text-slate-500 mb-1">
+                            <span class="text-xs font-bold uppercase tracking-wider">Running Brands</span>
+                            <span class="text-base">🏢</span>
+                        </div>
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-2xl font-black text-slate-900">{{ $waAccounts->count() }}</span>
+                            <span class="text-xs text-emerald-600 font-bold">{{ $connectedCount }} Online</span>
+                        </div>
                     </div>
-                    <span class="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
-                        Total Brand: {{ $waAccounts->count() }}
-                    </span>
+
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                        <div class="flex justify-between items-center text-slate-500 mb-1">
+                            <span class="text-xs font-bold uppercase tracking-wider">Total Leads</span>
+                            <span class="text-base">👥</span>
+                        </div>
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-2xl font-black text-slate-900">{{ $totalLeadsCount }}</span>
+                            <span class="text-xs text-slate-400 font-medium">Akumulasi</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                        <div class="flex justify-between items-center text-slate-500 mb-1">
+                            <span class="text-xs font-bold uppercase tracking-wider">Inbound Hari Ini</span>
+                            <span class="text-base">📥</span>
+                        </div>
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-2xl font-black text-blue-600">{{ $todayLeadsCount }}</span>
+                            <span class="text-xs text-blue-500 font-medium">Leads Baru</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
+                        <div class="flex justify-between items-center text-slate-500 mb-1">
+                            <span class="text-xs font-bold uppercase tracking-wider">Closing Deal</span>
+                            <span class="text-base">🎯</span>
+                        </div>
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-2xl font-black text-emerald-600">{{ $dealsTotalCount }}</span>
+                            <span class="text-xs text-emerald-500 font-bold">
+                                {{ $totalLeadsCount > 0 ? round(($dealsTotalCount / $totalLeadsCount) * 100, 1) : 0 }}% Conv.
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Running Brands Cards Section -->
+                <div class="flex justify-between items-center border-t border-slate-200 pt-6">
+                    <div>
+                        <h3 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                            🏢 Portfolio Overview Per Brand
+                        </h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Pilih brand untuk masuk ke kontrol pipeline & kanban khusus.</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="openBrandManagementModal()" class="px-3.5 py-1.5 bg-slate-900 text-white font-bold text-xs rounded-xl hover:bg-slate-800 transition">
+                            + kelola Brand
+                        </button>
+                    </div>
                 </div>
 
                 <!-- SLEEK MINI WIDGETS GRID -->
