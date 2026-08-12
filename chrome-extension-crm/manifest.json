@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "CRM MVP WA Web Stage Switcher",
+  "version": "1.0.0",
+  "description": "Custom multiple select command bar for WhatsApp Web to update lead stages in 1-click with 0% messages sent to customers.",
+  "action": {},
+  "permissions": [
+    "storage"
+  ],
+  "host_permissions": [
+    "https://web.whatsapp.com/*",
+    "http://127.0.0.1:8000/*",
+    "http://localhost:8000/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://web.whatsapp.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "css": [
+        "styles.css"
+      ]
+    }
+  ]
+}

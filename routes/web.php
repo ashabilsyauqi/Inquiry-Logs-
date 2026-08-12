@@ -276,4 +276,38 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/users', [UserController::class, 'index']);
     Route::post('/users/{id}/approve', [UserController::class, 'approve']);
     Route::post('/users/{id}/reject', [UserController::class, 'reject']);
+
+    // Extension API Endpoints
+    Route::get('/api/extension/stages', function (Request $request) {
+        $waAccounts = WaAccount::with('pipelineStages')->get();
+        return response()->json(['status' => 'success', 'accounts' => $waAccounts]);
+    });
+
+    Route::post('/api/extension/update-stage', function (Request $request) {
+        $phone = $request->input('phone');
+        $stageName = $request->input('stage');
+
+        if (!$phone || !$stageName) {
+            return response()->json(['status' => 'error', 'message' => 'Missing phone or stage'], 400);
+        }
+
+        $phone = preg_replace('/[^0-9]/', '', $phone);
+        if (str_starts_with($phone, '08')) {
+            $phone = '62' . substr($phone, 1);
+        }
+
+        $lead = Lead::where('phone', $phone)->first();
+        if (!$lead) {
+            $lead = Lead::create([
+                'name' => '+ ' . $phone,
+                'phone' => $phone,
+                'stage' => $stageName
+            ]);
+        } else {
+            $lead->stage = $stageName;
+            $lead->save();
+        }
+
+        return response()->json(['status' => 'success', 'message' => "Stage updated to {$stageName}", 'lead' => $lead]);
+    });
 });
