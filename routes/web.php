@@ -79,11 +79,26 @@ Route::middleware(['auth'])->group(function () {
                         $bridgeStatus = $data['sessionStatus'] ?? null;
                         if ($bridgeStatus && in_array($bridgeStatus, ['CONNECTED', 'DISCONNECTED'])) {
                             if ($acc->status !== $bridgeStatus) {
+                                $oldStatus = $acc->status;
                                 $acc->status = $bridgeStatus;
-                                if ($bridgeStatus === 'CONNECTED' && !empty($data['phone'])) {
-                                    $acc->phone = preg_replace('/[^0-9]/', '', $data['phone']);
+                                if ($bridgeStatus === 'CONNECTED') {
+                                    if (!empty($data['phone'])) {
+                                        $acc->phone = preg_replace('/[^0-9]/', '', $data['phone']);
+                                    }
+                                    // Reset email timestamp when connected so next disconnect triggers instant email!
+                                    $acc->last_disconnect_email_sent_at = null;
                                 }
                                 $acc->save();
+
+                                // Instant Email Alert on Disconnection Transition
+                                if ($oldStatus === 'CONNECTED' && $bridgeStatus === 'DISCONNECTED') {
+                                    $alertReq = new Request([
+                                        'sessionId' => $acc->session_id ?: $acc->id,
+                                        'reason' => 'Perangkat WA terputus dari HP (Deteksi Otomatis Langsung)',
+                                        'forceTest' => false
+                                    ]);
+                                    (new WebhookController())->handleDisconnectAlert($alertReq);
+                                }
                             }
                         }
                     }

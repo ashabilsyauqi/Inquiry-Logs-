@@ -260,6 +260,8 @@ class WebhookController extends Controller
         }
 
         if ($waAccount) {
+            $isFirstDetection = ($waAccount->status !== 'DISCONNECTED' || !$waAccount->last_disconnect_email_sent_at);
+
             $waAccount->status = 'DISCONNECTED';
             $waAccount->save();
 
@@ -269,11 +271,12 @@ class WebhookController extends Controller
                 return response()->json(['status' => 'success', 'message' => 'Account marked DISCONNECTED (Email alert disabled)']);
             }
 
-            // Check interval (e.g. 10s for testing, 1800s for 30m prod)
+            // Interval throttling (e.g. 10s for testing, 1800s for 30m prod)
+            // FIRST DETECTION ALWAYS BYPASSES THROTTLING (Sends Email Instantly!)
             $intervalSeconds = $waAccount->disconnect_email_interval ?: 10;
             $lastSent = $waAccount->last_disconnect_email_sent_at ? \Carbon\Carbon::parse($waAccount->last_disconnect_email_sent_at) : null;
 
-            if ($lastSent && !$forceTest && $lastSent->diffInSeconds(now()) < $intervalSeconds) {
+            if (!$isFirstDetection && $lastSent && !$forceTest && $lastSent->diffInSeconds(now()) < $intervalSeconds) {
                 $secondsLeft = $intervalSeconds - $lastSent->diffInSeconds(now());
                 Log::info("⏳ Disconnect email alert throttled for Account {$waAccount->name}. Next email allowed in {$secondsLeft}s");
                 return response()->json([
