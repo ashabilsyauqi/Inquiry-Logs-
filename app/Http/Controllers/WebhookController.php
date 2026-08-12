@@ -22,7 +22,8 @@ class WebhookController extends Controller
         $message = trim($request->input('message') ?? $request->input('text'));
         $senderNameInput = $request->input('senderName');
         $sessionId = $request->input('sessionId') ?? 'default';
-        $isAdminCommand = $request->input('isAdminCommand') || str_starts_with($message, '/');
+        $isAdminCommand = $request->input('isAdminCommand') || str_starts_with($message, '/') || str_starts_with($message, '#');
+        $isSelfChat = (bool)$request->input('isSelfChat');
 
         if (!$sender || !$receiver || !$message) {
             return response()->json(['status' => 'error', 'message' => 'Missing sender, receiver, or message'], 400);
@@ -57,10 +58,74 @@ class WebhookController extends Controller
         $myNumber = $waAccount->phone ?: $receiverPhone;
         $isFromMe = $request->input('isFromMe') || ($senderPhone === $myNumber);
 
+        // 1. DEDICATED SELF-CHAT ADMIN CONTROL PANEL HASHTAG COMMANDS (#deal 08123456789)
+        if (($isSelfChat || str_starts_with($message, '#')) && $isFromMe) {
+            // Extract phone number inside message if provided e.g. "#deal 08123456789"
+            preg_match('/(?:08|628|\+628)[0-9]{8,12}/', $message, $matches);
+            $targetPhoneRaw = $matches[0] ?? null;
+
+            if ($targetPhoneRaw) {
+                $targetLeadPhone = $this->sanitizePhone($targetPhoneRaw);
+                $commandPart = trim(str_replace($targetPhoneRaw, '', $message));
+            } else {
+                $targetLeadPhone = null;
+                $commandPart = $message;
+            }
+
+            $cleanCmd = strtolower(ltrim(trim($commandPart), '#')); // e.g. "deal", "meeting", "stage 1"
+            $matchedStage = null;
+
+            if (str_starts_with($cleanCmd, 'stage ')) {
+                $stageArg = trim(substr($cleanCmd, 6));
+                if (is_numeric($stageArg)) {
+                    $matchedStage = PipelineStage::where('wa_account_id', $waAccount->id)->where('order', (int)$stageArg)->first();
+                } else {
+                    $matchedStage = PipelineStage::where('wa_account_id', $waAccount->id)->whereRaw('LOWER(name) LIKE ?', ['%' . strtolower($stageArg) . '%'])->first();
+                }
+            } else {
+                $matchedStage = PipelineStage::where('wa_account_id', $waAccount->id)->whereRaw('LOWER(name) LIKE ?', ['%' . $cleanCmd . '%'])->first();
+                if (!$matchedStage) {
+                    $trigger = StageTrigger::where('wa_account_id', $waAccount->id)->whereRaw('LOWER(keyword) = ?', [$cleanCmd])->first();
+                    if ($trigger) {
+                        $matchedStage = $trigger->pipelineStage;
+                    }
+                }
+            }
+
+            if ($matchedStage && $targetLeadPhone) {
+                $targetLead = Lead::where('phone', $targetLeadPhone)->first();
+                if (!$targetLead) {
+                    $displayName = $this->formatDisplayPhone($targetLeadPhone);
+                    $targetLead = Lead::create([
+                        'wa_account_id' => $waAccount->id,
+                        'name' => $displayName,
+                        'phone' => $targetLeadPhone,
+                        'stage' => $matchedStage->name
+                    ]);
+                } else {
+                    $targetLead->stage = $matchedStage->name;
+                    $targetLead->save();
+                }
+
+                $replyText = "✅ *STATUS CRM TERHUBUNG & TERUPDATE!*\n\n" .
+                             "👤 *Lead*: {$targetLead->name} ({$targetLead->phone})\n" .
+                             "📌 *Stage Baru*: *{$matchedStage->name}*\n" .
+                             "🛡️ *Pesan Ke Customer*: 0% (Tidak ada pesan terkirim ke customer).";
+
+                Log::info("⚡ SELF CHAT CONTROL COMMAND EXECUTED: Lead {$targetLead->phone} moved to {$matchedStage->name}");
+
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Self chat control command executed',
+                    'replyMessage' => $replyText
+                ]);
+            }
+        }
+
         $leadPhone = $isFromMe ? $receiverPhone : $senderPhone;
         $lead = Lead::where('phone', $leadPhone)->first();
 
-        // 1. HANDLE INTERNAL ADMIN WA SLASH COMMANDS (e.g. /deal, /meeting, /stage 2, /stage pitching)
+        // 2. HANDLE INTERNAL ADMIN WA SLASH COMMANDS (e.g. /deal, /meeting, /stage 2, /stage pitching)
         if ($isFromMe && $isAdminCommand) {
             $commandStr = strtolower(ltrim($message, '/')); // e.g. "deal", "meeting", "stage 2", "stage pitching"
             $matchedStage = null;
@@ -103,7 +168,7 @@ class WebhookController extends Controller
             }
         }
 
-        // 2. BI-DIRECTIONAL & NON-LINEAR KEYWORD STAGE TRIGGERS (Skip or Jump Back Stage)
+        // 3. BI-DIRECTIONAL & NON-LINEAR KEYWORD STAGE TRIGGERS (Skip or Jump Back Stage)
         $lowerMessage = strtolower($message);
         $activeTriggers = StageTrigger::where('wa_account_id', $waAccount->id)->with('pipelineStage')->get();
         $matchedStageName = null;
@@ -161,7 +226,7 @@ class WebhookController extends Controller
         }
 
         // Store chat log in LeadMessage if not internal admin command
-        if ($lead && !$isAdminCommand) {
+        if ($lead && !$isAdminCommand && !$isSelfChat) {
             LeadMessage::create([
                 'lead_id' => $lead->id,
                 'sender' => $senderPhone,

@@ -65,6 +65,9 @@ function createSession(sessionId = 'default') {
             sessionData.phone = info.wid.user;
             console.log(`[WA Bridge] [${sessionId}] Client Ready! Phone: ${sessionData.phone}`);
             
+            // Send welcome Control Panel menu to Self Chat ("Message Yourself")
+            sendAdminControlPanelMenu(client, sessionData.phone);
+            
             // Scan and backfill missed/unread chats during offline period
             syncRecentChats(client, sessionId);
         } catch (e) {
@@ -115,21 +118,61 @@ function createSession(sessionId = 'default') {
                 // Ignore contact fetching error
             }
 
+            const cleanSender = sender.replace('@c.us', '').replace('@s.whatsapp.net', '').replace('@lid', '');
+            const cleanReceiver = receiver.replace('@c.us', '').replace('@s.whatsapp.net', '').replace('@lid', '');
+            const isSelfChat = (cleanSender === sessionData.phone && cleanReceiver === sessionData.phone) || (msg.from === msg.to);
+
+            const isHashtagCommand = msg.body && msg.body.trim().startsWith('#');
             const isSlashCommand = msg.body && msg.body.trim().startsWith('/');
 
-            // INTERNAL ADMIN SLASH COMMAND INTERCEPTOR
-            if (msg.fromMe && isSlashCommand) {
-                console.log(`[WA Bridge] Intercepted Internal Admin Command: "${msg.body}" to ${receiver}`);
+            // 1. SELF CHAT / DEDICATED ADMIN CONTROL PANEL (# COMMANDS IN MESSAGE YOURSELF)
+            if (isSelfChat || (msg.fromMe && isHashtagCommand)) {
+                if (isHashtagCommand || msg.body.trim() === '#help' || msg.body.trim() === '#menu') {
+                    console.log(`[WA Bridge] Processing Admin Self-Chat Control Command: "${msg.body}"`);
 
-                // Send payload to Laravel webhook as Admin Command
+                    if (msg.body.trim() === '#menu' || msg.body.trim() === '#help') {
+                        await sendAdminControlPanelMenu(client, sessionData.phone);
+                        return;
+                    }
+
+                    // Forward to Laravel Webhook as Admin Control Panel Command
+                    const payload = {
+                        sessionId,
+                        sender: cleanSender,
+                        receiver: cleanReceiver,
+                        senderName,
+                        message: msg.body.trim(),
+                        isFromMe: true,
+                        isAdminCommand: true,
+                        isSelfChat: true
+                    };
+
+                    try {
+                        const response = await axios.post(WEBHOOK_URL, payload);
+                        if (response.data && response.data.replyMessage) {
+                            // Reply back directly inside Self Chat
+                            await client.sendMessage(msg.from, response.data.replyMessage);
+                        }
+                    } catch (e) {
+                        console.error('[WA Bridge] Error posting self chat command:', e.message);
+                    }
+                    return;
+                }
+            }
+
+            // 2. INTERNAL ADMIN SLASH COMMAND INTERCEPTOR (IN CUSTOMER CHAT WITH INSTANT DELETE)
+            if (msg.fromMe && isSlashCommand && !isSelfChat) {
+                console.log(`[WA Bridge] Intercepted Internal Admin Slash Command: "${msg.body}" to ${receiver}`);
+
                 const payload = {
                     sessionId,
-                    sender: sender.replace('@c.us', '').replace('@s.whatsapp.net', '').replace('@lid', ''),
-                    receiver: receiver.replace('@c.us', '').replace('@s.whatsapp.net', '').replace('@lid', ''),
+                    sender: cleanSender,
+                    receiver: cleanReceiver,
                     senderName,
                     message: msg.body.trim(),
                     isFromMe: true,
-                    isAdminCommand: true
+                    isAdminCommand: true,
+                    isSelfChat: false
                 };
 
                 await axios.post(WEBHOOK_URL, payload).catch(e => {});
@@ -138,7 +181,6 @@ function createSession(sessionId = 'default') {
                 try {
                     await msg.delete(true);
                 } catch (delErr) {
-                    // Fallback to delete for me
                     try { await msg.delete(false); } catch (e) {}
                 }
                 return;
@@ -146,12 +188,13 @@ function createSession(sessionId = 'default') {
 
             const payload = {
                 sessionId,
-                sender: sender.replace('@c.us', '').replace('@s.whatsapp.net', '').replace('@lid', ''),
-                receiver: receiver.replace('@c.us', '').replace('@s.whatsapp.net', '').replace('@lid', ''),
+                sender: cleanSender,
+                receiver: cleanReceiver,
                 senderName,
                 message: msg.body,
                 isFromMe: msg.fromMe,
-                isAdminCommand: false
+                isAdminCommand: false,
+                isSelfChat
             };
 
             await axios.post(WEBHOOK_URL, payload);
@@ -167,6 +210,36 @@ function createSession(sessionId = 'default') {
     });
 
     return sessionData;
+}
+
+// Function to send Admin Control Panel Menu inside "Message Yourself" (Chat ke Nomor Sendiri)
+async function sendAdminControlPanelMenu(client, adminPhone) {
+    if (!adminPhone) return;
+    try {
+        const selfChatId = adminPhone.includes('@') ? adminPhone : `${adminPhone}@c.us`;
+        const menuText = 
+`🤖 *CRM ADMIN CONTROL PANEL (CHAT SENDIRI)* 🤖
+
+Gunakan format ini di *Chat Sendiri (Message Yourself)* untuk update stage customer *TANPA MENGIRIM PESAN APAPUN KE CUSTOMER*:
+
+📌 *FORMAT PERINTAH STAGE*:
+• `#deal <no_hp>` ➔ Set Stage *Deal*
+• `#meeting <no_hp>` ➔ Set Stage *Meeting*
+• `#pitching <no_hp>` ➔ Set Stage *Pitching*
+• `#stage <nomor/nama> <no_hp>` ➔ Set Stage khusus
+
+💡 *CONTOH CONKRET*:
+👉 `#deal 08123456789`
+👉 `#meeting 628123456789`
+👉 `#stage 1 08123456789`
+
+Ketik `#menu` kapan saja untuk melihat menu ini kembali.`;
+
+        await client.sendMessage(selfChatId, menuText);
+        console.log(`[WA Bridge] Sent Admin Control Panel menu to Self Chat (${selfChatId})`);
+    } catch (err) {
+        console.log('[WA Bridge] Could not send welcome menu to self chat:', err.message);
+    }
 }
 
 // Function to scan and backfill recent missed chats when WA reconnects
