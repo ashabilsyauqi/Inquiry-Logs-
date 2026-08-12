@@ -75,23 +75,44 @@
             </nav>
         </div>
 
-        <!-- User Profile & Logout -->
-        <div class="p-4 border-t border-slate-800 bg-slate-950/50">
-            <div class="flex items-center justify-between mb-3">
-                <div class="flex items-center gap-2.5 overflow-hidden">
-                    <div class="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
-                        {{ strtoupper(substr($user->name, 0, 1)) }}
+        <!-- DYNAMIC LOGGED-IN USER PROFILE & LOGOUT FOOTER -->
+        <div class="p-4 border-t border-slate-800/80 bg-slate-950/70 backdrop-blur-md">
+            <div class="p-3 bg-slate-900/90 border border-slate-800 rounded-xl mb-3 shadow-inner">
+                <div class="flex items-center gap-3">
+                    <div class="relative flex-shrink-0">
+                        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 via-teal-500 to-indigo-600 text-white flex items-center justify-center font-extrabold text-sm shadow-md shadow-emerald-900/40">
+                            {{ strtoupper(substr($user->name, 0, 1)) }}
+                        </div>
+                        <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-slate-900 rounded-full" title="Status: Online"></span>
                     </div>
-                    <div class="truncate">
-                        <p class="text-xs font-bold text-white truncate">{{ $user->name }}</p>
-                        <p class="text-[10px] text-slate-400 truncate">{{ $user->email }}</p>
+                    <div class="truncate flex-1 min-w-0">
+                        <div class="flex items-center gap-1.5 mb-0.5">
+                            <p class="text-xs font-bold text-white truncate leading-tight">{{ $user->name }}</p>
+                        </div>
+                        <p class="text-[10px] text-slate-400 truncate font-mono mb-1.5">{{ $user->email }}</p>
+                        <div>
+                            @if($user->isCeo())
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-500/20 text-purple-300 border border-purple-500/30 text-[9px] font-extrabold rounded-full uppercase tracking-wider">
+                                👑 CEO / Owner
+                            </span>
+                            @elseif($user->role == 'supervisor')
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[9px] font-extrabold rounded-full uppercase tracking-wider">
+                                🛡️ Supervisor
+                            </span>
+                            @else
+                            <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[9px] font-extrabold rounded-full uppercase tracking-wider">
+                                ⚡ Sales Admin
+                            </span>
+                            @endif
+                        </div>
                     </div>
                 </div>
             </div>
+
             <form method="POST" action="/logout">
                 @csrf
-                <button type="submit" class="w-full py-2 bg-slate-800 hover:bg-rose-900/50 hover:text-rose-300 text-slate-300 font-semibold text-xs rounded-lg transition border border-slate-700 flex items-center justify-center gap-2">
-                    🚪 Logout
+                <button type="submit" class="w-full py-2.5 bg-slate-900 hover:bg-rose-950/80 hover:text-rose-300 hover:border-rose-800/80 text-slate-300 font-bold text-xs rounded-xl transition-all duration-200 border border-slate-800 flex items-center justify-center gap-2 shadow-sm group">
+                    <span class="group-hover:translate-x-0.5 transition-transform">🚪</span> Logout System
                 </button>
             </form>
         </div>
@@ -223,8 +244,27 @@
                     </div>
                     @endforeach
                     @if($waAccounts->isEmpty())
-                    <div class="col-span-4 bg-white p-6 rounded-2xl border border-slate-200 text-center text-slate-400 text-xs">
-                        Belum ada Running Brand. Klik "WA Device Manager" untuk menambahkan.
+                    <div class="col-span-1 sm:col-span-2 lg:col-span-4 bg-gradient-to-b from-white to-slate-50/80 p-8 sm:p-12 rounded-3xl border border-slate-200/80 shadow-xl shadow-slate-200/40 text-center relative overflow-hidden group">
+                        <div class="absolute -right-12 -top-12 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl group-hover:bg-emerald-500/20 transition-all duration-500"></div>
+                        <div class="max-w-md mx-auto space-y-4 relative z-10">
+                            <div class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-600 text-white flex items-center justify-center text-3xl shadow-lg shadow-emerald-500/30">
+                                🎨
+                            </div>
+                            <div>
+                                <h4 class="text-lg font-extrabold text-slate-900 tracking-tight">Belum Ada Running Brand / Pipeline CS</h4>
+                                <p class="text-xs text-slate-500 mt-1 leading-relaxed">
+                                    Mulailah membuat Brand pertama Anda untuk memantau aktivitas sales pipeline dan WhatsApp lead secara real-time.
+                                </p>
+                            </div>
+                            <div class="flex flex-wrap justify-center gap-3 pt-2">
+                                <button onclick="openBrandManagementModal()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-600/30 hover:scale-105 transition-all">
+                                    + Tambah Brand Pertama
+                                </button>
+                                <button onclick="openDeviceModal()" class="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-md hover:scale-105 transition-all">
+                                    📱 WA Device Manager
+                                </button>
+                            </div>
+                        </div>
                     </div>
                     @endif
                 </div>
