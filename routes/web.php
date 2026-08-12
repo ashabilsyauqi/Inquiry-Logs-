@@ -276,102 +276,32 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/users', [UserController::class, 'index']);
     Route::post('/users/{id}/approve', [UserController::class, 'approve']);
     Route::post('/users/{id}/reject', [UserController::class, 'reject']);
-});
 
-// Extension Public API Endpoints (Accessible by Chrome Extension without web session cookie)
-Route::get('/api/extension/stages', function (Request $request) {
-    $phone = $request->input('phone');
-    $accountId = $request->input('account_id');
+    // WA Disconnect Email Alert Settings & Testing Routes
+    Route::post('/wa-accounts/{id}/update-disconnect-settings', function (Request $request, $id) {
+        $waAccount = WaAccount::findOrFail($id);
+        $waAccount->disconnect_email_enabled = (bool) $request->input('enabled');
+        $waAccount->disconnect_email_interval = (int) $request->input('interval');
+        $waAccount->save();
 
-    $allAccounts = WaAccount::with(['pipelineStages' => function ($q) {
-        $q->orderBy('order', 'asc');
-    }])->get();
-
-    $matchedAccount = null;
-
-    if ($accountId) {
-        $matchedAccount = $allAccounts->where('id', $accountId)->first();
-    } elseif ($phone) {
-        $sanitized = preg_replace('/[^0-9]/', '', $phone);
-        $shortDigits = substr($sanitized, -8); // last 8 digits
-
-        $matchedAccount = $allAccounts->first(function ($acc) use ($sanitized, $shortDigits) {
-            if (!$acc->phone) return false;
-            $accSanitized = preg_replace('/[^0-9]/', '', $acc->phone);
-            return str_contains($accSanitized, $sanitized) || str_contains($sanitized, $accSanitized) || (strlen($shortDigits) >= 6 && str_contains($accSanitized, $shortDigits));
-        });
-    }
-
-    // If matched account found, put it first in the list
-    if ($matchedAccount) {
-        $sortedAccounts = collect([$matchedAccount])->concat($allAccounts->where('id', '!=', $matchedAccount->id));
-    } else {
-        $sortedAccounts = $allAccounts;
-    }
-
-    return response()->json(['status' => 'success', 'accounts' => $sortedAccounts->values()]);
-});
-
-Route::post('/api/extension/update-stage', function (Request $request) {
-    $phone = $request->input('phone');
-    $name = $request->input('name');
-    $stageName = $request->input('stage');
-    $accountId = $request->input('account_id');
-
-    if (!$stageName || (!$phone && !$name)) {
-        return response()->json(['status' => 'error', 'message' => 'Missing lead identifier or stage'], 400);
-    }
-
-    $sanitizedPhone = preg_replace('/[^0-9]/', '', $phone);
-    if (str_starts_with($sanitizedPhone, '08')) {
-        $sanitizedPhone = '62' . substr($sanitizedPhone, 1);
-    }
-
-    $lead = null;
-
-    // 1. Match by phone if valid digits exist
-    if (!empty($sanitizedPhone) && strlen($sanitizedPhone) >= 8) {
-        $lead = Lead::where('phone', $sanitizedPhone)->first();
-    }
-
-    // 2. Fallback: match by name
-    if (!$lead && !empty($name)) {
-        $cleanName = trim($name);
-        $query = Lead::where('name', $cleanName);
-        if ($accountId) {
-            $query->where('wa_account_id', $accountId);
-        }
-        $lead = $query->first();
-
-        if (!$lead) {
-            $queryPartial = Lead::where('name', 'LIKE', '%' . $cleanName . '%');
-            if ($accountId) {
-                $queryPartial->where('wa_account_id', $accountId);
-            }
-            $lead = $queryPartial->first();
-        }
-    }
-
-    // 3. Fallback: match by partial phone in name
-    if (!$lead && !empty($sanitizedPhone) && strlen($sanitizedPhone) >= 6) {
-        $shortDigits = substr($sanitizedPhone, -8);
-        $lead = Lead::where('phone', 'LIKE', '%' . $shortDigits . '%')
-            ->orWhere('name', 'LIKE', '%' . $shortDigits . '%')
-            ->first();
-    }
-
-    if (!$lead) {
-        // Create new lead if absolutely not found
-        $lead = Lead::create([
-            'name' => $name ?: ('+ ' . $sanitizedPhone),
-            'phone' => $sanitizedPhone ?: ($phone ?: '0'),
-            'stage' => $stageName,
-            'wa_account_id' => $accountId
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Pengaturan Notifikasi Email Disconnect Berhasil Diperbarui!',
+            'account' => $waAccount
         ]);
-    } else {
-        $lead->stage = $stageName;
-        $lead->save();
-    }
+    });
 
-    return response()->json(['status' => 'success', 'message' => "Stage updated to {$stageName}", 'lead' => $lead]);
+    Route::post('/wa-accounts/{id}/test-disconnect-email', function (Request $request, $id) {
+        $waAccount = WaAccount::findOrFail($id);
+        
+        $webhookCtrl = new \App\Http\Controllers\WebhookController();
+        $testRequest = new Request([
+            'sessionId' => $waAccount->session_id,
+            'reason' => 'Uji Coba Pengiriman Notifikasi Email Disconnect (Tombol Tes Admin)',
+            'forceTest' => true
+        ]);
+
+        return $webhookCtrl->handleDisconnectAlert($testRequest);
+    });
 });
+

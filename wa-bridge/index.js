@@ -357,6 +357,8 @@ app.post('/api/logout', async (req, res) => {
         sessions.delete(sessionId);
     }
 
+    sendDisconnectAlert(sessionId, 'Manual disconnect / Logout triggered from Dashboard');
+
     res.json({ status: 'success', message: `Session ${sessionId} logged out.` });
 });
 

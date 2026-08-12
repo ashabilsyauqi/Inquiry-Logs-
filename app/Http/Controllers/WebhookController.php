@@ -251,17 +251,46 @@ class WebhookController extends Controller
     public function handleDisconnectAlert(Request $request)
     {
         $sessionId = $request->input('sessionId') ?? 'default';
-        $reason = $request->input('reason') ?? 'Lost connection / Unauthenticated';
+        $reason = $request->input('reason') ?? 'Perangkat terputus atau koneksi WhatsApp hilang';
+        $forceTest = (bool)$request->input('forceTest');
 
         $waAccount = WaAccount::where('session_id', $sessionId)->first();
+        if (!$waAccount && is_numeric($sessionId)) {
+            $waAccount = WaAccount::find($sessionId);
+        }
+
         if ($waAccount) {
             $waAccount->status = 'DISCONNECTED';
             $waAccount->save();
 
+            // Check if email alert is enabled for this WA Account
+            if (!$waAccount->disconnect_email_enabled && !$forceTest) {
+                Log::info("ℹ️ Disconnect email alert skipped for Account {$waAccount->name} (Feature Disabled in Settings)");
+                return response()->json(['status' => 'success', 'message' => 'Account marked DISCONNECTED (Email alert disabled)']);
+            }
+
+            // Check interval (e.g. 10s for testing, 1800s for 30m prod)
+            $intervalSeconds = $waAccount->disconnect_email_interval ?: 10;
+            $lastSent = $waAccount->last_disconnect_email_sent_at ? \Carbon\Carbon::parse($waAccount->last_disconnect_email_sent_at) : null;
+
+            if ($lastSent && !$forceTest && $lastSent->diffInSeconds(now()) < $intervalSeconds) {
+                $secondsLeft = $intervalSeconds - $lastSent->diffInSeconds(now());
+                Log::info("⏳ Disconnect email alert throttled for Account {$waAccount->name}. Next email allowed in {$secondsLeft}s");
+                return response()->json([
+                    'status' => 'success',
+                    'message' => "Account marked DISCONNECTED (Email throttled, next alert in {$secondsLeft}s)"
+                ]);
+            }
+
             // Send Email Notification Alert to CEO Users
             $ceos = User::where('role', 'CEO')->get();
+            if ($ceos->isEmpty()) {
+                $ceos = User::where('role', 'admin')->get();
+            }
+
             $accountName = $waAccount->name;
             $phone = $waAccount->phone ?: 'Belum Terhubung';
+            $intervalText = ($intervalSeconds < 60) ? "{$intervalSeconds} Detik (Testing Mode)" : ($intervalSeconds / 60) . " Menit";
 
             foreach ($ceos as $ceo) {
                 $to = $ceo->email;
@@ -269,22 +298,32 @@ class WebhookController extends Controller
                 
                 $htmlBody = "
                 <html>
-                <body style='font-family: Arial, sans-serif; color: #333; line-height: 1.6;'>
-                    <div style='max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; rounded-radius: 12px;'>
-                        <h2 style='color: #dc2626;'>⚠️ PERINGATAN DARURAT WA TERPUTUS</h2>
-                        <p>Halo CEO / Owner (<strong>{$ceo->name}</strong>),</p>
-                        <p>Perangkat WhatsApp untuk brand <strong>{$accountName}</strong> (No: <code>{$phone}</code>) baru saja <strong>TERPUTUS</strong> dari server.</p>
-                        <div style='background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 12px; margin: 15px 0;'>
-                            <strong>Alasan Terputus:</strong> {$reason}
+                <body style='font-family: Arial, sans-serif; color: #333; line-height: 1.6; background-color: #f8fafc; padding: 20px;'>
+                    <div style='max-width: 600px; margin: 0 auto; background: #ffffff; padding: 25px; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.05);'>
+                        <div style='text-align: center; margin-bottom: 20px;'>
+                            <h2 style='color: #dc2626; margin: 0;'>⚠️ PERINGATAN DARURAT WA TERPUTUS</h2>
+                            <p style='color: #64748b; font-size: 13px;'>Sistem Deteksi Otomatis CRM MVP</p>
                         </div>
-                        <p>Silakan segera menyambungkan kembali koneksi perangkat WhatsApp Anda:</p>
+                        <p>Halo <strong>{$ceo->name}</strong>,</p>
+                        <p>Perangkat WhatsApp untuk brand <strong>{$accountName}</strong> (No: <code>{$phone}</code>) saat ini dalam status <span style='color: #dc2626; font-weight: bold;'>TERPUTUS (DISCONNECTED)</span>.</p>
+                        
+                        <div style='background-color: #fef2f2; border-left: 4px solid #ef4444; padding: 14px; margin: 15px 0; border-radius: 6px;'>
+                            <strong>Detail Peringatan:</strong><br/>
+                            • <strong>Brand / Device:</strong> {$accountName}<br/>
+                            • <strong>Alasan:</strong> {$reason}<br/>
+                            • <strong>Waktu Kejadian:</strong> " . now()->format('d M Y - H:i:s') . " WIB<br/>
+                            • <strong>Mode Interval:</strong> {$intervalText}
+                        </div>
+
+                        <p>Silakan segera lakukan scan ulang QR code di dashboard CRM Anda agar pesan dari customer tetap masuk:</p>
+
                         <p style='text-align: center; margin: 25px 0;'>
-                            <a href='https://crm.difitech.id' style='background-color: #059669; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;'>
+                            <a href='http://127.0.0.1:8000/dashboard' style='background-color: #059669; color: white; padding: 14px 28px; text-decoration: none; border-radius: 10px; font-weight: bold; display: inline-block; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);'>
                                 📲 Scan QR Code Ulang Sekarang
                             </a>
                         </p>
                         <hr style='border: none; border-top: 1px solid #e2e8f0; margin-top: 30px;' />
-                        <p style='font-size: 11px; color: #94a3b8;'>Pesan ini dikirimkan secara otomatis oleh CRM MVP System Difitech.</p>
+                        <p style='font-size: 11px; color: #94a3b8; text-align: center;'>Pesan notifikasi otomatis ini dikirimkan oleh CRM MVP Difitech System.</p>
                     </div>
                 </body>
                 </html>
@@ -297,6 +336,9 @@ class WebhookController extends Controller
 
                 @mail($to, $subject, $htmlBody, $headers);
             }
+
+            $waAccount->last_disconnect_email_sent_at = now();
+            $waAccount->save();
 
             Log::warning("⚠️ DISCONNECTION EMAIL ALERT DISPATCHED to CEOs for Account {$accountName} ({$sessionId})");
         }

@@ -652,10 +652,32 @@
                 </div>
                 @endif
 
-                <div>
-                    <h4 class="font-semibold text-slate-800 text-sm mb-3">Daftar Akun WA Terdaftar</h4>
-                    <div id="accountsListContainer" class="space-y-3">
-                        <div class="text-center py-6 text-slate-400 text-sm">Memuat data akun...</div>
+                <!-- Disconnection Email Alert Control Panel (Testing vs Production) -->
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h4 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                                📧 Pengaturan Email Notifikasi Disconnect
+                            </h4>
+                            <p class="text-xs text-slate-500">Kirim email darurat otomatis ke CEO jika koneksi WA terputus</p>
+                        </div>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="disconnectEmailToggle" class="sr-only peer" onchange="saveDisconnectSettings()" {{ ($activeAccount && $activeAccount->disconnect_email_enabled) ? 'checked' : '' }}>
+                            <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                        </label>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-200 pt-3">
+                        <div class="flex items-center gap-2 w-full sm:w-auto">
+                            <span class="text-xs font-semibold text-slate-600 whitespace-nowrap">Mode Interval:</span>
+                            <select id="disconnectIntervalSelect" onchange="saveDisconnectSettings()" class="text-xs font-semibold bg-white border border-slate-300 rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-emerald-500 outline-none">
+                                <option value="10" {{ ($activeAccount && $activeAccount->disconnect_email_interval == 10) ? 'selected' : '' }}>⚡ 10 Detik (Mode Testing / Validation)</option>
+                                <option value="1800" {{ ($activeAccount && $activeAccount->disconnect_email_interval == 1800) ? 'selected' : '' }}>⏱️ 30 Menit (Mode Production)</option>
+                            </select>
+                        </div>
+                        <button onclick="triggerTestDisconnectEmail()" class="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-lg transition shadow-sm whitespace-nowrap">
+                            🧪 Test Kirim Email Disconnect Now
+                        </button>
                     </div>
                 </div>
 
@@ -1124,6 +1146,44 @@
                         </div>
                     `).join('');
                 });
+        }
+
+        function saveDisconnectSettings() {
+            const toggle = document.getElementById('disconnectEmailToggle');
+            const select = document.getElementById('disconnectIntervalSelect');
+            const enabled = toggle ? (toggle.checked ? 1 : 0) : 1;
+            const interval = select ? select.value : 10;
+            const accId = '{{ $activeAccount ? $activeAccount->id : ($waAccounts->first() ? $waAccounts->first()->id : 1) }}';
+
+            fetch('/wa-accounts/' + accId + '/update-disconnect-settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                body: JSON.stringify({ enabled, interval })
+            })
+            .then(res => res.json())
+            .then(data => {
+                showToastNotification('✅ ' + data.message);
+            })
+            .catch(err => {
+                alert('Gagal menyimpan pengaturan disconnect email.');
+            });
+        }
+
+        function triggerTestDisconnectEmail() {
+            const accId = '{{ $activeAccount ? $activeAccount->id : ($waAccounts->first() ? $waAccounts->first()->id : 1) }}';
+            if (!confirm('Kirim email uji coba disconnect sekarang ke Inbox CEO?')) return;
+
+            fetch('/wa-accounts/' + accId + '/test-disconnect-email', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert('📬 SUCCESS! Email darurat disconnect berhasil dikirim ke Inbox CEO!');
+            })
+            .catch(err => {
+                alert('⚠️ Gagal mengirim email test disconnect.');
+            });
         }
 
         function addNewAccount() {

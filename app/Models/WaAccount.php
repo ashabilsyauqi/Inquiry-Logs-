@@ -14,6 +14,9 @@ class WaAccount extends Model
         'phone',
         'session_id',
         'status',
+        'disconnect_email_enabled',
+        'disconnect_email_interval',
+        'last_disconnect_email_sent_at',
     ];
 
     public function leads()
