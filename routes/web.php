@@ -52,7 +52,7 @@ Route::middleware(['auth'])->group(function () {
             \Illuminate\Support\Facades\Artisan::call('wa:check-disconnects');
         } catch (\Throwable $e) {}
 
-        $query = Lead::with('waAccount');
+        $query = Lead::with(['waAccount', 'assignedUser']);
 
         if ($filter === 'daily') {
             $query->whereDate('created_at', Carbon::today());

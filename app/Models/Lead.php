@@ -16,6 +16,7 @@ class Lead extends Model
         'notes',
         'priority',
         'wa_account_id',
+        'assigned_user_id',
     ];
 
     public function waAccount()
@@ -23,8 +24,14 @@ class Lead extends Model
         return $this->belongsTo(WaAccount::class);
     }
 
+    public function assignedUser()
+    {
+        return $this->belongsTo(User::class, 'assigned_user_id');
+    }
+
     public function messages()
     {
         return $this->hasMany(LeadMessage::class);
     }
 }
+

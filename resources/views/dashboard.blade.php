@@ -1349,26 +1349,33 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Accept': 'application/json',
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
                 },
                 body: JSON.stringify({ name, email, phone, password, wa_account_id })
             })
-            .then(res => res.json())
+            .then(async res => {
+                const data = await res.json();
+                if (!res.ok) {
+                    let msg = data.message || 'Gagal merekrut Admin CS';
+                    if (data.errors) {
+                        msg = Object.values(data.errors).flat().join('\n• ');
+                    }
+                    throw new Error(msg);
+                }
+                return data;
+            })
             .then(data => {
                 btn.disabled = false;
                 btn.innerText = '🚀 Simpan & Rekrut Admin CS';
-                if (data.status === 'success') {
-                    showToastNotification('✅ ' + data.message);
-                    document.getElementById('createCsForm').reset();
-                    loadCsTeamList();
-                } else {
-                    alert('Gagal: ' + (data.message || data.error || 'Terjadi kesalahan'));
-                }
+                showToastNotification('✅ ' + data.message);
+                document.getElementById('createCsForm').reset();
+                loadCsTeamList();
             })
             .catch(err => {
                 btn.disabled = false;
                 btn.innerText = '🚀 Simpan & Rekrut Admin CS';
-                alert('Gagal merekrut Admin CS. Pastikan email belum pernah terdaftar.');
+                alert('⚠️ GAGAL REKRUT ADMIN CS:\n• ' + err.message);
             });
         }
 
