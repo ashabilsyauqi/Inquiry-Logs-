@@ -92,6 +92,8 @@
                             </span>
                             <span id="pendingBrandBadge" class="bg-[#da3633] text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-full hidden">0</span>
                         </button>
+                        @endif
+
                         @if(!$user->isCeo() || $accountId != 'all')
                         <button onclick="openCsTeamModal()" class="w-full flex items-center justify-between px-2.5 py-2 rounded-md text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc] transition text-left">
                             <span class="flex items-center gap-2.5">
@@ -423,7 +425,7 @@
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 flex items-center justify-between">
                         <div>
                             <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Total Leads</p>
-                            <h3 class="text-3xl font-bold text-slate-900 mt-1">{{ $totalLeads }}</h3>
+                            <h3 class="text-3xl font-bold text-slate-900 mt-1">{{ $leads->count() }}</h3>
                         </div>
                         <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 text-lg font-bold">#</div>
                     </div>
