@@ -1134,8 +1134,11 @@
             });
         }
 
+        let currentActiveTab = 'all';
+
         // INTERACTIVE TAB SWITCHING LOGIC
         function switchTab(tabName) {
+            currentActiveTab = tabName;
             const secAnalytics = document.getElementById('section-analytics');
             const secTable = document.getElementById('section-table');
             const secKanban = document.getElementById('section-kanban');
@@ -1145,9 +1148,9 @@
                 const btn = document.getElementById('nav-' + t);
                 if (btn) {
                     if (t === tabName) {
-                        btn.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-slate-800 text-white font-semibold shadow-sm transition text-left";
+                        btn.className = "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md bg-[#161b22] text-[#f0f6fc] font-semibold border-l-2 border-[#2f81f7] transition text-left";
                     } else {
-                        btn.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white transition text-left";
+                        btn.className = "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc] transition text-left";
                     }
                 }
             });
@@ -1155,8 +1158,6 @@
             if (secAnalytics) secAnalytics.classList.toggle('hidden', tabName !== 'all' && tabName !== 'analytics');
             if (secTable) secTable.classList.toggle('hidden', tabName !== 'all' && tabName !== 'table');
             if (secKanban) secKanban.classList.toggle('hidden', tabName !== 'all' && tabName !== 'kanban');
-
-            document.getElementById('main-scroll-area').scrollTop = 0;
         }
 
         // Chart.js Trend Analytics Initialization
@@ -1932,7 +1933,7 @@
             });
         }
 
-        // Auto-refresh content
+        // Auto-refresh content without disrupting active tab state
         function fetchLeads() {
             if (isModalOpen) return;
             const currentParams = window.location.search;
@@ -1941,7 +1942,13 @@
                 .then(html => {
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
-                    document.querySelector('#dashboard-content').innerHTML = doc.querySelector('#dashboard-content').innerHTML;
+                    const newContent = doc.querySelector('#dashboard-content');
+                    if (newContent) {
+                        document.querySelector('#dashboard-content').innerHTML = newContent.innerHTML;
+                        if (typeof switchTab === 'function' && currentActiveTab && currentActiveTab !== 'all') {
+                            switchTab(currentActiveTab);
+                        }
+                    }
                 });
         }
         setInterval(fetchLeads, 5000);
