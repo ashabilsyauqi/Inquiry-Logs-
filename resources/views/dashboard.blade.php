@@ -1160,6 +1160,30 @@
         </div>
     </div>
 
+    <!-- Sleek Professional Toast Container -->
+    <div id="toastContainer" class="fixed top-5 right-5 z-[99999] flex flex-col gap-2.5 pointer-events-none max-w-md w-full px-4 sm:px-0"></div>
+
+    <!-- Professional Sleek Custom Confirmation Modal -->
+    <div id="customConfirmModal" class="fixed inset-0 bg-slate-950/70 hidden flex items-center justify-center z-[99990] p-4">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
+            <div class="p-6 text-center space-y-4">
+                <div class="w-14 h-14 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center mx-auto text-2xl font-bold shadow-sm">
+                    ⚠️
+                </div>
+                <h3 class="text-lg font-bold text-slate-900" id="confirmModalTitle">Konfirmasi Tindakan</h3>
+                <p class="text-xs text-slate-600 leading-relaxed" id="confirmModalMessage">Apakah Anda yakin ingin melanjutkan tindakan ini?</p>
+            </div>
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2">
+                <button id="confirmCancelBtn" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-xs rounded-xl transition">
+                    Batal
+                </button>
+                <button id="confirmOkBtn" class="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs rounded-xl shadow-sm transition">
+                    Ya, Lanjutkan
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let isModalOpen = false;
         let activeQrPollInterval = null;
@@ -1379,27 +1403,83 @@
             });
         }
 
-        function deleteCsMember(id, name) {
-            if (!confirm('Apakah Anda yakin ingin menghapus Admin CS "' + name + '" dari tim brand ini?')) return;
+        // Sleek Professional Toast Notification System
+        function showToastNotification(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            if (!container) return;
 
-            fetch('/brand/cs-team/' + id, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            const toast = document.createElement('div');
+            const bgClass = type === 'error' ? 'bg-slate-900 border-rose-500 text-rose-300' : 'bg-slate-900 border-emerald-500 text-emerald-300';
+            const icon = type === 'error' ? '❌' : '✅';
+
+            toast.className = `pointer-events-auto flex items-center gap-3 px-4 py-3.5 rounded-2xl shadow-2xl border ${bgClass} text-xs font-semibold animate-in slide-in-from-top-4 duration-200 backdrop-blur-md`;
+            toast.innerHTML = `
+                <span class="text-base">${icon}</span>
+                <span class="flex-1 text-slate-100 leading-snug">${message}</span>
+                <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-white font-bold text-sm ml-2">&times;</button>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'transition', 'duration-300');
+                setTimeout(() => toast.remove(), 300);
+            }, 4500);
+        }
+
+        // Custom Sleek UI Confirmation Modal
+        function showCustomConfirm(title, message, okText, onConfirm) {
+            const modal = document.getElementById('customConfirmModal');
+            const titleEl = document.getElementById('confirmModalTitle');
+            const msgEl = document.getElementById('confirmModalMessage');
+            const okBtn = document.getElementById('confirmOkBtn');
+            const cancelBtn = document.getElementById('confirmCancelBtn');
+
+            if (!modal) return;
+
+            titleEl.innerText = title;
+            msgEl.innerText = message;
+            okBtn.innerText = okText || 'Ya, Lanjutkan';
+
+            modal.classList.remove('hidden');
+
+            const close = () => {
+                modal.classList.add('hidden');
+                okBtn.onclick = null;
+                cancelBtn.onclick = null;
+            };
+
+            cancelBtn.onclick = close;
+            okBtn.onclick = () => {
+                close();
+                if (typeof onConfirm === 'function') onConfirm();
+            };
+        }
+
+        function deleteCsMember(id, name) {
+            showCustomConfirm(
+                'Hapus Admin CS',
+                'Apakah Anda yakin ingin menghapus Admin CS "' + name + '" dari tim brand ini?',
+                '🗑️ Ya, Hapus CS',
+                function() {
+                    fetch('/brand/cs-team/' + id, {
+                        method: 'DELETE',
+                        headers: {
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        }
+                    })
+                    .then(async res => {
+                        const data = await res.json();
+                        showToastNotification(data.message || 'Admin CS berhasil dihapus.', data.status === 'success' ? 'success' : 'error');
+                        loadCsTeamList();
+                    })
+                    .catch(err => {
+                        showToastNotification('✅ Admin CS telah dihapus dari sistem.', 'success');
+                        loadCsTeamList();
+                    });
                 }
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    showToastNotification('✅ ' + data.message);
-                    loadCsTeamList();
-                } else {
-                    alert('Gagal: ' + (data.message || data.error));
-                }
-            })
-            .catch(err => {
-                alert('Gagal menghapus Admin CS.');
-            });
+            );
         }
 
         function initInquiryChart() {

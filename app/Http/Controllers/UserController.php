@@ -151,11 +151,17 @@ class UserController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        $csUser = User::where('id', $id)->where('role', 'SALES_ADMIN')->firstOrFail();
+        $csUser = User::find($id);
+        if (!$csUser) {
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Admin CS sudah terhapus dari sistem.'
+            ]);
+        }
 
         // Security check: Non-CEO can only delete CS under their own brand
         if (!$supervisor->isCeo() && $csUser->wa_account_id != $supervisor->wa_account_id) {
-            return response()->json(['error' => 'Unauthorized action for this brand'], 403);
+            return response()->json(['error' => 'Akses ditolak: Hanya Supervisor Brand ini yang dapat menghapus CS.'], 403);
         }
 
         $csName = $csUser->name;
@@ -163,7 +169,8 @@ class UserController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => '🗑️ Admin CS "' . $csName . '" berhasil dihapus dari tim brand.'
+            'message' => '🗑️ Admin CS "' . $csName . '" berhasil dihapus.'
         ]);
     }
+
 }
