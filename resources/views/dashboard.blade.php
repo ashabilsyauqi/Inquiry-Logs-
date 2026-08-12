@@ -369,29 +369,14 @@
             <!-- 2. BRAND DASHBOARD VIEW (STAT CARDS, ADJUSTABLE PERIOD, TREND CHART, KANBAN, DATA TABLE) -->
             @if(!$user->isCeo() || $accountId != 'all')
             
-            <!-- Top Action Header & Adjustable Period Filters -->
-            <div class="flex flex-col md:flex-row justify-between items-center gap-4 bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
-                <div class="flex items-center gap-3">
-                    @if($user->isCeo())
-                    <a href="/?filter={{ $filter }}&account_id=all" 
-                       class="px-4 py-2 text-xs rounded-xl font-bold transition flex items-center gap-2 bg-slate-900 text-white hover:bg-slate-800 shadow">
-                        ⬅️ Kembali ke Portfolio Brands CEO
-                    </a>
-                    @endif
-
-                    <h3 class="font-bold text-slate-800 text-sm">
-                        Filter Periode Data Brand:
-                    </h3>
-                </div>
-
-                <!-- Adjustable Period Filter Buttons (Semua, Hari Ini, Bulan Ini, Tahun Ini) -->
-                <div class="flex gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
-                    <a href="/?filter=all&account_id={{ $accountId }}" class="px-3 py-1.5 text-xs font-semibold rounded-lg transition {{ $filter == 'all' ? 'bg-blue-600 text-white font-bold shadow-sm' : 'text-slate-600 hover:bg-slate-200' }}">Semua</a>
-                    <a href="/?filter=daily&account_id={{ $accountId }}" class="px-3 py-1.5 text-xs font-semibold rounded-lg transition {{ $filter == 'daily' ? 'bg-blue-600 text-white font-bold shadow-sm' : 'text-slate-600 hover:bg-slate-200' }}">Hari Ini</a>
-                    <a href="/?filter=monthly&account_id={{ $accountId }}" class="px-3 py-1.5 text-xs font-semibold rounded-lg transition {{ $filter == 'monthly' ? 'bg-blue-600 text-white font-bold shadow-sm' : 'text-slate-600 hover:bg-slate-200' }}">Bulan Ini</a>
-                    <a href="/?filter=yearly&account_id={{ $accountId }}" class="px-3 py-1.5 text-xs font-semibold rounded-lg transition {{ $filter == 'yearly' ? 'bg-blue-600 text-white font-bold shadow-sm' : 'text-slate-600 hover:bg-slate-200' }}">Tahun Ini</a>
-                </div>
+            @if($user->isCeo() && $accountId != 'all')
+            <div class="mb-3">
+                <a href="/?filter={{ $filter }}&account_id=all" 
+                   class="inline-flex items-center gap-2 px-3.5 py-2 text-xs rounded-xl font-bold bg-slate-900 text-white hover:bg-slate-800 shadow transition">
+                    ⬅️ Kembali ke Portfolio Brands CEO
+                </a>
             </div>
+            @endif
 
             <!-- Active Pipeline Banner -->
             @if($activeAccount)
@@ -481,11 +466,24 @@
 
             <!-- SECTION 2: DAFTAR LEADS TABLE VIEW -->
             <section id="section-table" class="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
-                <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center">
-                    <h2 class="text-lg font-bold text-slate-900">
-                        Daftar Leads {{ $activeAccount ? '(' . $activeAccount->name . ')' : '(Semua Pipeline)' }}
-                    </h2>
-                    <span class="text-xs text-slate-400 font-medium">Total: {{ $leads->count() }} Data</span>
+                <div class="px-6 py-4 border-b border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                            📋 Daftar Leads {{ $activeAccount ? '(' . $activeAccount->name . ')' : '(Semua Pipeline)' }}
+                        </h2>
+                        <p class="text-xs text-slate-500 font-medium mt-0.5">Total: {{ $leads->count() }} Data Lead</p>
+                    </div>
+
+                    <!-- Filter Periode Leads (Semua, Hari Ini, Bulan Ini, Tahun Ini) -->
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-bold text-slate-500 hidden sm:inline">Filter Periode:</span>
+                        <div class="flex gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+                            <a href="/?filter=all&account_id={{ $accountId }}" class="px-3 py-1.5 text-xs font-semibold rounded-lg transition {{ $filter == 'all' ? 'bg-blue-600 text-white font-bold shadow-sm' : 'text-slate-600 hover:bg-slate-200' }}">Semua</a>
+                            <a href="/?filter=daily&account_id={{ $accountId }}" class="px-3 py-1.5 text-xs font-semibold rounded-lg transition {{ $filter == 'daily' ? 'bg-blue-600 text-white font-bold shadow-sm' : 'text-slate-600 hover:bg-slate-200' }}">Hari Ini</a>
+                            <a href="/?filter=monthly&account_id={{ $accountId }}" class="px-3 py-1.5 text-xs font-semibold rounded-lg transition {{ $filter == 'monthly' ? 'bg-blue-600 text-white font-bold shadow-sm' : 'text-slate-600 hover:bg-slate-200' }}">Bulan Ini</a>
+                            <a href="/?filter=yearly&account_id={{ $accountId }}" class="px-3 py-1.5 text-xs font-semibold rounded-lg transition {{ $filter == 'yearly' ? 'bg-blue-600 text-white font-bold shadow-sm' : 'text-slate-600 hover:bg-slate-200' }}">Tahun Ini</a>
+                        </div>
+                    </div>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
