@@ -15,10 +15,17 @@ const DISCONNECT_ALERT_URL = process.env.DISCONNECT_ALERT_URL || 'http://127.0.0
 
 // Map to store sessions: sessionId -> { sessionId, client, status, qrDataUrl, phone }
 const sessions = new Map();
+const STATUS_UPDATE_URL = process.env.STATUS_UPDATE_URL || 'http://127.0.0.1:8000/api/wa-status-update';
 
 function sendDisconnectAlert(sessionId, reason) {
     axios.post(DISCONNECT_ALERT_URL, { sessionId, reason })
         .catch(err => console.error(`[WA Bridge] Failed sending disconnect alert for ${sessionId}:`, err.message));
+}
+
+function sendConnectStatusUpdate(sessionId, status, phone = null) {
+    axios.post(STATUS_UPDATE_URL, { sessionId, status, phone })
+        .then(() => console.log(`[WA Bridge] [${sessionId}] Status '${status}' synced to Laravel DB.`))
+        .catch(err => console.error(`[WA Bridge] Failed syncing status for ${sessionId}:`, err.message));
 }
 
 function createSession(sessionId = 'default') {
@@ -65,6 +72,9 @@ function createSession(sessionId = 'default') {
             sessionData.phone = info.wid.user;
             console.log(`[WA Bridge] [${sessionId}] Client Ready! Phone: ${sessionData.phone}`);
             
+            // Instantly sync CONNECTED status & phone to Laravel MySQL DB
+            sendConnectStatusUpdate(sessionId, 'CONNECTED', sessionData.phone);
+
             // Send welcome Control Panel menu to Self Chat ("Message Yourself")
             sendAdminControlPanelMenu(client, sessionData.phone);
             
@@ -72,6 +82,7 @@ function createSession(sessionId = 'default') {
             syncRecentChats(client, sessionId);
         } catch (e) {
             console.log(`[WA Bridge] [${sessionId}] Client Ready!`);
+            sendConnectStatusUpdate(sessionId, 'CONNECTED');
         }
     });
 
@@ -84,7 +95,19 @@ function createSession(sessionId = 'default') {
         sessionData.status = 'DISCONNECTED';
         sessionData.qrDataUrl = null;
         console.error(`[WA Bridge] [${sessionId}] Auth failure:`, msg);
+        sendConnectStatusUpdate(sessionId, 'DISCONNECTED');
         sendDisconnectAlert(sessionId, 'Auth failure: ' + msg);
+    });
+
+    client.on('change_state', (state) => {
+        console.log(`[WA Bridge] [${sessionId}] Connection state changed: ${state}`);
+        if (state === 'DISCONNECTED' || state === 'UNPAIRED' || state === 'UNLAUNCHED') {
+            sessionData.status = 'DISCONNECTED';
+            sessionData.qrDataUrl = null;
+            sessionData.phone = null;
+            sendConnectStatusUpdate(sessionId, 'DISCONNECTED');
+            sendDisconnectAlert(sessionId, 'Perangkat WhatsApp terputus dari HP (State: ' + state + ')');
+        }
     });
 
     client.on('disconnected', (reason) => {
@@ -92,6 +115,7 @@ function createSession(sessionId = 'default') {
         sessionData.qrDataUrl = null;
         sessionData.phone = null;
         console.log(`[WA Bridge] [${sessionId}] Disconnected:`, reason);
+        sendConnectStatusUpdate(sessionId, 'DISCONNECTED');
         sendDisconnectAlert(sessionId, 'Disconnected: ' + reason);
     });
 
@@ -217,23 +241,18 @@ async function sendAdminControlPanelMenu(client, adminPhone) {
     if (!adminPhone) return;
     try {
         const selfChatId = adminPhone.includes('@') ? adminPhone : `${adminPhone}@c.us`;
-        const menuText = 
-`🤖 *CRM ADMIN CONTROL PANEL (CHAT SENDIRI)* 🤖
-
-Gunakan format ini di *Chat Sendiri (Message Yourself)* untuk update stage customer *TANPA MENGIRIM PESAN APAPUN KE CUSTOMER*:
-
-📌 *FORMAT PERINTAH STAGE*:
-• `#deal <no_hp>` ➔ Set Stage *Deal*
-• `#meeting <no_hp>` ➔ Set Stage *Meeting*
-• `#pitching <no_hp>` ➔ Set Stage *Pitching*
-• `#stage <nomor/nama> <no_hp>` ➔ Set Stage khusus
-
-💡 *CONTOH CONKRET*:
-👉 `#deal 08123456789`
-👉 `#meeting 628123456789`
-👉 `#stage 1 08123456789`
-
-Ketik `#menu` kapan saja untuk melihat menu ini kembali.`;
+        const menuText = "🤖 *CRM ADMIN CONTROL PANEL (CHAT SENDIRI)* 🤖\n\n" +
+            "Gunakan format ini di *Chat Sendiri (Message Yourself)* untuk update stage customer *TANPA MENGIRIM PESAN APAPUN KE CUSTOMER*:\n\n" +
+            "📌 *FORMAT PERINTAH STAGE*:\n" +
+            "• `#deal <no_hp>` ➔ Set Stage *Deal*\n" +
+            "• `#meeting <no_hp>` ➔ Set Stage *Meeting*\n" +
+            "• `#pitching <no_hp>` ➔ Set Stage *Pitching*\n" +
+            "• `#stage <nomor/nama> <no_hp>` ➔ Set Stage khusus\n\n" +
+            "💡 *CONTOH CONKRET*:\n" +
+            "👉 `#deal 08123456789` \n" +
+            "👉 `#meeting 628123456789` \n" +
+            "👉 `#stage 1 08123456789` \n\n" +
+            "Ketik `#menu` kapan saja untuk melihat menu ini kembali.";
 
         await client.sendMessage(selfChatId, menuText);
         console.log(`[WA Bridge] Sent Admin Control Panel menu to Self Chat (${selfChatId})`);
@@ -309,12 +328,29 @@ app.get('/api/sessions', (req, res) => {
 });
 
 // 2. Get QR Data URL for a session
-app.get('/api/qr', (req, res) => {
+app.get('/api/qr', async (req, res) => {
     const sessionId = req.query.session || 'default';
     let session = sessions.get(sessionId);
 
     if (!session) {
         session = createSession(sessionId);
+    } else if (session.client && session.status === 'CONNECTED') {
+        try {
+            const state = await session.client.getState();
+            if (!state || state === 'DISCONNECTED' || state === 'UNPAIRED' || state === 'UNLAUNCHED') {
+                session.status = 'DISCONNECTED';
+                session.qrDataUrl = null;
+                session.phone = null;
+                sendConnectStatusUpdate(sessionId, 'DISCONNECTED');
+                sendDisconnectAlert(sessionId, 'Device unlinked from phone app (state: ' + state + ')');
+            }
+        } catch (e) {
+            session.status = 'DISCONNECTED';
+            session.qrDataUrl = null;
+            session.phone = null;
+            sendConnectStatusUpdate(sessionId, 'DISCONNECTED');
+            sendDisconnectAlert(sessionId, 'Connection check failed: ' + e.message);
+        }
     }
 
     res.json({

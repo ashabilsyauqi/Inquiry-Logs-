@@ -21,6 +21,27 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
 // Webhook Disconnection Alert Route
 Route::post('/api/wa-disconnect-alert', [WebhookController::class, 'handleDisconnectAlert']);
+Route::post('/api/wa-status-update', function (Request $request) {
+    $sessionId = $request->input('sessionId') ?? $request->input('session_id');
+    $status = $request->input('status', 'CONNECTED');
+    $phone = $request->input('phone');
+
+    if ($sessionId) {
+        $account = WaAccount::where('session_id', $sessionId)->first();
+        if (!$account && is_numeric($sessionId)) {
+            $account = WaAccount::find($sessionId);
+        }
+        if ($account) {
+            $account->status = $status;
+            if ($phone) {
+                $account->phone = preg_replace('/[^0-9]/', '', $phone);
+            }
+            $account->save();
+            return response()->json(['status' => 'success', 'account' => $account]);
+        }
+    }
+    return response()->json(['status' => 'error', 'message' => 'Account not found'], 404);
+});
 
 // Authenticated CRM Routes
 Route::middleware(['auth'])->group(function () {
@@ -45,6 +66,29 @@ Route::middleware(['auth'])->group(function () {
         // Sales Admin Isolation: Force account_id to assigned WA account
         if (!$user->isCeo()) {
             $accountId = $user->wa_account_id;
+        }
+
+        // Instant 2-Way Status Sync: Auto-sync ALL WA accounts status with wa-bridge server
+        $allApprovedAccs = WaAccount::where('approval_status', 'APPROVED')->get();
+        foreach ($allApprovedAccs as $acc) {
+            if ($acc->session_id) {
+                try {
+                    $res = \Illuminate\Support\Facades\Http::timeout(1)->get('http://127.0.0.1:3001/api/qr?session=' . $acc->session_id);
+                    if ($res->successful()) {
+                        $data = $res->json();
+                        $bridgeStatus = $data['sessionStatus'] ?? null;
+                        if ($bridgeStatus && in_array($bridgeStatus, ['CONNECTED', 'DISCONNECTED'])) {
+                            if ($acc->status !== $bridgeStatus) {
+                                $acc->status = $bridgeStatus;
+                                if ($bridgeStatus === 'CONNECTED' && !empty($data['phone'])) {
+                                    $acc->phone = preg_replace('/[^0-9]/', '', $data['phone']);
+                                }
+                                $acc->save();
+                            }
+                        }
+                    }
+                } catch (\Throwable $e) {}
+            }
         }
 
         // Auto-check for disconnected WA accounts & dispatch email alerts based on interval (10s / 30m)
