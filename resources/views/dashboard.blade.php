@@ -130,13 +130,20 @@
                 <span class="text-[10px] text-[#8b949e] font-mono">#{{ $user->id }}</span>
             </div>
 
-            <form method="POST" action="/logout">
-                @csrf
-                <button type="submit" class="w-full py-1.5 bg-[#21262d] hover:bg-[#30363d] hover:text-[#f85149] text-[#c9d1d9] font-medium text-xs rounded-md transition border border-[#30363d] flex items-center justify-center gap-2">
-                    <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 16 16"><path d="M2 2.75C2 1.784 2.784 1 3.75 1h2.5a.75.75 0 010 1.5h-2.5a.25.25 0 00-.25.25v10.5c0 .138.112.25.25.25h2.5a.75.75 0 010 1.5h-2.5A1.75 1.75 0 012 13.25V2.75zm10.44 4.5H6.75a.75.75 0 000 1.5h5.69l-1.97 1.97a.75.75 0 101.06 1.06l3.25-3.25a.75.75 0 000-1.06l-3.25-3.25a.75.75 0 10-1.06 1.06l1.97 1.97z"></path></svg>
-                    Sign out
+            <div class="flex items-center gap-2">
+                @if($user->isCeo())
+                <button onclick="openSmtpSettingsModal()" class="p-2 bg-[#21262d] hover:bg-[#30363d] text-[#8b949e] hover:text-[#58a6ff] rounded-md transition border border-[#30363d] flex items-center justify-center shadow-sm" title="Pengaturan Server SMTP Email & Sistem">
+                    <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 16 16"><path d="M8 0a8.2 8.2 0 00-1.7.2c-.3.1-.5.3-.5.6l-.3 1.2c-.4.2-.9.4-1.3.7l-1.1-.6c-.3-.1-.6 0-.8.2l-1.2 2c-.2.3-.1.6.1.8l1 .8c0 .2-.1.5-.1.8s0 .5.1.8l-1 .8c-.2.2-.3.5-.1.8l1.2 2c.2.2.5.3.8.2l1.1-.6c.4.3.8.5 1.3.7l.3 1.2c0 .3.2.5.5.6A8.2 8.2 0 008 16a8.2 8.2 0 001.7-.2c.3-.1.5-.3.5-.6l.3-1.2c.4-.2.9-.4 1.3-.7l1.1.6c.3.1.6 0 .8-.2l1.2-2c.2-.3.1-.6-.1-.8l-1-.8c0-.2.1-.5.1-.8s0-.5-.1-.8l1-.8c.2-.2.3-.5.1-.8l-1.2-2c-.2-.2-.5-.3-.8-.2l-1.1.6c-.4-.3-.8-.5-1.3-.7l-.3-1.2c0-.3-.2-.5-.5-.6A8.2 8.2 0 008 0zm0 5a3 3 0 110 6 3 3 0 010-6z"></path></svg>
                 </button>
-            </form>
+                @endif
+                <form method="POST" action="/logout" class="flex-1">
+                    @csrf
+                    <button type="submit" class="w-full py-1.5 bg-[#21262d] hover:bg-[#30363d] hover:text-[#f85149] text-[#c9d1d9] font-medium text-xs rounded-md transition border border-[#30363d] flex items-center justify-center gap-2">
+                        <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 16 16"><path d="M2 2.75C2 1.784 2.784 1 3.75 1h2.5a.75.75 0 010 1.5h-2.5a.25.25 0 00-.25.25v10.5c0 .138.112.25.25.25h2.5a.75.75 0 010 1.5h-2.5A1.75 1.75 0 012 13.25V2.75zm10.44 4.5H6.75a.75.75 0 000 1.5h5.69l-1.97 1.97a.75.75 0 101.06 1.06l3.25-3.25a.75.75 0 000-1.06l-3.25-3.25a.75.75 0 10-1.06 1.06l1.97 1.97z"></path></svg>
+                        Sign out
+                    </button>
+                </form>
+            </div>
         </div>
     </aside>
 
@@ -981,6 +988,85 @@
     </div>
     @endif
 
+    <!-- CEO Dynamic SMTP Server Settings Modal -->
+    @if($user->isCeo())
+    <div id="smtpSettingsModal" class="fixed inset-0 bg-slate-950/70 hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="px-6 py-5 bg-gradient-to-r from-slate-900 to-slate-800 text-white flex justify-between items-center">
+                <div>
+                    <h3 class="text-lg font-bold flex items-center gap-2">
+                        ⚙️ Pengaturan Server SMTP Email (CEO Settings)
+                    </h3>
+                    <p class="text-xs text-slate-300 mt-0.5">Konfigurasi Pengiriman Email Notifikasi Automatic System & Disconnect Alert</p>
+                </div>
+                <button onclick="closeSmtpSettingsModal()" class="text-slate-300 hover:text-white text-2xl font-bold">&times;</button>
+            </div>
+
+            <div class="p-6 overflow-y-auto flex-1 space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="sm:col-span-2">
+                        <label class="block text-xs font-bold text-slate-700 mb-1">SMTP Host Server</label>
+                        <input type="text" id="smtp_host" placeholder="e.g. smtp.gmail.com atau mail.difitech.id" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-slate-900 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Port</label>
+                        <input type="number" id="smtp_port" placeholder="587" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-slate-900 outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">SMTP Username / Email</label>
+                        <input type="text" id="smtp_username" placeholder="user@difitech.id" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-slate-900 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">SMTP Password / App Password</label>
+                        <input type="password" id="smtp_password" placeholder="••••••••••••" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-slate-900 outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Enkripsi Mail</label>
+                        <select id="smtp_encryption" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-slate-900 outline-none">
+                            <option value="tls">TLS (Default / Port 587)</option>
+                            <option value="ssl">SSL (Port 465)</option>
+                            <option value="null">Tanpa Enkripsi (Port 25)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Email Pengirim (From)</label>
+                        <input type="email" id="smtp_from_address" placeholder="no-reply@difitech.id" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-slate-900 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">Nama Pengirim (From Name)</label>
+                        <input type="text" id="smtp_from_name" placeholder="Difitech CRM Alert" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-slate-900 outline-none">
+                    </div>
+                </div>
+
+                <div class="p-3 bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-xl flex items-start gap-2">
+                    <span>💡</span>
+                    <span><strong>Petunjuk SMTP Gmail:</strong> Gunakan Host <code>smtp.gmail.com</code>, Port <code>587</code>, Enkripsi <code>TLS</code>, dan gunakan <strong>App Password 16 Karakter</strong> dari Akun Google Anda.</span>
+                </div>
+            </div>
+
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center gap-3">
+                <button onclick="testSmtpConnection()" id="btnTestSmtp" class="w-full sm:w-auto px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-lg transition shadow-sm flex items-center justify-center gap-2">
+                    🧪 Tes Koneksi SMTP & Kirim Test Email
+                </button>
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <button onclick="closeSmtpSettingsModal()" class="flex-1 sm:flex-none px-4 py-2 bg-slate-200 text-slate-700 font-medium text-xs rounded-lg hover:bg-slate-300 transition">
+                        Batal
+                    </button>
+                    <button onclick="saveSmtpSettings()" id="btnSaveSmtp" class="flex-1 sm:flex-none px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-lg transition shadow-sm">
+                        💾 Simpan Pengaturan SMTP
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
     <script>
         let isModalOpen = false;
         let activeQrPollInterval = null;
@@ -1762,9 +1848,84 @@
             });
         }
 
-        if (document.getElementById('pendingBrandBadge')) {
-            loadPendingBrandBadgeCount();
-            setInterval(loadPendingBrandBadgeCount, 15000);
+        // --- CEO SMTP SETTINGS MODAL LOGIC ---
+        function openSmtpSettingsModal() {
+            const modal = document.getElementById('smtpSettingsModal');
+            if (modal) modal.classList.remove('hidden');
+            loadSmtpSettings();
+        }
+
+        function closeSmtpSettingsModal() {
+            const modal = document.getElementById('smtpSettingsModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function loadSmtpSettings() {
+            fetch('/admin/smtp-settings')
+                .then(res => res.json())
+                .then(data => {
+                    if (document.getElementById('smtp_host')) document.getElementById('smtp_host').value = data.mail_host || '';
+                    if (document.getElementById('smtp_port')) document.getElementById('smtp_port').value = data.mail_port || 587;
+                    if (document.getElementById('smtp_username')) document.getElementById('smtp_username').value = data.mail_username || '';
+                    if (document.getElementById('smtp_password')) document.getElementById('smtp_password').value = data.mail_password || '';
+                    if (document.getElementById('smtp_encryption')) document.getElementById('smtp_encryption').value = data.mail_encryption || 'tls';
+                    if (document.getElementById('smtp_from_address')) document.getElementById('smtp_from_address').value = data.mail_from_address || 'no-reply@difitech.id';
+                    if (document.getElementById('smtp_from_name')) document.getElementById('smtp_from_name').value = data.mail_from_name || 'Difitech CRM Alert';
+                })
+                .catch(() => {});
+        }
+
+        function saveSmtpSettings() {
+            const btn = document.getElementById('btnSaveSmtp');
+            if (btn) btn.innerText = 'Menyimpan...';
+
+            const payload = {
+                mail_host: document.getElementById('smtp_host').value,
+                mail_port: document.getElementById('smtp_port').value,
+                mail_username: document.getElementById('smtp_username').value,
+                mail_password: document.getElementById('smtp_password').value,
+                mail_encryption: document.getElementById('smtp_encryption').value,
+                mail_from_address: document.getElementById('smtp_from_address').value,
+                mail_from_name: document.getElementById('smtp_from_name').value,
+            };
+
+            fetch('/admin/smtp-settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                body: JSON.stringify(payload)
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (btn) btn.innerText = '💾 Simpan Pengaturan SMTP';
+                showToastNotification('✅ ' + data.message);
+            })
+            .catch(() => {
+                if (btn) btn.innerText = '💾 Simpan Pengaturan SMTP';
+                alert('Gagal menyimpan pengaturan SMTP.');
+            });
+        }
+
+        function testSmtpConnection() {
+            const btn = document.getElementById('btnTestSmtp');
+            if (btn) btn.innerText = 'Mengirimkan Test Email...';
+
+            fetch('/admin/smtp-settings/test', {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (btn) btn.innerText = '🧪 Tes Koneksi SMTP & Kirim Test Email';
+                if (data.status === 'success') {
+                    showToastNotification('✅ ' + data.message);
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(err => {
+                if (btn) btn.innerText = '🧪 Tes Koneksi SMTP & Kirim Test Email';
+                alert('Gagal menguji SMTP server: Silakan periksa kredensial/port host.');
+            });
         }
 
         // Auto-refresh content

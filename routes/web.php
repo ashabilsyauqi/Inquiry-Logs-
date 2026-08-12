@@ -329,5 +329,78 @@ Route::middleware(['auth'])->group(function () {
 
         return $webhookCtrl->handleDisconnectAlert($testRequest);
     });
+
+    // CEO Dynamic SMTP Settings Routes
+    Route::get('/admin/smtp-settings', function () {
+        if (!Auth::user() || !Auth::user()->isCeo()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+        $settings = \App\Models\SmtpSetting::firstOrCreate([], [
+            'mail_mailer' => 'smtp',
+            'mail_host' => 'smtp.gmail.com',
+            'mail_port' => 587,
+            'mail_encryption' => 'tls',
+            'mail_from_address' => 'no-reply@difitech.id',
+            'mail_from_name' => 'Difitech CRM Alert',
+        ]);
+        return response()->json($settings);
+    });
+
+    Route::post('/admin/smtp-settings', function (Request $request) {
+        if (!Auth::user() || !Auth::user()->isCeo()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $settings = \App\Models\SmtpSetting::firstOrCreate([]);
+        $settings->update([
+            'mail_mailer' => $request->input('mail_mailer', 'smtp'),
+            'mail_host' => $request->input('mail_host'),
+            'mail_port' => (int) $request->input('mail_port', 587),
+            'mail_username' => $request->input('mail_username'),
+            'mail_password' => $request->input('mail_password'),
+            'mail_encryption' => $request->input('mail_encryption'),
+            'mail_from_address' => $request->input('mail_from_address', 'no-reply@difitech.id'),
+            'mail_from_name' => $request->input('mail_from_name', 'Difitech CRM Alert'),
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => '✅ Pengaturan Server SMTP Email Berhasil Disimpan!',
+            'settings' => $settings
+        ]);
+    });
+
+    Route::post('/admin/smtp-settings/test', function (Request $request) {
+        if (!Auth::user() || !Auth::user()->isCeo()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $setting = \App\Models\SmtpSetting::applyConfig();
+        $targetEmail = Auth::user()->email;
+
+        try {
+            \Illuminate\Support\Facades\Mail::html("
+                <div style='font-family: sans-serif; padding: 20px; background: #f8fafc; border-radius: 12px;'>
+                    <h2 style='color: #059669;'>✅ Uji Coba Server SMTP Berhasil!</h2>
+                    <p>Halo <strong>" . Auth::user()->name . "</strong>,</p>
+                    <p>Pesan ini mengonfirmasi bahwa konfigurasi server SMTP <strong>" . ($setting->mail_host ?? 'SMTP') . "</strong> pada CRM MVP Difitech berfungsi dengan lancar!</p>
+                    <p style='font-size: 12px; color: #64748b;'>Waktu pengujian: " . now()->format('d M Y H:i:s') . " WIB</p>
+                </div>
+            ", function ($message) use ($targetEmail, $setting) {
+                $message->to($targetEmail)
+                    ->subject("🧪 Uji Coba Koneksi Server SMTP - Difitech CRM");
+            });
+
+            return response()->json([
+                'status' => 'success',
+                'message' => "✅ Uji coba email SMTP berhasil dikirimkan ke {$targetEmail}!"
+            ]);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => "❌ Gagal mengirimkan email SMTP: " . $e->getMessage()
+            ], 500);
+        }
+    });
 });
 

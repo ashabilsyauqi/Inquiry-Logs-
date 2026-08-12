@@ -337,15 +337,29 @@ class WebhookController extends Controller
             </html>
             ";
 
-            $headers  = "MIME-Version: 1.0\r\n";
-            $headers .= "Content-type: text/html; charset=UTF-8\r\n";
-            $headers .= "From: CRM Alert <no-reply@difitech.id>\r\n";
-            $headers .= "Reply-To: no-reply@difitech.id\r\n";
-            if (!empty($ceoEmails)) {
-                $headers .= "Cc: " . implode(', ', $ceoEmails) . "\r\n";
-            }
+            // Apply dynamic SMTP settings if configured
+            \App\Models\SmtpSetting::applyConfig();
 
-            @mail($primaryTo, $subject, $htmlBody, $headers);
+            try {
+                \Illuminate\Support\Facades\Mail::html($htmlBody, function ($message) use ($primaryTo, $ceoEmails, $subject) {
+                    $message->to($primaryTo)
+                        ->subject($subject);
+                    if (!empty($ceoEmails)) {
+                        $message->cc($ceoEmails);
+                    }
+                });
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error("❌ SMTP Mail Exception: " . $e->getMessage());
+                // Fallback to PHP mail
+                $headers  = "MIME-Version: 1.0\r\n";
+                $headers .= "Content-type: text/html; charset=UTF-8\r\n";
+                $headers .= "From: CRM Alert <no-reply@difitech.id>\r\n";
+                $headers .= "Reply-To: no-reply@difitech.id\r\n";
+                if (!empty($ceoEmails)) {
+                    $headers .= "Cc: " . implode(', ', $ceoEmails) . "\r\n";
+                }
+                @mail($primaryTo, $subject, $htmlBody, $headers);
+            }
 
             $waAccount->last_disconnect_email_sent_at = now();
             $waAccount->save();
