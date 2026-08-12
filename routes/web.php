@@ -47,6 +47,11 @@ Route::middleware(['auth'])->group(function () {
             $accountId = $user->wa_account_id;
         }
 
+        // Auto-check for disconnected WA accounts & dispatch email alerts based on interval (10s / 30m)
+        try {
+            \Illuminate\Support\Facades\Artisan::call('wa:check-disconnects');
+        } catch (\Throwable $e) {}
+
         $query = Lead::with('waAccount');
 
         if ($filter === 'daily') {
