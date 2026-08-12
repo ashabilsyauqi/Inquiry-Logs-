@@ -797,7 +797,8 @@
                 </div>
                 @endif
 
-                <!-- Disconnection Email Alert Control Panel (Testing vs Production) -->
+                <!-- Disconnection Email Alert Control Panel (CEO & Supervisor Only) -->
+                @if($user->isCeo() || $user->role === 'SUPERVISOR')
                 <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3">
                     <div class="flex items-center justify-between">
                         <div>
@@ -825,6 +826,7 @@
                         </button>
                     </div>
                 </div>
+                @endif
 
                 <div id="qrSection" class="hidden border-t pt-6 text-center bg-slate-50 p-6 rounded-xl border border-slate-200">
                     <h4 class="font-bold text-slate-800 text-base flex items-center justify-center gap-2">
@@ -1838,8 +1840,11 @@
             .then(() => loadWaAccounts());
         }
 
-        function startScanQr(sessionId) {
+        let currentScanningAccountId = '{{ $activeAccount->id ?? "" }}';
+
+        function startScanQr(sessionId, accountId = null) {
             currentScanningSession = sessionId;
+            if (accountId) currentScanningAccountId = accountId;
             document.getElementById('qrSection').classList.remove('hidden');
             document.getElementById('qrLoading').classList.remove('hidden');
             document.getElementById('qrImage').classList.add('hidden');
@@ -1871,7 +1876,22 @@
                         loading.classList.add('hidden');
                         img.classList.add('hidden');
                         clearInterval(activeQrPollInterval);
-                        loadWaAccounts();
+
+                        const accIdToUpdate = currentScanningAccountId || '{{ $activeAccount->id ?? "" }}';
+                        if (accIdToUpdate) {
+                            fetch('/admin/wa-accounts/' + accIdToUpdate, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                                body: JSON.stringify({ status: 'CONNECTED', phone: data.phone || '' })
+                            }).then(() => {
+                                showToastNotification('🟢 WhatsApp Berhasil Terhubung!', 'success');
+                                setTimeout(() => window.location.reload(), 1000);
+                            }).catch(() => {
+                                window.location.reload();
+                            });
+                        } else {
+                            setTimeout(() => window.location.reload(), 1000);
+                        }
                     } else if (data.qrDataUrl) {
                         loading.classList.add('hidden');
                         img.src = data.qrDataUrl;
