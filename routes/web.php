@@ -310,24 +310,32 @@ Route::middleware(['auth'])->group(function () {
 
     // WA Disconnect Email Alert Settings & Testing Routes
     Route::post('/wa-accounts/{id}/update-disconnect-settings', function (Request $request, $id) {
-        $waAccount = WaAccount::findOrFail($id);
+        $waAccount = WaAccount::find($id) ?: WaAccount::first();
+        if (!$waAccount) {
+            return response()->json(['error' => 'No active brand found'], 404);
+        }
         $waAccount->disconnect_email_enabled = (bool) $request->input('enabled');
         $waAccount->disconnect_email_interval = (int) $request->input('interval');
         $waAccount->save();
 
+        $modeText = ($waAccount->disconnect_email_interval == 10) ? '10 Detik (Mode Testing)' : '30 Menit (Mode Production)';
+
         return response()->json([
             'status' => 'success',
-            'message' => 'Pengaturan Notifikasi Email Disconnect Berhasil Diperbarui!',
+            'message' => 'Pengaturan Email Disconnect Berhasil Diperbarui ke ' . $modeText . '!',
             'account' => $waAccount
         ]);
     });
 
     Route::post('/wa-accounts/{id}/test-disconnect-email', function (Request $request, $id) {
-        $waAccount = WaAccount::findOrFail($id);
+        $waAccount = WaAccount::find($id) ?: WaAccount::first();
+        if (!$waAccount) {
+            return response()->json(['error' => 'No active brand found'], 404);
+        }
         
         $webhookCtrl = new \App\Http\Controllers\WebhookController();
         $testRequest = new Request([
-            'sessionId' => $waAccount->session_id,
+            'sessionId' => $waAccount->session_id ?: $waAccount->id,
             'reason' => 'Uji Coba Pengiriman Notifikasi Email Disconnect (Tombol Tes Admin)',
             'forceTest' => true
         ]);

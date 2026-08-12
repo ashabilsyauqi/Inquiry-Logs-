@@ -1469,7 +1469,7 @@
             const select = document.getElementById('disconnectIntervalSelect');
             const enabled = toggle ? (toggle.checked ? 1 : 0) : 1;
             const interval = select ? select.value : 10;
-            const accId = '{{ $activeAccount ? $activeAccount->id : ($waAccounts->first() ? $waAccounts->first()->id : 1) }}';
+            const accId = activeSettingsBrandId || '{{ $activeAccount ? $activeAccount->id : ($waAccounts->first() ? $waAccounts->first()->id : "") }}' || 'active';
 
             fetch('/wa-accounts/' + accId + '/update-disconnect-settings', {
                 method: 'POST',
@@ -1478,7 +1478,11 @@
             })
             .then(res => res.json())
             .then(data => {
-                showToastNotification('✅ ' + data.message);
+                if (data.status === 'success') {
+                    showToastNotification('✅ ' + data.message);
+                } else {
+                    alert('Gagal: ' + (data.error || data.message));
+                }
             })
             .catch(err => {
                 alert('Gagal menyimpan pengaturan disconnect email.');
