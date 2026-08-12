@@ -85,9 +85,19 @@ class WebhookController extends Controller
                 }
             }
 
-            if ($matchedStage && $lead) {
-                $lead->stage = $matchedStage->name;
-                $lead->save();
+            if ($matchedStage) {
+                if (!$lead) {
+                    $displayName = $this->formatDisplayPhone($leadPhone);
+                    $lead = Lead::create([
+                        'wa_account_id' => $waAccount->id,
+                        'name'  => $displayName,
+                        'phone' => $leadPhone,
+                        'stage' => $matchedStage->name
+                    ]);
+                } else {
+                    $lead->stage = $matchedStage->name;
+                    $lead->save();
+                }
                 Log::info("⚡ ADMIN WA SLASH COMMAND EXECUTED: Command '{$message}' moved Lead '{$lead->name}' to stage '{$matchedStage->name}'");
                 return response()->json(['status' => 'success', 'message' => "Admin command executed: Lead moved to {$matchedStage->name}"]);
             }
