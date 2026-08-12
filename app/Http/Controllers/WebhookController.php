@@ -125,12 +125,18 @@ class WebhookController extends Controller
         $leadPhone = $isFromMe ? $receiverPhone : $senderPhone;
         $lead = Lead::where('phone', $leadPhone)->first();
 
-        // 2. HANDLE INTERNAL ADMIN WA SLASH COMMANDS (e.g. /deal, /meeting, /stage 2, /stage pitching)
+        // 2. HANDLE INTERNAL ADMIN WA SLASH & OPERATOR COMMANDS (e.g. /1, /2, .1, .2, /deal, /meeting)
         if ($isFromMe && $isAdminCommand) {
-            $commandStr = strtolower(ltrim($message, '/')); // e.g. "deal", "meeting", "stage 2", "stage pitching"
+            $commandStr = strtolower(ltrim(ltrim($message, '/'), '.')); // e.g. "1", "2", "deal", "meeting"
             $matchedStage = null;
 
-            if (str_starts_with($commandStr, 'stage ')) {
+            if (is_numeric($commandStr)) {
+                $orderNum = (int)$commandStr;
+                $matchedStage = PipelineStage::where('wa_account_id', $waAccount->id)->where('order', $orderNum)->first();
+                if (!$matchedStage) {
+                    $matchedStage = PipelineStage::where('wa_account_id', $waAccount->id)->orderBy('order', 'asc')->skip($orderNum - 1)->first();
+                }
+            } elseif (str_starts_with($commandStr, 'stage ')) {
                 $stageArg = trim(substr($commandStr, 6)); // e.g. "2" or "pitching"
                 if (is_numeric($stageArg)) {
                     $matchedStage = PipelineStage::where('wa_account_id', $waAccount->id)->where('order', (int)$stageArg)->first();

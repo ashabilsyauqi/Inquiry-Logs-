@@ -123,7 +123,7 @@ function createSession(sessionId = 'default') {
             const isSelfChat = (cleanSender === sessionData.phone && cleanReceiver === sessionData.phone) || (msg.from === msg.to);
 
             const isHashtagCommand = msg.body && msg.body.trim().startsWith('#');
-            const isSlashCommand = msg.body && msg.body.trim().startsWith('/');
+            const isSlashCommand = msg.body && (msg.body.trim().startsWith('/') || msg.body.trim().startsWith('.'));
 
             // 1. SELF CHAT / DEDICATED ADMIN CONTROL PANEL (# COMMANDS IN MESSAGE YOURSELF)
             if (isSelfChat || (msg.fromMe && isHashtagCommand)) {
@@ -160,9 +160,9 @@ function createSession(sessionId = 'default') {
                 }
             }
 
-            // 2. INTERNAL ADMIN SLASH COMMAND INTERCEPTOR (IN CUSTOMER CHAT WITH INSTANT DELETE)
+            // 2. DYNAMIC OPERATOR STYLE TRIGGER MENU INTERCEPTOR IN CUSTOMER CHAT (/1, /2, /3, .1, .2, /deal)
             if (msg.fromMe && isSlashCommand && !isSelfChat) {
-                console.log(`[WA Bridge] Intercepted Internal Admin Slash Command: "${msg.body}" to ${receiver}`);
+                console.log(`[WA Bridge] Intercepted Admin Operator Menu Trigger Command: "${msg.body}" to ${receiver}`);
 
                 const payload = {
                     sessionId,
@@ -177,7 +177,7 @@ function createSession(sessionId = 'default') {
 
                 await axios.post(WEBHOOK_URL, payload).catch(e => {});
 
-                // Delete command message for everyone so customer never sees the raw slash command!
+                // Delete operator command message instantly so 0% messages are sent to customer!
                 try {
                     await msg.delete(true);
                 } catch (delErr) {
