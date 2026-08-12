@@ -43,6 +43,8 @@ class SmtpSetting extends Model
         Config::set('mail.from.address', $setting->mail_from_address ?: 'no-reply@difitech.id');
         Config::set('mail.from.name', $setting->mail_from_name ?: 'Difitech CRM Alert');
 
+        Mail::purge('smtp');
+
         return $setting;
     }
 }
