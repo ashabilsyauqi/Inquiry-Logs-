@@ -72,7 +72,8 @@
                     </div>
                 </div>
 
-                <!-- Section 2: Management Suite -->
+                <!-- Section 2: Management Suite (Only for CEO & Supervisor) -->
+                @if($user->isCeo() || $user->role === 'SUPERVISOR')
                 <div>
                     <p class="px-2 text-[10px] font-semibold uppercase tracking-wider text-[#8b949e] mb-2">Organization Admin</p>
                     <div class="space-y-1">
@@ -94,7 +95,6 @@
                         </button>
                         @endif
 
-                        @if(!$user->isCeo() || $accountId != 'all')
                         <button onclick="openCsTeamModal()" class="w-full flex items-center justify-between px-2.5 py-2 rounded-md text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc] transition text-left">
                             <span class="flex items-center gap-2.5">
                                 <svg class="w-4 h-4 fill-current text-[#79c0ff]" viewBox="0 0 16 16"><path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7zm4-6a3 3 0 100-6 3 3 0 000 6zm-5.784 6A2.238 2.238 0 015 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 005 9c-4 0-5 3-5 4 0 1 1 1 1 1h5.216zM4.5 8a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"></path></svg>
@@ -102,7 +102,6 @@
                             </span>
                             <span id="csTeamBadge" class="bg-[#1f6feb]/20 text-[#58a6ff] text-[10px] font-bold px-1.5 py-0.5 rounded-full font-mono">0 CS</span>
                         </button>
-                        @endif
 
                         <button onclick="openDeviceModal()" class="w-full flex items-center justify-between px-2.5 py-2 rounded-md text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc] transition text-left">
                             <span class="flex items-center gap-2.5">
@@ -113,6 +112,7 @@
                         </button>
                     </div>
                 </div>
+                @endif
             </nav>
         </div>
 
@@ -179,15 +179,6 @@
             </div>
 
             <div class="flex items-center gap-2.5">
-                @if($activeAccount)
-                <button onclick="openBrandSettingsModal({{ $activeAccount->id }})" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 text-xs font-bold rounded-xl transition flex items-center gap-2">
-                    ⚙️ Stage & Trigger
-                </button>
-                @endif
-
-                <button onclick="openDeviceModal()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-sm transition flex items-center gap-2">
-                    📱 WA Device Manager
-                </button>
                 <form method="POST" action="/logout" class="md:hidden">
                     @csrf
                     <button type="submit" class="px-3 py-2 bg-slate-100 text-slate-700 text-xs font-bold rounded-xl">Logout</button>
@@ -405,15 +396,15 @@
                     <p class="text-xs text-emerald-100 mt-1">Daftar Leads & Stat Cards dikhususkan untuk saluran ini saja.</p>
                 </div>
                 
-                <div class="flex gap-2">
-                    <button onclick="openBrandSettingsModal({{ $activeAccount->id }})" class="px-4 py-2 bg-purple-900 hover:bg-purple-950 text-white text-xs font-bold rounded-xl shadow transition whitespace-nowrap">
-                        ⚙️ Kelola Stage & Keyword Trigger
-                    </button>
-                    @if($user->isCeo())
-                    <button onclick="startScanQr('{{ $activeAccount->session_id }}'); openDeviceModal();" class="px-4 py-2 bg-white text-emerald-800 hover:bg-emerald-50 text-xs font-bold rounded-xl shadow transition whitespace-nowrap">
-                        📲 Scan / Sambungkan WA
+                <div class="flex items-center gap-2">
+                    @if($user->isCeo() || $user->role === 'SUPERVISOR')
+                    <button onclick="openBrandSettingsModal({{ $activeAccount->id }})" class="px-3.5 py-2 bg-emerald-800/60 hover:bg-emerald-900 text-white text-xs font-bold rounded-xl border border-emerald-500/50 shadow transition whitespace-nowrap">
+                        ⚙️ Stage & Keyword Trigger
                     </button>
                     @endif
+                    <button onclick="startScanQr('{{ $activeAccount->session_id }}'); openDeviceModal();" class="px-4 py-2.5 bg-white text-emerald-800 hover:bg-emerald-50 font-extrabold text-xs rounded-xl shadow-md transition flex items-center gap-2 whitespace-nowrap">
+                        📲 Connect WA / Scan QR
+                    </button>
                 </div>
             </div>
             @endif
