@@ -182,6 +182,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     phone: currentCustomerPhone,
+                    name: currentCustomerName,
                     stage: targetStage,
                     account_id: activeAccount ? activeAccount.id : null
                 })

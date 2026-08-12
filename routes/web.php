@@ -314,23 +314,59 @@ Route::get('/api/extension/stages', function (Request $request) {
 
 Route::post('/api/extension/update-stage', function (Request $request) {
     $phone = $request->input('phone');
+    $name = $request->input('name');
     $stageName = $request->input('stage');
+    $accountId = $request->input('account_id');
 
-    if (!$phone || !$stageName) {
-        return response()->json(['status' => 'error', 'message' => 'Missing phone or stage'], 400);
+    if (!$stageName || (!$phone && !$name)) {
+        return response()->json(['status' => 'error', 'message' => 'Missing lead identifier or stage'], 400);
     }
 
-    $phone = preg_replace('/[^0-9]/', '', $phone);
-    if (str_starts_with($phone, '08')) {
-        $phone = '62' . substr($phone, 1);
+    $sanitizedPhone = preg_replace('/[^0-9]/', '', $phone);
+    if (str_starts_with($sanitizedPhone, '08')) {
+        $sanitizedPhone = '62' . substr($sanitizedPhone, 1);
     }
 
-    $lead = Lead::where('phone', $phone)->first();
+    $lead = null;
+
+    // 1. Match by phone if valid digits exist
+    if (!empty($sanitizedPhone) && strlen($sanitizedPhone) >= 8) {
+        $lead = Lead::where('phone', $sanitizedPhone)->first();
+    }
+
+    // 2. Fallback: match by name
+    if (!$lead && !empty($name)) {
+        $cleanName = trim($name);
+        $query = Lead::where('name', $cleanName);
+        if ($accountId) {
+            $query->where('wa_account_id', $accountId);
+        }
+        $lead = $query->first();
+
+        if (!$lead) {
+            $queryPartial = Lead::where('name', 'LIKE', '%' . $cleanName . '%');
+            if ($accountId) {
+                $queryPartial->where('wa_account_id', $accountId);
+            }
+            $lead = $queryPartial->first();
+        }
+    }
+
+    // 3. Fallback: match by partial phone in name
+    if (!$lead && !empty($sanitizedPhone) && strlen($sanitizedPhone) >= 6) {
+        $shortDigits = substr($sanitizedPhone, -8);
+        $lead = Lead::where('phone', 'LIKE', '%' . $shortDigits . '%')
+            ->orWhere('name', 'LIKE', '%' . $shortDigits . '%')
+            ->first();
+    }
+
     if (!$lead) {
+        // Create new lead if absolutely not found
         $lead = Lead::create([
-            'name' => '+ ' . $phone,
-            'phone' => $phone,
-            'stage' => $stageName
+            'name' => $name ?: ('+ ' . $sanitizedPhone),
+            'phone' => $sanitizedPhone ?: ($phone ?: '0'),
+            'stage' => $stageName,
+            'wa_account_id' => $accountId
         ]);
     } else {
         $lead->stage = $stageName;
