@@ -163,15 +163,18 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('/wa-accounts', function (Request $request) {
         $name = $request->input('name', 'New Brand Account');
+        $category = $request->input('category', 'General Business');
         $phoneInput = $request->input('phone');
         $phone = $phoneInput ? preg_replace('/[^0-9]/', '', $phoneInput) : null;
         $sessionId = 'session_' . time();
 
         $account = WaAccount::create([
             'name' => $name,
+            'category' => $category,
             'phone' => $phone,
             'session_id' => $sessionId,
-            'status' => 'DISCONNECTED'
+            'status' => 'DISCONNECTED',
+            'approval_status' => 'APPROVED'
         ]);
         $account->ensureDefaultStages();
 
