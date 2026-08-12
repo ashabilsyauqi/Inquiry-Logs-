@@ -14,52 +14,59 @@
 </head>
 <body class="text-slate-800 flex h-screen overflow-hidden">
 
-    <!-- LEFT SIDEBAR NAVIGATION (ENTERPRISE CORPORATE STYLING) -->
-    <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col justify-between hidden md:flex flex-shrink-0 border-r border-slate-800">
+    <!-- LEFT SIDEBAR NAVIGATION (GITHUB ENTERPRISE DARK THEME) -->
+    <aside class="w-64 bg-[#0d1117] text-[#c9d1d9] flex flex-col justify-between hidden md:flex flex-shrink-0 border-r border-[#30363d]">
         <div>
-            <!-- Sidebar Header / Logo -->
-            <div class="px-5 py-5 border-b border-slate-800 flex items-center justify-between">
+            <!-- Workspace / Organization Header -->
+            <div class="px-4 py-4 border-b border-[#30363d] flex items-center justify-between bg-[#161b22]/50">
                 <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 bg-emerald-600 rounded-lg flex items-center justify-center text-white text-lg font-bold shadow-md shadow-emerald-900/50">
-                        🏢
+                    <div class="w-8 h-8 rounded-lg bg-[#21262d] border border-[#30363d] flex items-center justify-center text-[#2f81f7] font-bold shadow-sm">
+                        <svg class="w-4 h-4 fill-current" viewBox="0 0 16 16"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v12.5A1.75 1.75 0 0114.25 16H1.75A1.75 1.75 0 010 14.25V1.75zm1.75-.25a.25.25 0 00-.25.25v12.5c0 .138.112.25.25.25h12.5a.25.25 0 00.25-.25V1.75a.25.25 0 00-.25-.25H1.75zM4 4.75a.75.75 0 01.75-.75h6.5a.75.75 0 010 1.5h-6.5A.75.75 0 014 4.75zm0 3a.75.75 0 01.75-.75h6.5a.75.75 0 010 1.5h-6.5A.75.75 0 014 7.75zm0 3a.75.75 0 01.75-.75h4a.75.75 0 010 1.5h-4a.75.75 0 01-.75-.75z"></path></svg>
                     </div>
                     <div>
-                        <h2 class="font-extrabold text-white text-sm tracking-tight leading-tight">DIFITECH CRM</h2>
-                        <p class="text-[10px] text-slate-400 font-medium">Enterprise Suite</p>
+                        <h2 class="font-bold text-[#f0f6fc] text-xs tracking-tight leading-tight flex items-center gap-1.5">
+                            Difitech CRM
+                        </h2>
+                        <p class="text-[10px] text-[#8b949e] font-mono">Enterprise Suite</p>
                     </div>
                 </div>
-                <span class="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800/80">
+                <span class="text-[10px] font-mono text-[#8b949e] bg-[#21262d] px-2 py-0.5 rounded border border-[#30363d]">
                     v2.4
                 </span>
             </div>
 
             <!-- Nav Links -->
             <nav class="p-3 space-y-4 text-xs font-medium">
-                <!-- Section 1: Core Navigation -->
+                <!-- Section 1: Navigation -->
                 <div>
-                    <p class="px-3 text-[10px] font-extrabold uppercase tracking-wider text-slate-500 mb-1.5">NAVIGATION</p>
+                    <p class="px-2 text-[10px] font-semibold uppercase tracking-wider text-[#8b949e] mb-2">Repositories & Pipelines</p>
                     <div class="space-y-1">
                         @if($user->isCeo())
-                        <a href="/?account_id=all" class="w-full flex items-center justify-between px-3 py-2.5 rounded-lg {{ $accountId == 'all' ? 'bg-slate-800 text-white font-bold border-l-4 border-emerald-500 shadow-sm' : 'text-slate-400 hover:bg-slate-800/60 hover:text-white' }} transition text-left">
+                        <a href="/?account_id=all" class="w-full flex items-center justify-between px-2.5 py-2 rounded-md {{ $accountId == 'all' ? 'bg-[#161b22] text-[#f0f6fc] font-semibold border-l-2 border-[#2f81f7]' : 'text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc]' }} transition text-left">
                             <span class="flex items-center gap-2.5">
-                                <span class="text-sm">🏢</span> Running Brands
+                                <svg class="w-4 h-4 fill-current text-[#2f81f7]" viewBox="0 0 16 16"><path d="M1.75 2.5h12.5a.25.25 0 01.25.25v10.5a.25.25 0 01-.25.25H1.75a.25.25 0 01-.25-.25V2.75c0-.138.112-.25.25-.25zM1.75 1A1.75 1.75 0 000 2.75v10.5C0 14.216.784 15 1.75 15h12.5A1.75 1.75 0 0016 13.25V2.75A1.75 1.75 0 0014.25 1H1.75zM4 4.75a.75.75 0 01.75-.75h6.5a.75.75 0 010 1.5h-6.5A.75.75 0 014 4.75zm0 3a.75.75 0 01.75-.75h6.5a.75.75 0 010 1.5h-6.5A.75.75 0 014 7.75zm0 3a.75.75 0 01.75-.75h4a.75.75 0 010 1.5h-4a.75.75 0 01-.75-.75z"></path></svg>
+                                <span>Running Brands</span>
                             </span>
-                            <span class="text-[10px] bg-slate-700/80 text-slate-300 px-1.5 py-0.5 rounded font-mono">{{ $waAccounts->count() }}</span>
+                            <span class="text-[11px] bg-[#21262d] text-[#8b949e] px-2 py-0.5 rounded-full font-mono border border-[#30363d]">{{ $waAccounts->count() }}</span>
                         </a>
                         @endif
 
                         @if(!$user->isCeo() || $accountId != 'all')
-                        <button onclick="switchTab('all')" id="nav-all" class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-slate-800 text-white font-bold border-l-4 border-emerald-500 shadow-sm transition text-left">
-                            <span class="text-sm">🌐</span> Overview All
+                        <button onclick="switchTab('all')" id="nav-all" class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md bg-[#161b22] text-[#f0f6fc] font-semibold border-l-2 border-[#2f81f7] transition text-left">
+                            <svg class="w-4 h-4 fill-current text-[#58a6ff]" viewBox="0 0 16 16"><path d="M8 0a8 8 0 100 16A8 8 0 008 0zM1.5 8a6.5 6.5 0 1113 0 6.5 6.5 0 01-13 0z"></path></svg>
+                            <span>Overview All</span>
                         </button>
-                        <button onclick="switchTab('analytics')" id="nav-analytics" class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-slate-400 hover:bg-slate-800/60 hover:text-white transition text-left">
-                            <span class="text-sm">📊</span> Analytics & KPI
+                        <button onclick="switchTab('analytics')" id="nav-analytics" class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc] transition text-left">
+                            <svg class="w-4 h-4 fill-current text-[#bc8cff]" viewBox="0 0 16 16"><path d="M1.75 1.5a.75.75 0 00-.75.75v11.5c0 .414.336.75.75.75h11.5a.75.75 0 000-1.5H2.5V2.25a.75.75 0 00-.75-.75zm3 4a.75.75 0 00-.75.75v5c0 .414.336.75.75.75h1.5a.75.75 0 00.75-.75v-5a.75.75 0 00-.75-.75h-1.5zm4-2a.75.75 0 00-.75.75v7c0 .414.336.75.75.75h1.5a.75.75 0 00.75-.75v-7a.75.75 0 00-.75-.75h-1.5zm4 4a.75.75 0 00-.75.75v3c0 .414.336.75.75.75h1.5a.75.75 0 00.75-.75v-3a.75.75 0 00-.75-.75h-1.5z"></path></svg>
+                            <span>Analytics & Insights</span>
                         </button>
-                        <button onclick="switchTab('kanban')" id="nav-kanban" class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-slate-400 hover:bg-slate-800/60 hover:text-white transition text-left">
-                            <span class="text-sm">📋</span> Kanban Pipeline
+                        <button onclick="switchTab('kanban')" id="nav-kanban" class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc] transition text-left">
+                            <svg class="w-4 h-4 fill-current text-[#3fb950]" viewBox="0 0 16 16"><path d="M0 2.75C0 1.784.784 1 1.75 1h12.5C15.216 1 16 1.784 16 2.75v10.5A1.75 1.75 0 0114.25 15H1.75A1.75 1.75 0 010 13.25V2.75zm1.75-.25a.25.25 0 00-.25.25v10.5c0 .138.112.25.25.25h3.5v-11h-3.5zm5 0v11h3.5v-11h-3.5zm5 0v11h2.75a.25.25 0 00.25-.25V2.75a.25.25 0 00-.25-.25h-2.75z"></path></svg>
+                            <span>Kanban Pipeline</span>
                         </button>
-                        <button onclick="switchTab('table')" id="nav-table" class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-slate-400 hover:bg-slate-800/60 hover:text-white transition text-left">
-                            <span class="text-sm">📑</span> Lead Master List
+                        <button onclick="switchTab('table')" id="nav-table" class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc] transition text-left">
+                            <svg class="w-4 h-4 fill-current text-[#d29922]" viewBox="0 0 16 16"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v12.5A1.75 1.75 0 0114.25 16H1.75A1.75 1.75 0 010 14.25V1.75zm1.75-.25a.25.25 0 00-.25.25V5h13V1.75a.25.25 0 00-.25-.25H1.75zm13 4.75h-13v8c0 .138.112.25.25.25h12.5a.25.25 0 00.25-.25v-8z"></path></svg>
+                            <span>Lead Master List</span>
                         </button>
                         @endif
                     </div>
@@ -67,62 +74,67 @@
 
                 <!-- Section 2: Management Suite -->
                 <div>
-                    <p class="px-3 text-[10px] font-extrabold uppercase tracking-wider text-slate-500 mb-1.5">ADMIN SUITE</p>
+                    <p class="px-2 text-[10px] font-semibold uppercase tracking-wider text-[#8b949e] mb-2">Organization Admin</p>
                     <div class="space-y-1">
                         @if($user->isCeo())
-                        <button onclick="openBrandManagementModal()" class="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition text-left">
+                        <button onclick="openBrandManagementModal()" class="w-full flex items-center justify-between px-2.5 py-2 rounded-md text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc] transition text-left">
                             <span class="flex items-center gap-2.5">
-                                <span class="text-sm">⚙️</span> Brand Management
+                                <svg class="w-4 h-4 fill-current text-[#a5d6ff]" viewBox="0 0 16 16"><path d="M8 0a8 8 0 100 16A8 8 0 008 0zM1.5 8a6.5 6.5 0 1113 0 6.5 6.5 0 01-13 0zM8 4.75a.75.75 0 01.75.75v2.5h2.5a.75.75 0 010 1.5h-2.5v2.5a.75.75 0 01-1.5 0v-2.5h-2.5a.75.75 0 010-1.5h2.5v-2.5A.75.75 0 018 4.75z"></path></svg>
+                                <span>Brand Management</span>
                             </span>
-                            <span class="bg-emerald-950 text-emerald-400 border border-emerald-800/60 text-[9px] font-bold px-1.5 py-0.5 rounded">CRUD</span>
+                            <span class="bg-[#1f6feb]/15 text-[#58a6ff] border border-[#1f6feb]/30 text-[9px] font-semibold px-1.5 py-0.5 rounded">CRUD</span>
                         </button>
 
-                        <button onclick="openUserManagementModal()" class="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white transition text-left">
+                        <button onclick="openUserManagementModal()" class="w-full flex items-center justify-between px-2.5 py-2 rounded-md text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc] transition text-left">
                             <span class="flex items-center gap-2.5">
-                                <span class="text-sm">👥</span> User Approval
+                                <svg class="w-4 h-4 fill-current text-[#d2a8ff]" viewBox="0 0 16 16"><path d="M5.5 5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zm5 6c0-1.5-3-2.25-5-2.25S.5 9.5.5 11V12h10v-1zM11.5 5a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5zm2.25 6c0-.85-.92-1.63-2.25-2.02.58.45 1 1.05 1 1.77V12h3.25v-1z"></path></svg>
+                                <span>User Approvals</span>
                             </span>
-                            <span id="pendingBadge" class="bg-rose-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
+                            <span id="pendingBadge" class="bg-[#da3633] text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-full hidden">0</span>
                         </button>
                         @endif
 
-                        <button onclick="openDeviceModal()" class="w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-slate-400 hover:bg-slate-800/60 hover:text-white transition text-left">
+                        <button onclick="openDeviceModal()" class="w-full flex items-center justify-between px-2.5 py-2 rounded-md text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc] transition text-left">
                             <span class="flex items-center gap-2.5">
-                                <span class="text-sm">📱</span> WA Devices & QR
+                                <svg class="w-4 h-4 fill-current text-[#3fb950]" viewBox="0 0 16 16"><path d="M4 1.75C4 .784 4.784 0 5.75 0h4.5C11.216 0 12 .784 12 1.75v12.5A1.75 1.75 0 0110.25 16h-4.5A1.75 1.75 0 014 14.25V1.75zm1.75-.25a.25.25 0 00-.25.25v12.5c0 .138.112.25.25.25h4.5a.25.25 0 00.25-.25V1.75a.25.25 0 00-.25-.25h-4.5zM8 13a1 1 0 100-2 1 1 0 000 2z"></path></svg>
+                                <span>WA Devices & QR</span>
                             </span>
-                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                            <span class="w-2 h-2 rounded-full bg-[#238636]"></span>
                         </button>
                     </div>
                 </div>
             </nav>
         </div>
 
-        <!-- DYNAMIC LOGGED-IN USER PROFILE & LOGOUT FOOTER -->
-        <div class="p-3 border-t border-slate-800 bg-slate-950/80">
-            <div class="p-2.5 bg-slate-900 border border-slate-800 rounded-xl mb-2.5">
-                <div class="flex items-center gap-2.5">
+        <!-- GITHUB-STYLE USER PROFILE & LOGOUT FOOTER -->
+        <div class="p-3 border-t border-[#30363d] bg-[#090d13]">
+            <div class="p-2.5 bg-[#161b22] border border-[#30363d] rounded-lg mb-2 flex items-center justify-between">
+                <div class="flex items-center gap-2.5 min-w-0">
                     <div class="relative flex-shrink-0">
-                        <div class="w-8 h-8 rounded-lg bg-emerald-700 text-white flex items-center justify-center font-bold text-xs shadow-inner">
+                        <div class="w-8 h-8 rounded-full bg-[#21262d] border border-[#30363d] text-[#f0f6fc] flex items-center justify-center font-bold text-xs shadow-sm">
                             {{ strtoupper(substr($user->name, 0, 1)) }}
                         </div>
-                        <span class="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-slate-900 rounded-full" title="Online"></span>
+                        <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#238636] border-2 border-[#161b22] rounded-full" title="Online"></span>
                     </div>
-                    <div class="truncate flex-1 min-w-0">
-                        <p class="text-xs font-bold text-white truncate leading-tight">{{ $user->name }}</p>
-                        <p class="text-[10px] text-slate-400 truncate font-mono mt-0.5">{{ $user->email }}</p>
+                    <div class="truncate">
+                        <p class="text-xs font-semibold text-[#f0f6fc] truncate leading-tight">{{ $user->name }}</p>
+                        <p class="text-[10px] text-[#8b949e] truncate font-mono mt-0.5">{{ $user->email }}</p>
                     </div>
                 </div>
-                <div class="mt-2 pt-2 border-t border-slate-800/80 flex items-center justify-between">
-                    <span class="text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded {{ $user->isCeo() ? 'bg-purple-950 text-purple-300 border border-purple-800' : 'bg-blue-950 text-blue-300 border border-blue-800' }}">
-                        {{ $user->isCeo() ? '👑 Executive CEO' : ($user->role == 'supervisor' ? '🛡️ Supervisor' : '⚡ Sales Admin') }}
-                    </span>
-                    <span class="text-[9px] text-slate-500 font-mono">ID: #{{ $user->id }}</span>
-                </div>
+            </div>
+
+            <div class="flex items-center justify-between px-1 mb-2.5">
+                <span class="text-[10px] font-semibold text-[#58a6ff] bg-[#1f6feb]/15 border border-[#1f6feb]/30 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                    {{ $user->isCeo() ? 'Executive CEO' : ($user->role == 'supervisor' ? 'Supervisor' : 'Sales Admin') }}
+                </span>
+                <span class="text-[10px] text-[#8b949e] font-mono">#{{ $user->id }}</span>
             </div>
 
             <form method="POST" action="/logout">
                 @csrf
-                <button type="submit" class="w-full py-2 bg-slate-900 hover:bg-rose-950 hover:text-rose-300 hover:border-rose-800/80 text-slate-400 font-bold text-xs rounded-lg transition border border-slate-800 flex items-center justify-center gap-2">
-                    <span>🚪</span> Logout System
+                <button type="submit" class="w-full py-1.5 bg-[#21262d] hover:bg-[#30363d] hover:text-[#f85149] text-[#c9d1d9] font-medium text-xs rounded-md transition border border-[#30363d] flex items-center justify-center gap-2">
+                    <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 16 16"><path d="M2 2.75C2 1.784 2.784 1 3.75 1h2.5a.75.75 0 010 1.5h-2.5a.25.25 0 00-.25.25v10.5c0 .138.112.25.25.25h2.5a.75.75 0 010 1.5h-2.5A1.75 1.75 0 012 13.25V2.75zm10.44 4.5H6.75a.75.75 0 000 1.5h5.69l-1.97 1.97a.75.75 0 101.06 1.06l3.25-3.25a.75.75 0 000-1.06l-3.25-3.25a.75.75 0 10-1.06 1.06l1.97 1.97z"></path></svg>
+                    Sign out
                 </button>
             </form>
         </div>
