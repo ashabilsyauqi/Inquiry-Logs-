@@ -276,60 +276,66 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/users', [UserController::class, 'index']);
     Route::post('/users/{id}/approve', [UserController::class, 'approve']);
     Route::post('/users/{id}/reject', [UserController::class, 'reject']);
+});
 
-    // Extension API Endpoints
-    Route::get('/api/extension/stages', function (Request $request) {
-        $phone = $request->input('phone');
-        $accountId = $request->input('account_id');
+// Extension Public API Endpoints (Accessible by Chrome Extension without web session cookie)
+Route::get('/api/extension/stages', function (Request $request) {
+    $phone = $request->input('phone');
+    $accountId = $request->input('account_id');
 
-        $query = WaAccount::with(['pipelineStages' => function ($q) {
-            $q->orderBy('order', 'asc');
-        }]);
+    $allAccounts = WaAccount::with(['pipelineStages' => function ($q) {
+        $q->orderBy('order', 'asc');
+    }])->get();
 
-        if ($accountId) {
-            $query->where('id', $accountId);
-        } elseif ($phone) {
-            $sanitized = preg_replace('/[^0-9]/', '', $phone);
-            $query->where('phone', $sanitized)->orWhere('phone', 'LIKE', '%' . substr($sanitized, -8) . '%');
-        }
+    $matchedAccount = null;
 
-        $waAccounts = $query->get();
+    if ($accountId) {
+        $matchedAccount = $allAccounts->where('id', $accountId)->first();
+    } elseif ($phone) {
+        $sanitized = preg_replace('/[^0-9]/', '', $phone);
+        $shortDigits = substr($sanitized, -8); // last 8 digits
 
-        // Fallback: If no account matched, return all accounts with ordered stages
-        if ($waAccounts->isEmpty()) {
-            $waAccounts = WaAccount::with(['pipelineStages' => function ($q) {
-                $q->orderBy('order', 'asc');
-            }])->get();
-        }
+        $matchedAccount = $allAccounts->first(function ($acc) use ($sanitized, $shortDigits) {
+            if (!$acc->phone) return false;
+            $accSanitized = preg_replace('/[^0-9]/', '', $acc->phone);
+            return str_contains($accSanitized, $sanitized) || str_contains($sanitized, $accSanitized) || (strlen($shortDigits) >= 6 && str_contains($accSanitized, $shortDigits));
+        });
+    }
 
-        return response()->json(['status' => 'success', 'accounts' => $waAccounts]);
-    });
+    // If matched account found, put it first in the list
+    if ($matchedAccount) {
+        $sortedAccounts = collect([$matchedAccount])->concat($allAccounts->where('id', '!=', $matchedAccount->id));
+    } else {
+        $sortedAccounts = $allAccounts;
+    }
 
-    Route::post('/api/extension/update-stage', function (Request $request) {
-        $phone = $request->input('phone');
-        $stageName = $request->input('stage');
+    return response()->json(['status' => 'success', 'accounts' => $sortedAccounts->values()]);
+});
 
-        if (!$phone || !$stageName) {
-            return response()->json(['status' => 'error', 'message' => 'Missing phone or stage'], 400);
-        }
+Route::post('/api/extension/update-stage', function (Request $request) {
+    $phone = $request->input('phone');
+    $stageName = $request->input('stage');
 
-        $phone = preg_replace('/[^0-9]/', '', $phone);
-        if (str_starts_with($phone, '08')) {
-            $phone = '62' . substr($phone, 1);
-        }
+    if (!$phone || !$stageName) {
+        return response()->json(['status' => 'error', 'message' => 'Missing phone or stage'], 400);
+    }
 
-        $lead = Lead::where('phone', $phone)->first();
-        if (!$lead) {
-            $lead = Lead::create([
-                'name' => '+ ' . $phone,
-                'phone' => $phone,
-                'stage' => $stageName
-            ]);
-        } else {
-            $lead->stage = $stageName;
-            $lead->save();
-        }
+    $phone = preg_replace('/[^0-9]/', '', $phone);
+    if (str_starts_with($phone, '08')) {
+        $phone = '62' . substr($phone, 1);
+    }
 
-        return response()->json(['status' => 'success', 'message' => "Stage updated to {$stageName}", 'lead' => $lead]);
-    });
+    $lead = Lead::where('phone', $phone)->first();
+    if (!$lead) {
+        $lead = Lead::create([
+            'name' => '+ ' . $phone,
+            'phone' => $phone,
+            'stage' => $stageName
+        ]);
+    } else {
+        $lead->stage = $stageName;
+        $lead->save();
+    }
+
+    return response()->json(['status' => 'success', 'message' => "Stage updated to {$stageName}", 'lead' => $lead]);
 });
