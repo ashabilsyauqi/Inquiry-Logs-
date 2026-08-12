@@ -69,14 +69,14 @@ Route::middleware(['auth'])->group(function () {
 
         $leads = $query->latest()->get();
 
-        // CEO sees all WA Accounts with lead counts & metrics
+        // CEO sees all APPROVED WA Accounts with lead counts & metrics
         if ($user->isCeo()) {
-            $waAccounts = WaAccount::with(['leads', 'pipelineStages.triggers'])->get();
+            $waAccounts = WaAccount::with(['leads', 'pipelineStages.triggers'])->where('approval_status', 'APPROVED')->get();
             foreach ($waAccounts as $acc) {
                 $acc->ensureDefaultStages();
             }
         } else {
-            $waAccounts = $user->wa_account_id ? WaAccount::with(['leads', 'pipelineStages.triggers'])->where('id', $user->wa_account_id)->get() : collect();
+            $waAccounts = $user->wa_account_id ? WaAccount::with(['leads', 'pipelineStages.triggers'])->where('id', $user->wa_account_id)->where('approval_status', 'APPROVED')->get() : collect();
         }
 
         $totalLeads = $leads->count();
@@ -144,7 +144,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/wa-accounts', function () {
         $user = Auth::user();
         if ($user->isCeo()) {
-            return response()->json(WaAccount::with(['pipelineStages.triggers'])->get());
+            return response()->json(WaAccount::with(['pipelineStages.triggers'])->where('approval_status', 'APPROVED')->get());
         }
 
         if (!$user->wa_account_id) {
