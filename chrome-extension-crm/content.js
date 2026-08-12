@@ -1,9 +1,9 @@
-// CRM MVP WHATSAPP WEB CONTENT SCRIPT
+// CRM MVP WHATSAPP WEB CONTENT SCRIPT (ENHANCED V1.0.1)
 (function() {
     console.log("🚀 CRM MVP WhatsApp Web Stage Switcher Extension Loaded!");
 
     const SERVER_URL = 'http://127.0.0.1:8000';
-    let availableStages = [];
+    let availableStages = ['Inquiry Masuk', 'Pitching', 'Meeting Call', 'Deal', 'Lost'];
     let currentCustomerPhone = null;
     let currentCustomerName = null;
 
@@ -13,45 +13,54 @@
             const res = await fetch(`${SERVER_URL}/api/extension/stages`);
             const data = await res.json();
             if (data.status === 'success' && data.accounts) {
-                // Collect unique stages across pipeline stages
                 const stageSet = new Set();
                 data.accounts.forEach(acc => {
                     if (acc.pipeline_stages) {
                         acc.pipeline_stages.forEach(s => stageSet.add(s.name));
                     }
                 });
-                availableStages = Array.from(stageSet);
-                if (availableStages.length === 0) {
-                    availableStages = ['Inquiry Masuk', 'Pitching', 'Meeting Call', 'Deal', 'Lost'];
+                if (stageSet.size > 0) {
+                    availableStages = Array.from(stageSet);
                 }
             }
         } catch (err) {
-            console.error('Failed to fetch stages from CRM:', err);
-            availableStages = ['Inquiry Masuk', 'Pitching', 'Meeting Call', 'Deal', 'Lost'];
+            console.log('CRM API offline or CORS, using default stages');
         }
+        populateDropdown();
     }
 
-    loadDynamicStages();
+    // Create & Inject Floating Bar and Floating Action Button (FAB)
+    function injectFloatingUI() {
+        if (!document.getElementById('crm-wa-floating-bar')) {
+            const bar = document.createElement('div');
+            bar.id = 'crm-wa-floating-bar';
+            bar.innerHTML = `
+                <div class="crm-bar-title">🚀 CRM MVP</div>
+                <div class="crm-phone-badge" id="crm-active-lead-phone">Pilih Chat Customer...</div>
+                <select class="crm-stage-select" id="crm-stage-dropdown">
+                    <option value="">Pilih Target Stage...</option>
+                </select>
+                <button class="crm-save-btn" id="crm-btn-update-stage">💾 Update Stage</button>
+            `;
 
-    // Create & Inject Floating Command Bar
-    function injectFloatingBar() {
-        if (document.getElementById('crm-wa-floating-bar')) return;
+            (document.body || document.documentElement).appendChild(bar);
+            document.getElementById('crm-btn-update-stage').addEventListener('click', updateCurrentLeadStage);
+            populateDropdown();
+        }
 
-        const bar = document.createElement('div');
-        bar.id = 'crm-wa-floating-bar';
-        bar.innerHTML = `
-            <div class="crm-bar-title">🚀 CRM MVP</div>
-            <div class="crm-phone-badge" id="crm-active-lead-phone">Pilih Chat...</div>
-            <select class="crm-stage-select" id="crm-stage-dropdown">
-                <option value="">Pilih Target Stage...</option>
-            </select>
-            <button class="crm-save-btn" id="crm-btn-update-stage">💾 Update Stage</button>
-        `;
-
-        document.body.appendChild(bar);
-
-        document.getElementById('crm-btn-update-stage').addEventListener('click', updateCurrentLeadStage);
-        populateDropdown();
+        if (!document.getElementById('crm-floating-fab-btn')) {
+            const fab = document.createElement('button');
+            fab.id = 'crm-floating-fab-btn';
+            fab.innerHTML = '🚀 CRM Stage Bar';
+            fab.title = 'Tampilkan / Sembunyikan Stage Bar CRM';
+            fab.addEventListener('click', () => {
+                const bar = document.getElementById('crm-wa-floating-bar');
+                if (bar) {
+                    bar.style.display = (bar.style.display === 'none') ? 'flex' : 'none';
+                }
+            });
+            (document.body || document.documentElement).appendChild(fab);
+        }
     }
 
     function populateDropdown() {
@@ -69,27 +78,31 @@
 
     // Monitor Active Chat Selection in WhatsApp Web UI
     function detectActiveChat() {
-        injectFloatingBar();
+        injectFloatingUI();
 
-        // Detect chat header title in WhatsApp Web
-        const headerTitleEl = document.querySelector('#main header span[dir="auto"]') || document.querySelector('#main header [role="button"] span');
+        // Query active chat title / header in WA Web DOM
+        const headerContainer = document.querySelector('#main header');
         const phoneBadge = document.getElementById('crm-active-lead-phone');
 
-        if (headerTitleEl) {
-            const titleText = headerTitleEl.textContent || '';
-            currentCustomerName = titleText;
+        if (headerContainer) {
+            const titleEl = headerContainer.querySelector('span[dir="auto"]') || headerContainer.querySelector('span[title]');
+            if (titleEl) {
+                const titleText = titleEl.getAttribute('title') || titleEl.textContent || '';
+                currentCustomerName = titleText;
 
-            // Extract phone digits if present or use name
-            const digits = titleText.replace(/[^0-9]/g, '');
-            if (digits.length >= 8) {
-                currentCustomerPhone = digits;
-                if (phoneBadge) phoneBadge.textContent = '+' + digits;
-            } else {
-                currentCustomerPhone = titleText;
-                if (phoneBadge) phoneBadge.textContent = titleText.substring(0, 15);
+                const digits = titleText.replace(/[^0-9]/g, '');
+                if (digits.length >= 8) {
+                    currentCustomerPhone = digits;
+                    if (phoneBadge) phoneBadge.textContent = '+' + digits;
+                } else if (titleText.trim().length > 0) {
+                    currentCustomerPhone = titleText.trim();
+                    if (phoneBadge) phoneBadge.textContent = titleText.substring(0, 16);
+                }
             }
         } else {
-            if (phoneBadge) phoneBadge.textContent = 'Buka Chat Customer...';
+            if (phoneBadge && phoneBadge.textContent === 'Pilih Chat Customer...') {
+                phoneBadge.textContent = 'Buka Chat Customer...';
+            }
         }
     }
 
@@ -98,11 +111,11 @@
         const select = document.getElementById('crm-stage-dropdown');
         const targetStage = select ? select.value : '';
 
-        if (!currentCustomerPhone) {
-            return showToast('⚠️ Silakan buka chat customer terlebih dahulu.');
+        if (!currentCustomerPhone || currentCustomerPhone === 'Pilih Chat Customer...') {
+            return showToast('⚠️ Buka chat customer di WhatsApp Web dulu!');
         }
         if (!targetStage) {
-            return showToast('⚠️ Pilih target stage terlebih dahulu.');
+            return showToast('⚠️ Pilih target stage dari dropdown!');
         }
 
         try {
@@ -117,13 +130,13 @@
 
             const data = await res.json();
             if (data.status === 'success') {
-                showToast(`✅ BERHASIL! Stage customer ${currentCustomerName || currentCustomerPhone} diupdate ke: ${targetStage}`);
+                showToast(`✅ BERHASIL! Stage ${currentCustomerName || currentCustomerPhone} diupdate ke: ${targetStage}`);
             } else {
-                showToast('❌ Gagal mengupdate stage.');
+                showToast('❌ Gagal update stage ke server.');
             }
         } catch (err) {
             console.error('Error updating stage:', err);
-            showToast('⚠️ Gagal terhubung ke CRM server.');
+            showToast('⚠️ Gagal terhubung ke CRM server. Pastikan server lokal aktif.');
         }
     }
 
@@ -134,12 +147,15 @@
         const toast = document.createElement('div');
         toast.className = 'crm-toast';
         toast.textContent = message;
-        document.body.appendChild(toast);
+        (document.body || document.documentElement).appendChild(toast);
 
         setTimeout(() => toast.remove(), 4000);
     }
 
-    // DOM Observer to update active chat selection on click
+    // Load initial dynamic stages
+    loadDynamicStages();
+
+    // DOM Observer loop
     setInterval(detectActiveChat, 1000);
 
 })();
