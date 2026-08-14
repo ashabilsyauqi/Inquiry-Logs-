@@ -15,11 +15,15 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
-
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // Seed default CEO Account if not exists
+        User::firstOrCreate(
+            ['email' => 'ceo@difitech.id'],
+            [
+                'name' => 'CEO / Owner',
+                'password' => \Illuminate\Support\Facades\Hash::make('password123'),
+                'role' => 'CEO',
+                'status' => 'APPROVED'
+            ]
+        );
     }
 }
