@@ -556,7 +556,7 @@
                         <h2 class="text-xl font-bold text-slate-900">
                             Kanban Board {{ $activeAccount ? '(' . $activeAccount->name . ')' : '(Semua Pipeline)' }}
                         </h2>
-                        <p class="text-xs text-slate-500">💡 <strong>Double-click judul stage</strong> untuk ganti nama langsung. Klik tombol <strong>⭐ Set Entry</strong> untuk pintu masuk WA.</p>
+                        <p class="text-xs text-slate-500">🔒 <strong>Stage Untouchable (Otomatis)</strong>: Perubahan stage lead dikendalikan 100% via trigger WhatsApp (misal: <code>#deal</code>, <code>#meeting</code> di chat WA).</p>
                     </div>
                 </div>
                 
@@ -662,12 +662,16 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">Tahapan / Stage Pipeline</label>
-                        <select name="stage" id="modalStage" class="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white font-medium">
+                        <label class="block text-xs font-semibold text-slate-600 mb-1 flex items-center justify-between">
+                            <span>Tahapan / Stage Pipeline</span>
+                            <span class="text-[10px] text-amber-600 font-bold bg-amber-50 px-2 py-0.5 rounded border border-amber-200">🔒 Otomatis via WhatsApp</span>
+                        </label>
+                        <select name="stage" id="modalStage" disabled class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl outline-none bg-slate-100 font-bold text-slate-600 cursor-not-allowed">
                             @foreach($stages as $st)
                                 <option value="{{ $st->name }}">{{ $st->name }}</option>
                             @endforeach
                         </select>
+                        <p class="text-[11px] text-slate-400 mt-1 italic">💡 Stage hanya dapat diperbarui secara otomatis melalui perintah trigger WhatsApp (contoh: <code>#deal</code>, <code>#meeting</code> di chat WA).</p>
                     </div>
 
                     <div class="mb-3">
