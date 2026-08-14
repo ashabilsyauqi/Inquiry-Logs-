@@ -1336,7 +1336,38 @@
                         return;
                     }
 
-                    tbody.innerHTML = list.map(cs => `
+                    tbody.innerHTML = list.map(cs => {
+                        const waAcc = cs.wa_account || {};
+                        const isConnected = waAcc.status === 'CONNECTED';
+                        const rawPhone = waAcc.phone || cs.phone;
+                        const cleanPhone = rawPhone ? rawPhone.toString().replace(/^\+/, '') : '';
+
+                        let phoneBadgeHtml = '';
+                        if (isConnected && cleanPhone) {
+                            phoneBadgeHtml = `
+                                <span title="WhatsApp Terhubung & Aktif" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 font-mono shadow-sm">
+                                    <span class="relative flex h-2 w-2">
+                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                        <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                    </span>
+                                    +${cleanPhone}
+                                </span>
+                            `;
+                        } else if (isConnected) {
+                            phoneBadgeHtml = `
+                                <span title="WhatsApp Terhubung" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 font-mono shadow-sm">
+                                    🟢 Online
+                                </span>
+                            `;
+                        } else {
+                            phoneBadgeHtml = `
+                                <span title="Perangkat WhatsApp Belum Terhubung / Terputus" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-red-100 text-red-700 border border-red-200">
+                                    🔴 Not Connected
+                                </span>
+                            `;
+                        }
+
+                        return `
                         <tr class="hover:bg-slate-50 transition border-b border-slate-100">
                             <td class="p-3 font-bold text-slate-800 flex items-center gap-2">
                                 👤 ${cs.name}
@@ -1344,8 +1375,8 @@
                             <td class="p-3 text-slate-600 font-mono">
                                 ${cs.email}
                             </td>
-                            <td class="p-3 text-slate-600 font-mono">
-                                ${cs.phone ? '+' + cs.phone : '<span class="text-slate-400 font-sans italic">-</span>'}
+                            <td class="p-3">
+                                ${phoneBadgeHtml}
                             </td>
                             <td class="p-3">
                                 <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
@@ -1358,7 +1389,7 @@
                                 </button>
                             </td>
                         </tr>
-                    `).join('');
+                    `}).join('');
                 })
                 .catch(err => {
                     tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-rose-500 font-semibold">Gagal memuat daftar tim CS.</td></tr>`;

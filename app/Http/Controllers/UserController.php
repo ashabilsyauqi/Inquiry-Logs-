@@ -85,7 +85,7 @@ class UserController extends Controller
         }
 
         $query = User::where('role', 'SALES_ADMIN');
-        if ($brandId) {
+        if ($brandId && $brandId !== 'all') {
             $query->where('wa_account_id', $brandId);
         }
 
