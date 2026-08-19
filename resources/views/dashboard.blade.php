@@ -1950,6 +1950,12 @@
                     const img = document.getElementById('qrImage');
                     const badge = document.getElementById('qrStatusBadge');
 
+                    if (data.error) {
+                        badge.className = "inline-block px-3 py-1 bg-red-100 text-red-800 text-xs font-semibold rounded-full mt-2";
+                        badge.textContent = "⚠️ " + data.error;
+                        return;
+                    }
+
                     if (data.sessionStatus === 'CONNECTED') {
                         badge.className = "inline-block px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-full mt-2";
                         badge.textContent = "🟢 Terhubung! HP: " + (data.phone || '');
@@ -1978,12 +1984,15 @@
                         img.classList.remove('hidden');
                         badge.className = "inline-block px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-semibold rounded-full mt-2";
                         badge.textContent = "📲 Silakan Scan QR Code di atas";
+                    } else {
+                        badge.className = "inline-block px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full mt-2 animate-pulse";
+                        badge.textContent = "⏳ Memunculkan Barcode QR... (" + (data.sessionStatus || 'Memulai Browser WA') + ")";
                     }
                 })
                 .catch(err => {
                     const badge = document.getElementById('qrStatusBadge');
                     badge.className = "inline-block px-3 py-1 bg-red-100 text-red-800 text-xs font-semibold rounded-full mt-2";
-                    badge.textContent = "⚠️ Pastikan `wa-bridge` jalan di port 3001";
+                    badge.textContent = "⚠️ Tidak dapat terhubung ke WA Bridge di server";
                 });
         }
 

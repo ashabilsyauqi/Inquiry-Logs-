@@ -398,21 +398,21 @@ Route::middleware(['auth'])->group(function () {
     // WA Bridge Proxy Routes (Bypasses HTTPS Mixed Content & Port 3001 Firewall blocks)
     Route::post('/admin/wa-proxy/connect', function (Request $request) {
         try {
-            $res = \Illuminate\Support\Facades\Http::timeout(3)->post('http://127.0.0.1:3001/api/connect', [
+            $res = \Illuminate\Support\Facades\Http::timeout(10)->post('http://127.0.0.1:3001/api/connect', [
                 'session' => $request->input('session', 'default')
             ]);
             return response()->json($res->json(), $res->status());
         } catch (\Throwable $e) {
-            return response()->json(['error' => 'WA Bridge offline di server local/cPanel'], 503);
+            return response()->json(['error' => 'WA Bridge offline di cPanel (Perlu di-start via Node.js App / Terminal)'], 503);
         }
     });
 
     Route::get('/admin/wa-proxy/qr', function (Request $request) {
         try {
-            $res = \Illuminate\Support\Facades\Http::timeout(3)->get('http://127.0.0.1:3001/api/qr?session=' . $request->query('session', 'default'));
+            $res = \Illuminate\Support\Facades\Http::timeout(10)->get('http://127.0.0.1:3001/api/qr?session=' . $request->query('session', 'default'));
             return response()->json($res->json(), $res->status());
         } catch (\Throwable $e) {
-            return response()->json(['error' => 'WA Bridge offline di server local/cPanel'], 503);
+            return response()->json(['error' => 'WA Bridge offline di cPanel (Perlu di-start via Node.js App / Terminal)'], 503);
         }
     });
 
