@@ -80,9 +80,6 @@ class UserController extends Controller
         }
 
         $brandId = $user->isCeo() ? request('account_id') : $user->wa_account_id;
-        if (!$brandId && !$user->isCeo()) {
-            return response()->json(['csTeam' => []]);
-        }
 
         $query = User::where('role', 'SALES_ADMIN');
         if ($brandId && $brandId !== 'all') {
