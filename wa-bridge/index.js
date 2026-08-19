@@ -45,8 +45,10 @@ function getCustomExecutablePath() {
                     if (stat.isDirectory()) {
                         const res = searchPath(fullPath);
                         if (res) return res;
-                    } else if (file === 'chrome-headless-shell' || file === 'headless_shell') {
-                        return fullPath;
+                    } else if (file === 'chrome' || file === 'chrome-headless-shell' || file === 'headless_shell' || file === 'chromium') {
+                        if (stat.mode & 0o111) {
+                            return fullPath;
+                        }
                     }
                 }
             } catch (e) {}
@@ -86,6 +88,7 @@ function createSession(sessionId = 'default') {
     const client = new Client({
         authStrategy: new LocalAuth({ clientId: sessionId }),
         puppeteer: {
+            headless: true,
             executablePath: execPath,
             args: [
                 '--no-sandbox',
