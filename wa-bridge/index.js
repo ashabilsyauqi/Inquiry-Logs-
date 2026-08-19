@@ -29,13 +29,19 @@ function sendConnectStatusUpdate(sessionId, status, phone = null) {
 }
 
 function createSession(sessionId = 'default') {
-    if (sessions.has(sessionId)) {
-        return sessions.get(sessionId);
+    let sessionData = sessions.get(sessionId);
+
+    if (sessionData && sessionData.status !== 'DISCONNECTED' && sessionData.client) {
+        return sessionData;
+    }
+
+    if (sessionData && sessionData.client) {
+        try { sessionData.client.destroy(); } catch (e) {}
     }
 
     console.log(`[WA Bridge] Initializing session: ${sessionId}`);
 
-    const sessionData = {
+    sessionData = {
         sessionId,
         status: 'INITIALIZING',
         qrDataUrl: null,
@@ -46,7 +52,16 @@ function createSession(sessionId = 'default') {
     const client = new Client({
         authStrategy: new LocalAuth({ clientId: sessionId }),
         puppeteer: {
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
+            args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-accelerated-2d-canvas',
+                '--no-first-run',
+                '--no-zygote',
+                '--single-process',
+                '--disable-gpu'
+            ]
         }
     });
 
