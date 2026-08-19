@@ -1922,6 +1922,11 @@
 
         let currentScanningAccountId = '{{ $activeAccount->id ?? "" }}';
 
+        const getWaBridgeUrl = (path) => {
+            const host = window.location.hostname || 'localhost';
+            return 'http://' + host + ':3001' + path;
+        };
+
         function startScanQr(sessionId, accountId = null) {
             currentScanningSession = sessionId;
             if (accountId) currentScanningAccountId = accountId;
@@ -1932,7 +1937,7 @@
 
             if (activeQrPollInterval) clearInterval(activeQrPollInterval);
 
-            fetch('http://localhost:3001/api/connect', {
+            fetch(getWaBridgeUrl('/api/connect'), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ session: sessionId })
@@ -1943,7 +1948,7 @@
         }
 
         function pollQr() {
-            fetch('http://localhost:3001/api/qr?session=' + currentScanningSession)
+            fetch(getWaBridgeUrl('/api/qr?session=' + currentScanningSession))
                 .then(res => res.json())
                 .then(data => {
                     const loading = document.getElementById('qrLoading');
