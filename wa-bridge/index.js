@@ -27,6 +27,7 @@ function sendConnectStatusUpdate(sessionId, status, phone = null) {
     axios.post(STATUS_UPDATE_URL, { sessionId, status, phone })
         .then(() => console.log(`[WA Bridge] [${sessionId}] Status '${status}' synced to Laravel DB.`))
         .catch(err => console.error(`[WA Bridge] Failed syncing status for ${sessionId}:`, err.message));
+}
 const fs = require('fs');
 const path = require('path');
 
