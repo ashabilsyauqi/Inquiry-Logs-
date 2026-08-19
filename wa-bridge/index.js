@@ -36,50 +36,26 @@ function getCustomExecutablePath() {
     const homeDir = process.env.HOME || '/home/sryyuqht';
     const cacheDir = path.join(homeDir, '.cache/puppeteer');
     if (fs.existsSync(cacheDir)) {
-        // Priority 1: Search specifically for chrome-headless-shell (doesn't require GTK/libatk)
-        const searchHeadlessShell = (dir) => {
+        const searchExecutable = (dir) => {
             try {
                 const files = fs.readdirSync(dir);
                 for (const file of files) {
                     const fullPath = path.join(dir, file);
                     const stat = fs.statSync(fullPath);
                     if (stat.isDirectory()) {
-                        const res = searchHeadlessShell(fullPath);
+                        const res = searchExecutable(fullPath);
                         if (res) return res;
-                    } else if (file === 'chrome-headless-shell' || file === 'headless_shell') {
+                    } else if (file === 'chrome' || file === 'chrome-headless-shell' || file === 'headless_shell' || file === 'chromium') {
                         if (stat.mode & 0o111) return fullPath;
                     }
                 }
             } catch (e) {}
             return null;
         };
-        const shellPath = searchHeadlessShell(cacheDir);
-        if (shellPath) {
-            console.log(`[WA Bridge] Found chrome-headless-shell at: ${shellPath}`);
-            return shellPath;
-        }
-
-        // Priority 2: Fallback to full chrome/chromium
-        const searchChrome = (dir) => {
-            try {
-                const files = fs.readdirSync(dir);
-                for (const file of files) {
-                    const fullPath = path.join(dir, file);
-                    const stat = fs.statSync(fullPath);
-                    if (stat.isDirectory()) {
-                        const res = searchChrome(fullPath);
-                        if (res) return res;
-                    } else if (file === 'chrome' || file === 'chromium') {
-                        if (stat.mode & 0o111) return fullPath;
-                    }
-                }
-            } catch (e) {}
-            return null;
-        };
-        const chromePath = searchChrome(cacheDir);
-        if (chromePath) {
-            console.log(`[WA Bridge] Found chrome at: ${chromePath}`);
-            return chromePath;
+        const execPath = searchExecutable(cacheDir);
+        if (execPath) {
+            console.log(`[WA Bridge] Found browser executable at: ${execPath}`);
+            return execPath;
         }
     }
     return undefined;
