@@ -1,9 +1,12 @@
-const { Client, LocalAuth } = require('whatsapp-web.js');
+const { default: makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } = require('@whiskeysockets/baileys');
 const qrcode = require('qrcode');
 const qrcodeTerminal = require('qrcode-terminal');
 const axios = require('axios');
 const express = require('express');
 const cors = require('cors');
+const pino = require('pino');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
 app.use(cors());
@@ -13,10 +16,10 @@ const PORT = process.env.BRIDGE_PORT || 3001;
 const BASE_URL = process.env.APP_URL || 'https://crm.difitech.id';
 const WEBHOOK_URL = process.env.WEBHOOK_URL || (BASE_URL + '/api/wa-webhook');
 const DISCONNECT_ALERT_URL = process.env.DISCONNECT_ALERT_URL || (BASE_URL + '/api/wa-disconnect-alert');
-
-// Map to store sessions: sessionId -> { sessionId, client, status, qrDataUrl, phone }
-const sessions = new Map();
 const STATUS_UPDATE_URL = process.env.STATUS_UPDATE_URL || (BASE_URL + '/api/wa-status-update');
+
+// Map to store sessions: sessionId -> { sessionId, sock, status, qrDataUrl, phone }
+const sessions = new Map();
 
 function sendDisconnectAlert(sessionId, reason) {
     axios.post(DISCONNECT_ALERT_URL, { sessionId, reason })
@@ -28,337 +31,123 @@ function sendConnectStatusUpdate(sessionId, status, phone = null) {
         .then(() => console.log(`[WA Bridge] [${sessionId}] Status '${status}' synced to Laravel DB.`))
         .catch(err => console.error(`[WA Bridge] Failed syncing status for ${sessionId}:`, err.message));
 }
-const fs = require('fs');
-const path = require('path');
 
-function getCustomExecutablePath() {
-    if (process.env.PUPPETEER_EXECUTABLE_PATH) return process.env.PUPPETEER_EXECUTABLE_PATH;
-    const homeDir = process.env.HOME || '/home/sryyuqht';
-    const cacheDir = path.join(homeDir, '.cache/puppeteer');
-    if (fs.existsSync(cacheDir)) {
-        const searchExecutable = (dir) => {
-            try {
-                const files = fs.readdirSync(dir);
-                for (const file of files) {
-                    const fullPath = path.join(dir, file);
-                    const stat = fs.statSync(fullPath);
-                    if (stat.isDirectory()) {
-                        const res = searchExecutable(fullPath);
-                        if (res) return res;
-                    } else if (file === 'chrome' || file === 'chrome-headless-shell' || file === 'headless_shell' || file === 'chromium') {
-                        if (stat.mode & 0o111) return fullPath;
-                    }
-                }
-            } catch (e) {}
-            return null;
-        };
-        const execPath = searchExecutable(cacheDir);
-        if (execPath) {
-            console.log(`[WA Bridge] Found browser executable at: ${execPath}`);
-            return execPath;
-        }
-    }
-    return undefined;
-}
-
-function createSession(sessionId = 'default') {
+async function createSession(sessionId = 'default') {
     let sessionData = sessions.get(sessionId);
 
-    if (sessionData && sessionData.status !== 'DISCONNECTED' && sessionData.client) {
+    if (sessionData && sessionData.status !== 'DISCONNECTED' && sessionData.sock) {
         return sessionData;
     }
 
-    if (sessionData && sessionData.client) {
-        try { sessionData.client.destroy(); } catch (e) {}
+    if (sessionData && sessionData.sock) {
+        try { sessionData.sock.ev.removeAllListeners(); } catch (e) {}
+        try { sessionData.sock.end(new Error('Session reset')); } catch (e) {}
     }
 
-    console.log(`[WA Bridge] Initializing session: ${sessionId}`);
+    console.log(`[WA Bridge] Initializing Baileys Socket Session: ${sessionId}`);
 
     sessionData = {
         sessionId,
         status: 'INITIALIZING',
         qrDataUrl: null,
         phone: null,
-        client: null
+        sock: null
     };
-
-    const execPath = getCustomExecutablePath();
-    const client = new Client({
-        authStrategy: new LocalAuth({ clientId: sessionId }),
-        puppeteer: {
-            headless: true,
-            executablePath: execPath,
-            args: [
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
-                '--disable-dev-shm-usage',
-                '--disable-accelerated-2d-canvas',
-                '--no-first-run',
-                '--no-zygote',
-                '--single-process',
-                '--disable-gpu',
-                '--disable-software-rasterizer'
-            ]
-        }
-    });
-
-    sessionData.client = client;
     sessions.set(sessionId, sessionData);
 
-    client.on('qr', async (qr) => {
-        console.log(`[WA Bridge] [${sessionId}] New QR Code generated.`);
-        sessionData.status = 'QR_READY';
-        try {
-            sessionData.qrDataUrl = await qrcode.toDataURL(qr);
-        } catch (err) {
-            console.error('Error generating QR Data URL:', err);
-        }
-        qrcodeTerminal.generate(qr, { small: true });
-    });
+    try {
+        const authFolder = path.join(__dirname, `baileys_auth_${sessionId}`);
+        const { state, saveCreds } = await useMultiFileAuthState(authFolder);
+        const { version } = await fetchLatestBaileysVersion().catch(() => ({ version: [2, 3000, 1015901307] }));
 
-    client.on('ready', async () => {
-        sessionData.status = 'CONNECTED';
-        sessionData.qrDataUrl = null;
-        try {
-            const info = client.info;
-            sessionData.phone = info.wid.user;
-            console.log(`[WA Bridge] [${sessionId}] Client Ready! Phone: ${sessionData.phone}`);
-            
-            // Instantly sync CONNECTED status & phone to Laravel MySQL DB
-            sendConnectStatusUpdate(sessionId, 'CONNECTED', sessionData.phone);
+        const sock = makeWASocket({
+            version,
+            auth: state,
+            printQRInTerminal: false,
+            logger: pino({ level: 'silent' }),
+            browser: ['Difitech CRM', 'Chrome', '1.0.0'],
+            connectTimeoutMs: 60000,
+            defaultQueryTimeoutMs: 60000,
+            keepAliveIntervalMs: 25000,
+        });
 
-            // Send welcome Control Panel menu to Self Chat ("Message Yourself")
-            sendAdminControlPanelMenu(client, sessionData.phone);
-            
-            // Scan and backfill missed/unread chats during offline period
-            syncRecentChats(client, sessionId);
-        } catch (e) {
-            console.log(`[WA Bridge] [${sessionId}] Client Ready!`);
-            sendConnectStatusUpdate(sessionId, 'CONNECTED');
-        }
-    });
+        sessionData.sock = sock;
 
-    client.on('authenticated', () => {
-        sessionData.status = 'AUTHENTICATED';
-        console.log(`[WA Bridge] [${sessionId}] Authenticated.`);
-    });
+        sock.ev.on('creds.update', saveCreds);
 
-    client.on('auth_failure', (msg) => {
-        sessionData.status = 'DISCONNECTED';
-        sessionData.qrDataUrl = null;
-        console.error(`[WA Bridge] [${sessionId}] Auth failure:`, msg);
-        sendConnectStatusUpdate(sessionId, 'DISCONNECTED');
-        sendDisconnectAlert(sessionId, 'Auth failure: ' + msg);
-    });
+        sock.ev.on('connection.update', async (update) => {
+            const { connection, lastDisconnect, qr } = update;
 
-    client.on('change_state', (state) => {
-        console.log(`[WA Bridge] [${sessionId}] Connection state changed: ${state}`);
-        if (state === 'DISCONNECTED' || state === 'UNPAIRED' || state === 'UNLAUNCHED') {
-            sessionData.status = 'DISCONNECTED';
-            sessionData.qrDataUrl = null;
-            sessionData.phone = null;
-            sendConnectStatusUpdate(sessionId, 'DISCONNECTED');
-            sendDisconnectAlert(sessionId, 'Perangkat WhatsApp terputus dari HP (State: ' + state + ')');
-        }
-    });
-
-    client.on('disconnected', (reason) => {
-        sessionData.status = 'DISCONNECTED';
-        sessionData.qrDataUrl = null;
-        sessionData.phone = null;
-        console.log(`[WA Bridge] [${sessionId}] Disconnected:`, reason);
-        sendConnectStatusUpdate(sessionId, 'DISCONNECTED');
-        sendDisconnectAlert(sessionId, 'Disconnected: ' + reason);
-    });
-
-    client.on('message_create', async (msg) => {
-        if (msg.from === 'status@broadcast' || msg.to === 'status@broadcast') return;
-        if (msg.from.includes('@g.us') || msg.to.includes('@g.us')) return;
-
-        try {
-            let sender = msg.from;
-            let receiver = msg.to;
-            let senderName = null;
-
-            try {
-                const senderContact = await client.getContactById(msg.from);
-                if (senderContact) {
-                    if (senderContact.number) sender = senderContact.number;
-                    senderName = senderContact.name || senderContact.pushname || null;
-                }
-                const receiverContact = await client.getContactById(msg.to);
-                if (receiverContact && receiverContact.number) {
-                    receiver = receiverContact.number;
-                }
-            } catch (e) {
-                // Ignore contact fetching error
-            }
-
-            const cleanSender = sender.replace('@c.us', '').replace('@s.whatsapp.net', '').replace('@lid', '');
-            const cleanReceiver = receiver.replace('@c.us', '').replace('@s.whatsapp.net', '').replace('@lid', '');
-            const isSelfChat = (cleanSender === sessionData.phone && cleanReceiver === sessionData.phone) || (msg.from === msg.to);
-
-            const isHashtagCommand = msg.body && msg.body.trim().startsWith('#');
-            const isSlashCommand = msg.body && (msg.body.trim().startsWith('/') || msg.body.trim().startsWith('.'));
-
-            // 1. SELF CHAT / DEDICATED ADMIN CONTROL PANEL (# COMMANDS IN MESSAGE YOURSELF)
-            if (isSelfChat || (msg.fromMe && isHashtagCommand)) {
-                if (isHashtagCommand || msg.body.trim() === '#help' || msg.body.trim() === '#menu') {
-                    console.log(`[WA Bridge] Processing Admin Self-Chat Control Command: "${msg.body}"`);
-
-                    if (msg.body.trim() === '#menu' || msg.body.trim() === '#help') {
-                        await sendAdminControlPanelMenu(client, sessionData.phone);
-                        return;
-                    }
-
-                    // Forward to Laravel Webhook as Admin Control Panel Command
-                    const payload = {
-                        sessionId,
-                        sender: cleanSender,
-                        receiver: cleanReceiver,
-                        senderName,
-                        message: msg.body.trim(),
-                        isFromMe: true,
-                        isAdminCommand: true,
-                        isSelfChat: true
-                    };
-
-                    try {
-                        const response = await axios.post(WEBHOOK_URL, payload);
-                        if (response.data && response.data.replyMessage) {
-                            // Reply back directly inside Self Chat
-                            await client.sendMessage(msg.from, response.data.replyMessage);
-                        }
-                    } catch (e) {
-                        console.error('[WA Bridge] Error posting self chat command:', e.message);
-                    }
-                    return;
-                }
-            }
-
-            // 2. DYNAMIC OPERATOR STYLE TRIGGER MENU INTERCEPTOR IN CUSTOMER CHAT (/1, /2, /3, .1, .2, /deal)
-            if (msg.fromMe && isSlashCommand && !isSelfChat) {
-                console.log(`[WA Bridge] Intercepted Admin Operator Menu Trigger Command: "${msg.body}" to ${receiver}`);
-
-                const payload = {
-                    sessionId,
-                    sender: cleanSender,
-                    receiver: cleanReceiver,
-                    senderName,
-                    message: msg.body.trim(),
-                    isFromMe: true,
-                    isAdminCommand: true,
-                    isSelfChat: false
-                };
-
-                await axios.post(WEBHOOK_URL, payload).catch(e => {});
-
-                // Delete operator command message instantly so 0% messages are sent to customer!
+            if (qr) {
+                console.log(`[WA Bridge] [${sessionId}] New QR Code generated.`);
+                sessionData.status = 'QR_READY';
                 try {
-                    await msg.delete(true);
-                } catch (delErr) {
-                    try { await msg.delete(false); } catch (e) {}
+                    sessionData.qrDataUrl = await qrcode.toDataURL(qr);
+                    qrcodeTerminal.generate(qr, { small: true });
+                } catch (err) {
+                    console.error(`[WA Bridge] [${sessionId}] Error generating QR Data URL:`, err.message);
                 }
-                return;
             }
 
-            const payload = {
-                sessionId,
-                sender: cleanSender,
-                receiver: cleanReceiver,
-                senderName,
-                message: msg.body,
-                isFromMe: msg.fromMe,
-                isAdminCommand: false,
-                isSelfChat
-            };
+            if (connection === 'open') {
+                const rawUser = sock.user ? sock.user.id : null;
+                const cleanPhone = rawUser ? rawUser.split(':')[0].replace(/[^0-9]/g, '') : null;
+                sessionData.status = 'CONNECTED';
+                sessionData.qrDataUrl = null;
+                sessionData.phone = cleanPhone;
+                console.log(`[WA Bridge] [${sessionId}] Socket Connected! Phone: ${cleanPhone}`);
 
-            await axios.post(WEBHOOK_URL, payload);
-        } catch (error) {
-            console.error(`[WA Bridge] [${sessionId}] Error forwarding webhook:`, error.message);
-        }
-    });
+                sendConnectStatusUpdate(sessionId, 'CONNECTED', cleanPhone);
+            }
 
-    client.initialize().catch(err => {
-        console.error(`[WA Bridge] [${sessionId}] Initialize error:`, err);
+            if (connection === 'close') {
+                const statusCode = lastDisconnect?.error?.output?.statusCode;
+                const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
+                console.log(`[WA Bridge] [${sessionId}] Connection closed (code ${statusCode}). Reconnecting: ${shouldReconnect}`);
+
+                sessionData.status = 'DISCONNECTED';
+                sessionData.qrDataUrl = null;
+
+                if (statusCode === DisconnectReason.loggedOut) {
+                    sendDisconnectAlert(sessionId, 'Log out dari aplikasi HP WhatsApp');
+                    try { fs.rmSync(authFolder, { recursive: true, force: true }); } catch (e) {}
+                } else if (shouldReconnect) {
+                    setTimeout(() => createSession(sessionId), 3000);
+                }
+            }
+        });
+
+        sock.ev.on('messages.upsert', async (m) => {
+            if (m.type !== 'notify') return;
+            for (const msg of m.messages) {
+                if (!msg.message || msg.key.fromMe) continue;
+                const remoteJid = msg.key.remoteJid || '';
+                if (remoteJid.endsWith('@g.us') || remoteJid.includes('status@broadcast')) continue;
+
+                const sender = remoteJid.replace('@s.whatsapp.net', '').replace(/[^0-9]/g, '');
+                const text = msg.message.conversation || msg.message.extendedTextMessage?.text || msg.message.imageMessage?.caption || '';
+                const senderName = msg.pushName || sender;
+
+                console.log(`[WA Bridge] [${sessionId}] Incoming message from ${sender}: ${text}`);
+
+                axios.post(WEBHOOK_URL, {
+                    sessionId,
+                    sender,
+                    receiver: sessionData.phone,
+                    senderName,
+                    message: text,
+                    isFromMe: false
+                }).catch(err => console.error(`[WA Bridge] Webhook post error:`, err.message));
+            }
+        });
+
+    } catch (err) {
+        console.error(`[WA Bridge] [${sessionId}] Baileys Init Error:`, err.message);
         sessionData.status = 'DISCONNECTED';
-        sendDisconnectAlert(sessionId, 'Initialize error: ' + err.message);
-    });
+    }
 
     return sessionData;
 }
-
-// Function to send Admin Control Panel Menu inside "Message Yourself" (Chat ke Nomor Sendiri)
-async function sendAdminControlPanelMenu(client, adminPhone) {
-    if (!adminPhone) return;
-    try {
-        const selfChatId = adminPhone.includes('@') ? adminPhone : `${adminPhone}@c.us`;
-        const menuText = "🤖 *CRM ADMIN CONTROL PANEL (CHAT SENDIRI)* 🤖\n\n" +
-            "Gunakan format ini di *Chat Sendiri (Message Yourself)* untuk update stage customer *TANPA MENGIRIM PESAN APAPUN KE CUSTOMER*:\n\n" +
-            "📌 *FORMAT PERINTAH STAGE*:\n" +
-            "• `#deal <no_hp>` ➔ Set Stage *Deal*\n" +
-            "• `#meeting <no_hp>` ➔ Set Stage *Meeting*\n" +
-            "• `#pitching <no_hp>` ➔ Set Stage *Pitching*\n" +
-            "• `#stage <nomor/nama> <no_hp>` ➔ Set Stage khusus\n\n" +
-            "💡 *CONTOH CONKRET*:\n" +
-            "👉 `#deal 08123456789` \n" +
-            "👉 `#meeting 628123456789` \n" +
-            "👉 `#stage 1 08123456789` \n\n" +
-            "Ketik `#menu` kapan saja untuk melihat menu ini kembali.";
-
-        await client.sendMessage(selfChatId, menuText);
-        console.log(`[WA Bridge] Sent Admin Control Panel menu to Self Chat (${selfChatId})`);
-    } catch (err) {
-        console.log('[WA Bridge] Could not send welcome menu to self chat:', err.message);
-    }
-}
-
-// Function to scan and backfill recent missed chats when WA reconnects
-async function syncRecentChats(client, sessionId) {
-    try {
-        console.log(`[WA Bridge] [${sessionId}] Scanning recent missed chats after reconnect...`);
-        const chats = await client.getChats();
-        const recentChats = chats.slice(0, 20); // Scan top 20 recent chats
-
-        for (const chat of recentChats) {
-            if (chat.isGroup) continue;
-            const messages = await chat.fetchMessages({ limit: 5 });
-
-            for (const msg of messages) {
-                let sender = msg.from;
-                let receiver = msg.to;
-                let senderName = null;
-
-                try {
-                    const senderContact = await client.getContactById(msg.from);
-                    if (senderContact) {
-                        if (senderContact.number) sender = senderContact.number;
-                        senderName = senderContact.name || senderContact.pushname || null;
-                    }
-                } catch (e) {}
-
-                const payload = {
-                    sessionId,
-                    sender: sender.replace('@c.us', '').replace('@s.whatsapp.net', '').replace('@lid', ''),
-                    receiver: receiver.replace('@c.us', '').replace('@s.whatsapp.net', '').replace('@lid', ''),
-                    senderName,
-                    message: msg.body,
-                    isFromMe: msg.fromMe
-                };
-
-                await axios.post(WEBHOOK_URL, payload).catch(() => {});
-            }
-        }
-        console.log(`[WA Bridge] [${sessionId}] Missed chats sync complete.`);
-    } catch (err) {
-        console.error(`[WA Bridge] [${sessionId}] Error syncing missed chats:`, err.message);
-    }
-}
-
-// Global unhandled rejection catch to prevent node process crash on puppeteer context navigation
-process.on('unhandledRejection', (reason, promise) => {
-    console.log('[WA Bridge] Handled async promise rejection:', reason ? reason.message : reason);
-});
 
 // Automatically initialize 'default' session on startup
 createSession('default');
@@ -384,25 +173,8 @@ app.get('/api/qr', async (req, res) => {
     const sessionId = req.query.session || 'default';
     let session = sessions.get(sessionId);
 
-    if (!session) {
-        session = createSession(sessionId);
-    } else if (session.client && session.status === 'CONNECTED') {
-        try {
-            const state = await session.client.getState();
-            if (!state || state === 'DISCONNECTED' || state === 'UNPAIRED' || state === 'UNLAUNCHED') {
-                session.status = 'DISCONNECTED';
-                session.qrDataUrl = null;
-                session.phone = null;
-                sendConnectStatusUpdate(sessionId, 'DISCONNECTED');
-                sendDisconnectAlert(sessionId, 'Device unlinked from phone app (state: ' + state + ')');
-            }
-        } catch (e) {
-            session.status = 'DISCONNECTED';
-            session.qrDataUrl = null;
-            session.phone = null;
-            sendConnectStatusUpdate(sessionId, 'DISCONNECTED');
-            sendDisconnectAlert(sessionId, 'Connection check failed: ' + e.message);
-        }
+    if (!session || session.status === 'DISCONNECTED') {
+        session = await createSession(sessionId);
     }
 
     res.json({
@@ -415,12 +187,12 @@ app.get('/api/qr', async (req, res) => {
 });
 
 // 3. Connect / Initialize a session
-app.post('/api/connect', (req, res) => {
+app.post('/api/connect', async (req, res) => {
     const sessionId = req.body.session || 'default';
     let session = sessions.get(sessionId);
 
     if (!session || session.status === 'DISCONNECTED') {
-        session = createSession(sessionId);
+        session = await createSession(sessionId);
     }
 
     res.json({
@@ -430,19 +202,51 @@ app.post('/api/connect', (req, res) => {
     });
 });
 
-// 4. Logout / Destroy a session
+// 4. Send direct WhatsApp message
+app.post('/api/send-message', async (req, res) => {
+    const { session: sessionId = 'default', to, message } = req.body;
+    const session = sessions.get(sessionId);
+
+    if (!session || !session.sock || session.status !== 'CONNECTED') {
+        return res.status(400).json({ status: 'error', message: 'WA Session tidak aktif atau belum terhubung.' });
+    }
+
+    if (!to || !message) {
+        return res.status(422).json({ status: 'error', message: 'Nomor tujuan (to) dan isi pesan (message) wajib diisi.' });
+    }
+
+    try {
+        const cleanTo = to.replace(/[^0-9]/g, '');
+        const jid = cleanTo + '@s.whatsapp.net';
+        const sentMsg = await session.sock.sendMessage(jid, { text: message });
+
+        res.json({
+            status: 'success',
+            message: 'Pesan WhatsApp berhasil dikirim!',
+            messageId: sentMsg.key.id
+        });
+    } catch (err) {
+        console.error(`[WA Bridge] Send message error:`, err.message);
+        res.status(500).json({ status: 'error', message: err.message });
+    }
+});
+
+// 5. Logout / Destroy a session
 app.post('/api/logout', async (req, res) => {
     const sessionId = req.body.session || 'default';
     const session = sessions.get(sessionId);
 
-    if (session && session.client) {
+    if (session && session.sock) {
         try {
-            await session.client.logout().catch(() => {});
-            await session.client.destroy().catch(() => {});
+            await session.sock.logout().catch(() => {});
+            session.sock.end();
         } catch (err) {
-            console.error(`Error logging out session ${sessionId}:`, err);
+            console.error(`Error logging out session ${sessionId}:`, err.message);
         }
         sessions.delete(sessionId);
+
+        const authFolder = path.join(__dirname, `baileys_auth_${sessionId}`);
+        try { fs.rmSync(authFolder, { recursive: true, force: true }); } catch (e) {}
     }
 
     sendDisconnectAlert(sessionId, 'Manual disconnect / Logout triggered from Dashboard');
@@ -451,5 +255,5 @@ app.post('/api/logout', async (req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 WA Bridge Express API running on http://0.0.0.0:${PORT}`);
+    console.log(`🚀 WA Bridge Baileys Socket Engine running on http://0.0.0.0:${PORT}`);
 });
