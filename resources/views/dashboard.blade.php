@@ -1431,19 +1431,17 @@
                 },
                 body: JSON.stringify({ name, email, phone, password, wa_account_id })
             })
-            .then(async res => {
-                const text = await res.text();
-                let data = {};
-                try {
-                    data = JSON.parse(text);
-                } catch (e) {
-                    if (!res.ok) {
-                        throw new Error('Server error (' + res.status + '). Silakan coba beberapa saat lagi.');
+                .then(async res => {
+                    const text = await res.text();
+                    let data = {};
+                    try {
+                        data = JSON.parse(text);
+                    } catch (e) {
+                        const cleanText = text.replace(/<[^>]*>?/gm, '').trim().substring(0, 200);
+                        throw new Error('Server status ' + res.status + ': ' + (cleanText || 'Response HTML non-JSON'));
                     }
-                    throw new Error('Respon server tidak valid.');
-                }
 
-                if (!res.ok) {
+                    if (!res.ok) {
                     let msg = data.message || data.error || 'Gagal merekrut Admin CS';
                     if (data.errors) {
                         msg = Object.values(data.errors).flat().join('\n• ');
