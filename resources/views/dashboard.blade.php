@@ -1323,7 +1323,11 @@
             const countLabel = document.getElementById('csTeamTableCount');
             if (!tbody) return;
 
-            const accId = '{{ $accountId }}';
+            let accId = '{{ $accountId }}';
+            if (accId === 'all' || !accId) {
+                const urlParams = new URLSearchParams(window.location.search);
+                accId = activeSettingsBrandId || urlParams.get('account_id') || '';
+            }
             fetch('/brand/cs-team?account_id=' + accId)
                 .then(res => res.json())
                 .then(data => {
@@ -1403,7 +1407,11 @@
             const email = document.getElementById('cs_email').value;
             const phone = document.getElementById('cs_phone').value;
             const password = document.getElementById('cs_password').value;
-            const wa_account_id = '{{ $accountId }}';
+            let wa_account_id = '{{ $accountId }}';
+            if (wa_account_id === 'all' || !wa_account_id) {
+                const urlParams = new URLSearchParams(window.location.search);
+                wa_account_id = activeSettingsBrandId || urlParams.get('account_id') || '';
+            }
 
             btn.disabled = true;
             btn.innerText = 'Memproses...';
@@ -1418,9 +1426,19 @@
                 body: JSON.stringify({ name, email, phone, password, wa_account_id })
             })
             .then(async res => {
-                const data = await res.json();
+                const text = await res.text();
+                let data = {};
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    if (!res.ok) {
+                        throw new Error('Server error (' + res.status + '). Silakan coba beberapa saat lagi.');
+                    }
+                    throw new Error('Respon server tidak valid.');
+                }
+
                 if (!res.ok) {
-                    let msg = data.message || 'Gagal merekrut Admin CS';
+                    let msg = data.message || data.error || 'Gagal merekrut Admin CS';
                     if (data.errors) {
                         msg = Object.values(data.errors).flat().join('\n• ');
                     }
