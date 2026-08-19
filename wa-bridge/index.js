@@ -10,12 +10,13 @@ app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.BRIDGE_PORT || 3001;
-const WEBHOOK_URL = process.env.WEBHOOK_URL || 'http://127.0.0.1:8000/api/wa-webhook';
-const DISCONNECT_ALERT_URL = process.env.DISCONNECT_ALERT_URL || 'http://127.0.0.1:8000/api/wa-disconnect-alert';
+const BASE_URL = process.env.APP_URL || 'https://crm.difitech.id';
+const WEBHOOK_URL = process.env.WEBHOOK_URL || (BASE_URL + '/api/wa-webhook');
+const DISCONNECT_ALERT_URL = process.env.DISCONNECT_ALERT_URL || (BASE_URL + '/api/wa-disconnect-alert');
 
 // Map to store sessions: sessionId -> { sessionId, client, status, qrDataUrl, phone }
 const sessions = new Map();
-const STATUS_UPDATE_URL = process.env.STATUS_UPDATE_URL || 'http://127.0.0.1:8000/api/wa-status-update';
+const STATUS_UPDATE_URL = process.env.STATUS_UPDATE_URL || (BASE_URL + '/api/wa-status-update');
 
 function sendDisconnectAlert(sessionId, reason) {
     axios.post(DISCONNECT_ALERT_URL, { sessionId, reason })
