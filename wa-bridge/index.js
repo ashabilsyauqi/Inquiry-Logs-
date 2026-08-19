@@ -27,6 +27,37 @@ function sendConnectStatusUpdate(sessionId, status, phone = null) {
     axios.post(STATUS_UPDATE_URL, { sessionId, status, phone })
         .then(() => console.log(`[WA Bridge] [${sessionId}] Status '${status}' synced to Laravel DB.`))
         .catch(err => console.error(`[WA Bridge] Failed syncing status for ${sessionId}:`, err.message));
+const fs = require('fs');
+const path = require('path');
+
+function getCustomExecutablePath() {
+    if (process.env.PUPPETEER_EXECUTABLE_PATH) return process.env.PUPPETEER_EXECUTABLE_PATH;
+    const homeDir = process.env.HOME || '/home/sryyuqht';
+    const cacheDir = path.join(homeDir, '.cache/puppeteer');
+    if (fs.existsSync(cacheDir)) {
+        const searchPath = (dir) => {
+            try {
+                const files = fs.readdirSync(dir);
+                for (const file of files) {
+                    const fullPath = path.join(dir, file);
+                    const stat = fs.statSync(fullPath);
+                    if (stat.isDirectory()) {
+                        const res = searchPath(fullPath);
+                        if (res) return res;
+                    } else if (file === 'chrome-headless-shell' || file === 'headless_shell') {
+                        return fullPath;
+                    }
+                }
+            } catch (e) {}
+            return null;
+        };
+        const shellPath = searchPath(cacheDir);
+        if (shellPath) {
+            console.log(`[WA Bridge] Found executable at: ${shellPath}`);
+            return shellPath;
+        }
+    }
+    return undefined;
 }
 
 function createSession(sessionId = 'default') {
@@ -50,9 +81,11 @@ function createSession(sessionId = 'default') {
         client: null
     };
 
+    const execPath = getCustomExecutablePath();
     const client = new Client({
         authStrategy: new LocalAuth({ clientId: sessionId }),
         puppeteer: {
+            executablePath: execPath,
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
@@ -61,7 +94,8 @@ function createSession(sessionId = 'default') {
                 '--no-first-run',
                 '--no-zygote',
                 '--single-process',
-                '--disable-gpu'
+                '--disable-gpu',
+                '--disable-software-rasterizer'
             ]
         }
     });
