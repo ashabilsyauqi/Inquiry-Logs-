@@ -1326,9 +1326,14 @@
             let accId = '{{ $accountId }}';
             if (accId === 'all' || !accId) {
                 const urlParams = new URLSearchParams(window.location.search);
-                accId = activeSettingsBrandId || urlParams.get('account_id') || '';
+                accId = activeSettingsBrandId || urlParams.get('account_id') || '{{ $activeAccount ? $activeAccount->id : ($waAccounts->first() ? $waAccounts->first()->id : "all") }}';
             }
-            fetch('/brand/cs-team?account_id=' + accId)
+            fetch('/brand/cs-team?account_id=' + accId, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
                 .then(res => res.json())
                 .then(data => {
                     const list = data.csTeam || [];
@@ -1410,7 +1415,7 @@
             let wa_account_id = '{{ $accountId }}';
             if (wa_account_id === 'all' || !wa_account_id) {
                 const urlParams = new URLSearchParams(window.location.search);
-                wa_account_id = activeSettingsBrandId || urlParams.get('account_id') || '';
+                wa_account_id = activeSettingsBrandId || urlParams.get('account_id') || '{{ $activeAccount ? $activeAccount->id : ($waAccounts->first() ? $waAccounts->first()->id : "") }}';
             }
 
             btn.disabled = true;
@@ -1421,6 +1426,7 @@
                 headers: {
                     'Content-Type': 'application/json',
                     'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
                     'X-CSRF-TOKEN': '{{ csrf_token() }}'
                 },
                 body: JSON.stringify({ name, email, phone, password, wa_account_id })

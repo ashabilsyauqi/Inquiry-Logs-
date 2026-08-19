@@ -107,7 +107,11 @@ class UserController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        $brandId = $supervisor->isCeo() ? $request->input('wa_account_id') : $supervisor->wa_account_id;
+        $brandId = $supervisor->isCeo() ? ($request->input('wa_account_id') ?: $supervisor->wa_account_id) : $supervisor->wa_account_id;
+        if ((!$brandId || $brandId === 'all') && $supervisor->isCeo()) {
+            $firstBrand = WaAccount::where('approval_status', 'APPROVED')->first() ?: WaAccount::first();
+            $brandId = $firstBrand ? $firstBrand->id : null;
+        }
 
         if (!$brandId) {
             return response()->json(['error' => 'Brand ID tidak terdeteksi. Silakan pilih brand terlebih dahulu.'], 422);
