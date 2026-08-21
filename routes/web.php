@@ -499,5 +499,6 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/ai-comparison', [LeadComparisonController::class, 'index'])->name('ai-comparison.index');
     Route::get('/api/ai-comparison', [LeadComparisonController::class, 'apiData'])->name('ai-comparison.api');
     Route::post('/ai-comparison/snapshot', [LeadComparisonController::class, 'storeSnapshot'])->name('ai-comparison.snapshot');
+    Route::post('/ai-comparison/simulate', [LeadComparisonController::class, 'simulate'])->name('ai-comparison.simulate');
 });
 

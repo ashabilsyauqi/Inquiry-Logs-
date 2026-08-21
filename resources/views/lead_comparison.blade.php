@@ -62,6 +62,46 @@
         </div>
         @endif
 
+        <!-- Interactive Simulation Box for Testing -->
+        <div class="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-blue-500/10 p-5 rounded-2xl border border-amber-300 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div class="space-y-1">
+                <div class="flex items-center gap-2">
+                    <span class="text-base">🧪</span>
+                    <h3 class="text-sm font-extrabold text-slate-900 tracking-tight">Simulator Uji Coba: Skenario CS & Deteksi AI</h3>
+                    <span class="bg-amber-100 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-300">Testing Mode</span>
+                </div>
+                <p class="text-xs text-slate-600">
+                    Uji bagaimana AI mendeteksi pesan chat saat CS lupa mengetik keyword trigger, dan bagaimana laporan selaras kembali saat keyword diketik.
+                </p>
+            </div>
+
+            <div class="flex items-center gap-2 flex-wrap">
+                <form method="POST" action="{{ route('ai-comparison.simulate') }}">
+                    @csrf
+                    <input type="hidden" name="type" value="deal_missed">
+                    <button type="submit" class="px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl transition shadow-sm flex items-center gap-1">
+                        <span>⚡</span> Simulasikan CS Lupa #deal
+                    </button>
+                </form>
+
+                <form method="POST" action="{{ route('ai-comparison.simulate') }}">
+                    @csrf
+                    <input type="hidden" name="type" value="meeting_missed">
+                    <button type="submit" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition shadow-sm flex items-center gap-1">
+                        <span>📅</span> Simulasikan CS Lupa /meeting
+                    </button>
+                </form>
+
+                <form method="POST" action="{{ route('ai-comparison.simulate') }}">
+                    @csrf
+                    <input type="hidden" name="type" value="deal_resolved">
+                    <button type="submit" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition shadow-sm flex items-center gap-1">
+                        <span>🎯</span> Simulasikan CS Ketik Keyword
+                    </button>
+                </form>
+            </div>
+        </div>
+
         <!-- Filter Controls Strip -->
         <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
             <form method="GET" action="{{ route('ai-comparison.index') }}" class="flex flex-wrap items-center gap-3 w-full md:w-auto">

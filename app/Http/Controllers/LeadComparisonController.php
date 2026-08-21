@@ -75,4 +75,99 @@ class LeadComparisonController extends Controller
 
         return redirect()->back()->with('success', 'Snapshot mingguan berhasil disimpan pada tanggal ' . $snapshot->report_date->format('d M Y') . '!');
     }
+
+    public function simulate(Request $request)
+    {
+        $type = $request->input('type', 'deal_missed'); // deal_missed, meeting_missed, deal_resolved
+        $account = WaAccount::first();
+
+        if (!$account) {
+            $account = WaAccount::create([
+                'name' => 'Demo Difitech WA',
+                'phone' => '628123456789',
+                'session_id' => 'demo_session',
+                'status' => 'CONNECTED',
+                'approval_status' => 'APPROVED'
+            ]);
+            $account->ensureDefaultStages();
+        }
+
+        $randomPhone = '62812' . rand(1000000, 9999999);
+
+        if ($type === 'deal_missed') {
+            $lead = \App\Models\Lead::create([
+                'name' => 'Simulasi Deal Missed (' . rand(100, 999) . ')',
+                'phone' => $randomPhone,
+                'stage' => 'Lead Masuk', // Real stage remains Lead Masuk
+                'wa_account_id' => $account->id,
+                'ai_concluded_stage' => 'Deal',
+                'ai_suggested_stage' => 'Deal',
+                'ai_suggested_keyword' => '#deal',
+                'ai_suggestion_reason' => 'Simulasi: Pembeli menyatakan setuju harga paket enterprise dan meminta rekening transfer, CS memberikan rekening tapi lupa mengetik #deal.',
+                'ai_suggested_at' => now(),
+            ]);
+
+            \App\Models\LeadMessage::create([
+                'lead_id' => $lead->id,
+                'sender' => $lead->phone,
+                'message' => 'Halo kak, saya fix ambil paketnya ya, minta rekening BCA nya dong.',
+                'is_from_me' => false,
+            ]);
+
+            \App\Models\LeadMessage::create([
+                'lead_id' => $lead->id,
+                'sender' => $account->phone,
+                'message' => 'Baik kak, rekening BCA 1234567890 an Difitech ya kak.',
+                'is_from_me' => true,
+            ]);
+
+            $msg = "✅ Berhasil mensimulasikan 'CS Lupa Ketik #deal'! Lead baru '{$lead->name}' masuk dengan Stage Real 'Lead Masuk' dan Kesimpulan AI 'Deal'. Cek perbedaannya di bawah!";
+        } elseif ($type === 'meeting_missed') {
+            $lead = \App\Models\Lead::create([
+                'name' => 'Simulasi Meeting Missed (' . rand(100, 999) . ')',
+                'phone' => $randomPhone,
+                'stage' => 'Lead Masuk',
+                'wa_account_id' => $account->id,
+                'ai_concluded_stage' => 'Meeting Call',
+                'ai_suggested_stage' => 'Meeting Call',
+                'ai_suggested_keyword' => '/meeting',
+                'ai_suggestion_reason' => 'Simulasi: Pembeli dan CS menyepakati sesi demo Google Meet besok jam 10 pagi, namun CS lupa mengetik /meeting.',
+                'ai_suggested_at' => now(),
+            ]);
+
+            \App\Models\LeadMessage::create([
+                'lead_id' => $lead->id,
+                'sender' => $lead->phone,
+                'message' => 'Bisa minta demo presentasi produk via Zoom besok jam 10 pagi kak?',
+                'is_from_me' => false,
+            ]);
+
+            \App\Models\LeadMessage::create([
+                'lead_id' => $lead->id,
+                'sender' => $account->phone,
+                'message' => 'Bisa banget kak! Link Zoom sudah kami kirimkan ke email ya.',
+                'is_from_me' => true,
+            ]);
+
+            $msg = "✅ Berhasil mensimulasikan 'CS Lupa Ketik /meeting'! Lead '{$lead->name}' memiliki perbedaan stage di sistem!";
+        } else {
+            // Skenario CS membalas dengan keyword trigger
+            $lead = \App\Models\Lead::whereNotNull('ai_suggested_stage')->latest()->first();
+            if ($lead) {
+                $prevAiStage = $lead->ai_suggested_stage;
+                $lead->stage = $prevAiStage;
+                $lead->ai_suggested_stage = null;
+                $lead->ai_suggested_keyword = null;
+                $lead->ai_suggestion_reason = null;
+                $lead->ai_suggested_at = null;
+                $lead->save();
+
+                $msg = "⚡ Berhasil mensimulasikan CS mengetik keyword trigger! Lead '{$lead->name}' sekarang resmi berubah stage menjadi '{$prevAiStage}' dan kembali SELARAS (Match)!";
+            } else {
+                $msg = "ℹ️ Semua lead saat ini sudah selaras 100%. Coba klik simulasi 'CS Lupa Ketik #deal' terlebih dahulu!";
+            }
+        }
+
+        return redirect()->route('ai-comparison.index')->with('success', $msg);
+    }
 }
