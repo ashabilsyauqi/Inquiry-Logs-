@@ -19,12 +19,16 @@ class AnalyticsController extends Controller
             $accountId = $user->wa_account_id;
         }
 
+        $csId = $request->query('cs_id', 'all');
+
         $query = Lead::query();
         if ($accountId !== 'all') {
             $query->where('wa_account_id', $accountId);
         }
         if ($user && $user->role === 'SALES_ADMIN') {
             $query->where('assigned_user_id', $user->id);
+        } elseif ($csId !== 'all' && is_numeric($csId)) {
+            $query->where('assigned_user_id', $csId);
         }
 
         $labels = [];

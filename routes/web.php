@@ -173,10 +173,14 @@ Route::middleware(['auth'])->group(function () {
         }
 
         $activeAccount = null;
+        $csId = $request->query('cs_id', 'all');
+
         if ($accountId !== 'all') {
             $query->where('wa_account_id', $accountId);
             if ($user->role === 'SALES_ADMIN') {
                 $query->where('assigned_user_id', $user->id);
+            } elseif ($csId !== 'all' && is_numeric($csId)) {
+                $query->where('assigned_user_id', $csId);
             }
             $activeAccount = WaAccount::with(['pipelineStages.triggers'])->find($accountId);
             if ($activeAccount) {
@@ -184,6 +188,8 @@ Route::middleware(['auth'])->group(function () {
             }
         } elseif ($user->role === 'SALES_ADMIN') {
             $query->where('assigned_user_id', $user->id);
+        } elseif ($csId !== 'all' && is_numeric($csId)) {
+            $query->where('assigned_user_id', $csId);
         }
 
         $leads = $query->latest()->get();
@@ -196,6 +202,19 @@ Route::middleware(['auth'])->group(function () {
             }
         } else {
             $waAccounts = $user->wa_account_id ? WaAccount::with(['leads', 'pipelineStages.triggers'])->where('id', $user->wa_account_id)->where('approval_status', 'APPROVED')->get() : collect();
+        }
+
+        // CS Team members for Supervisor / CEO selection cards
+        $csTeam = collect();
+        if ($activeAccount) {
+            $csTeam = User::where('wa_account_id', $activeAccount->id)
+                          ->where('role', 'SALES_ADMIN')
+                          ->get();
+            foreach ($csTeam as $cs) {
+                $cs->leads_count = Lead::where('wa_account_id', $activeAccount->id)
+                                       ->where('assigned_user_id', $cs->id)
+                                       ->count();
+            }
         }
 
         $totalLeads = $leads->count();
@@ -224,8 +243,22 @@ Route::middleware(['auth'])->group(function () {
 
         return view('dashboard', compact(
             'leads', 'filter', 'accountId', 'activeAccount', 'waAccounts', 'user', 'stages',
-            'totalLeads'
+            'totalLeads', 'csTeam', 'csId'
         ));
+    });
+
+    Route::post('/api/leads/{id}/stage', function (Request $request, $id) {
+        $lead = Lead::findOrFail($id);
+        $stage = $request->input('stage');
+        if ($stage) {
+            $lead->stage = $stage;
+            $lead->save();
+        }
+        return response()->json([
+            'status' => 'success',
+            'message' => "Stage lead '{$lead->name}' berhasil diubah ke '{$lead->stage}'.",
+            'lead' => $lead
+        ]);
     });
 
     Route::get('/leads/{id}/detail', function ($id) {
@@ -253,6 +286,9 @@ Route::middleware(['auth'])->group(function () {
         }
 
         $lead->save();
+        if ($request->wantsJson() || $request->isJson()) {
+            return response()->json(['status' => 'success', 'message' => 'Lead berhasil diperbarui.', 'lead' => $lead]);
+        }
         return redirect()->back();
     });
 

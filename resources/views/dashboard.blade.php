@@ -440,6 +440,68 @@
             </div>
             @endif
 
+            <!-- CS Team Pipeline Selector for Supervisor & CEO -->
+            @if($activeAccount && ($user->isCeo() || $user->role === 'SUPERVISOR') && isset($csTeam) && $csTeam->count() > 0)
+            <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-2.5">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+                        <span>👥</span> Filter Pipeline per Admin CS ({{ $csTeam->count() }} CS Terdaftar):
+                    </span>
+                    @if($csId !== 'all')
+                    <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&cs_id=all" class="text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:underline">
+                        🔄 Tampilkan Semua CS
+                    </a>
+                    @endif
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+                    <!-- All CS Card -->
+                    <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&cs_id=all" 
+                       class="p-3 rounded-xl border transition flex items-center justify-between {{ $csId === 'all' ? 'bg-emerald-50/90 border-emerald-400 ring-2 ring-emerald-400/30 shadow-sm' : 'bg-slate-50 hover:bg-slate-100 border-slate-200' }}">
+                        <div class="flex items-center gap-2.5">
+                            <div class="w-8 h-8 rounded-lg bg-emerald-600 text-white font-black text-xs flex items-center justify-center shadow-sm">
+                                🌟
+                            </div>
+                            <div>
+                                <div class="text-xs font-bold text-slate-800">Semua Admin CS</div>
+                                <div class="text-[10px] text-slate-500">Seluruh tim brand</div>
+                            </div>
+                        </div>
+                        <span class="text-xs font-black px-2 py-0.5 rounded-full {{ $csId === 'all' ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-700' }}">
+                            {{ $activeAccount->leads->count() }}
+                        </span>
+                    </a>
+
+                    <!-- Individual CS Cards -->
+                    @foreach($csTeam as $cs)
+                    @php
+                        $isCsActive = ($csId == $cs->id);
+                        $isOnline = ($cs->wa_status === 'CONNECTED');
+                    @endphp
+                    <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&cs_id={{ $cs->id }}" 
+                       class="p-3 rounded-xl border transition flex items-center justify-between {{ $isCsActive ? 'bg-emerald-50/90 border-emerald-400 ring-2 ring-emerald-400/30 shadow-sm' : 'bg-slate-50 hover:bg-slate-100 border-slate-200' }}">
+                        <div class="flex items-center gap-2.5 truncate">
+                            <div class="w-8 h-8 rounded-lg {{ $isOnline ? 'bg-emerald-500' : 'bg-slate-400' }} text-white font-bold text-xs flex items-center justify-center shadow-sm flex-shrink-0">
+                                {{ strtoupper(substr($cs->name, 0, 2)) }}
+                            </div>
+                            <div class="truncate">
+                                <div class="text-xs font-bold text-slate-800 truncate flex items-center gap-1">
+                                    {{ $cs->name }}
+                                </div>
+                                <div class="text-[10px] {{ $isOnline ? 'text-emerald-700 font-medium' : 'text-slate-400' }} flex items-center gap-1">
+                                    <span class="inline-block w-1.5 h-1.5 rounded-full {{ $isOnline ? 'bg-emerald-500' : 'bg-red-400' }}"></span>
+                                    {{ $isOnline ? ($cs->wa_phone ? '+' . $cs->wa_phone : 'Online') : 'Offline' }}
+                                </div>
+                            </div>
+                        </div>
+                        <span class="text-xs font-black px-2 py-0.5 rounded-full flex-shrink-0 {{ $isCsActive ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-700' }}">
+                            {{ $cs->leads_count ?? 0 }}
+                        </span>
+                    </a>
+                    @endforeach
+                </div>
+            </div>
+            @endif
+
             <!-- SECTION 1: STAT CARDS & INTERACTIVE TREND CHART -->
             <section id="section-analytics" class="space-y-6">
                 <!-- Dynamic Custom Stat Cards -->
@@ -527,7 +589,8 @@
                             <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider border-b border-slate-100">
                                 <th class="px-6 py-3 font-semibold">Nama Lead</th>
                                 <th class="px-6 py-3 font-semibold">No. WhatsApp</th>
-                                <th class="px-6 py-3 font-semibold">Akun WA CS</th>
+                                <th class="px-6 py-3 font-semibold">Brand Pipeline</th>
+                                <th class="px-6 py-3 font-semibold">Admin CS</th>
                                 <th class="px-6 py-3 font-semibold">Stage Status</th>
                                 <th class="px-6 py-3 font-semibold">Waktu Dibuat</th>
                                 <th class="px-6 py-3 font-semibold text-center">Aksi</th>
@@ -558,6 +621,15 @@
                                     </span>
                                 </td>
                                 <td class="px-6 py-4">
+                                    @if($lead->assignedUser)
+                                        <span class="inline-flex items-center gap-1.5 bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-md text-xs font-semibold border border-indigo-200">
+                                            👤 {{ $lead->assignedUser->name }}
+                                        </span>
+                                    @else
+                                        <span class="text-slate-400 text-xs italic">Belum Diassign</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4">
                                     <span class="bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full text-xs font-semibold">
                                         {{ $lead->stage }}
                                     </span>
@@ -572,7 +644,7 @@
                             @endforeach
                             @if($leads->isEmpty())
                             <tr>
-                                <td colspan="6" class="px-6 py-8 text-center text-slate-400 italic">Belum ada data lead di pipeline ini.</td>
+                                <td colspan="7" class="px-6 py-8 text-center text-slate-400 italic">Belum ada data lead di pipeline ini.</td>
                             </tr>
                             @endif
                         </tbody>
@@ -587,7 +659,7 @@
                         <h2 class="text-xl font-bold text-slate-900">
                             Kanban Board {{ $activeAccount ? '(' . $activeAccount->name . ')' : '(Semua Pipeline)' }}
                         </h2>
-                        <p class="text-xs text-slate-500">🔒 <strong>Stage Untouchable (Otomatis)</strong>: Perubahan stage lead dikendalikan 100% via trigger WhatsApp (misal: <code>#deal</code>, <code>#meeting</code> di chat WA).</p>
+                        <p class="text-xs text-slate-500">🖐️ <strong>Drag & Drop Aktif</strong>: Tarik kartu lead ke kolom stage lain untuk memindahkan stage secara instan, atau klik kartu untuk edit detail lead.</p>
                     </div>
                 </div>
                 
@@ -596,7 +668,7 @@
                     @php
                         $stageLeads = $leads->where('stage', $stage->name);
                     @endphp
-                    <div draggable="true" ondragstart="dragCard(event)" ondragover="allowDropCard(event)" ondrop="dropCard(event)" class="draggable-card flex-1 min-w-[260px] bg-white rounded-2xl shadow-sm p-4 border-t-4 border-emerald-500 border-x border-b border-slate-200/80">
+                    <div id="kanban-stage-col-{{ $stage->id }}" class="flex-1 min-w-[280px] bg-white rounded-2xl shadow-sm p-4 border-t-4 border-emerald-500 border-x border-b border-slate-200/80 flex flex-col">
                         <!-- Kanban Column Header with Inline Editing & Entry Selector -->
                         <div class="border-b border-slate-100 pb-3 mb-4">
                             <div class="flex justify-between items-center">
@@ -609,7 +681,7 @@
                                         {{ $stage->name }}
                                     </span>
                                 </h2>
-                                <span class="bg-emerald-100 text-emerald-800 text-xs py-0.5 px-2.5 rounded-full font-bold flex-shrink-0">{{ $stageLeads->count() }}</span>
+                                <span class="kanban-stage-count bg-emerald-100 text-emerald-800 text-xs py-0.5 px-2.5 rounded-full font-bold flex-shrink-0">{{ $stageLeads->count() }}</span>
                             </div>
 
                             <!-- Direct Entry Stage Selector Badge -->
@@ -627,25 +699,48 @@
                             </div>
                         </div>
 
-                        <!-- Kanban Cards Container -->
-                        <div class="space-y-3">
+                        <!-- Kanban Cards Drop Zone -->
+                        <div id="kanban-cards-{{ $stage->id }}" 
+                             data-stage-name="{{ $stage->name }}" 
+                             data-stage-id="{{ $stage->id }}"
+                             ondragover="allowDropLead(event)" 
+                             ondragleave="leaveDropLead(event)" 
+                             ondrop="dropLeadCard(event, '{{ $stage->name }}', {{ $stage->id }})" 
+                             class="kanban-drop-zone space-y-3 flex-1 min-h-[160px] p-1.5 rounded-xl transition">
                             @foreach($stageLeads as $lead)
-                            <div onclick="openLeadDetailModal({{ $lead->id }})" class="bg-slate-50 hover:bg-emerald-50/60 transition duration-150 p-4 rounded-xl shadow-sm border border-slate-200/80 cursor-pointer">
+                            <div id="lead-card-{{ $lead->id }}" 
+                                 draggable="true" 
+                                 ondragstart="dragLeadCard(event, {{ $lead->id }}, '{{ $stage->name }}')" 
+                                 ondragend="dragEndLeadCard(event)" 
+                                 onclick="openLeadDetailModal({{ $lead->id }})" 
+                                 class="kanban-lead-card bg-slate-50 hover:bg-emerald-50/60 hover:shadow-md transition duration-150 p-4 rounded-xl shadow-sm border border-slate-200/80 cursor-grab active:cursor-grabbing select-none relative group">
                                 <div class="flex justify-between items-start">
-                                    <h3 class="font-bold text-slate-800 text-sm">{{ $lead->name }}</h3>
-                                    @if($lead->priority > 0)
-                                        <div class="text-yellow-400 text-xs flex mt-0.5">
-                                            @for($i = 0; $i < $lead->priority; $i++)
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
-                                            @endfor
-                                        </div>
-                                    @endif
+                                    <h3 class="font-bold text-slate-800 text-sm group-hover:text-emerald-800 transition">{{ $lead->name }}</h3>
+                                    <div class="flex items-center gap-1">
+                                        @if($lead->priority > 0)
+                                            <div class="text-yellow-400 text-xs flex mt-0.5">
+                                                @for($i = 0; $i < $lead->priority; $i++)
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+                                                @endfor
+                                            </div>
+                                        @endif
+                                        <button onclick="event.stopPropagation(); quickEditLeadName({{ $lead->id }}, '{{ addslashes($lead->name) }}')" title="Edit Nama Lead" class="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-emerald-700 rounded transition text-xs">
+                                            ✏️
+                                        </button>
+                                    </div>
                                 </div>
                                 <p class="text-xs text-slate-500 mt-1 font-sans flex items-center gap-1">
-                                    <span>🕒</span> {{ $lead->created_at->format('d M, H:i') }}
+                                    <span>🕒</span> {{ $lead->created_at->format('d M, H:i') }} &bull; <span class="font-mono text-[11px]">{{ $lead->phone }}</span>
                                 </p>
-                                <div class="mt-2.5 text-[10px] font-bold text-slate-600 bg-slate-200/70 inline-block px-2 py-0.5 rounded">
-                                    {{ $lead->waAccount->name ?? 'Default Account' }}
+                                <div class="mt-2.5 flex items-center gap-1.5 flex-wrap">
+                                    <span class="text-[10px] font-bold text-slate-600 bg-slate-200/70 px-2 py-0.5 rounded">
+                                        {{ $lead->waAccount->name ?? 'Default' }}
+                                    </span>
+                                    @if($lead->assignedUser)
+                                    <span class="text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded">
+                                        👤 {{ $lead->assignedUser->name }}
+                                    </span>
+                                    @endif
                                 </div>
 
                                 @if($lead->ai_suggested_stage)
@@ -661,7 +756,9 @@
                             </div>
                             @endforeach
                             @if($stageLeads->isEmpty())
-                                <p class="text-xs text-slate-400 text-center py-6 italic">Kosong.</p>
+                                <div class="kanban-empty-placeholder text-xs text-slate-400 text-center py-8 italic">
+                                    Tarik card ke sini
+                                </div>
                             @endif
                         </div>
                     </div>
@@ -1241,30 +1338,129 @@
         let inquiryChartInstance = null;
         let currentChartPeriod = 'daily';
         let activeSettingsBrandId = null;
-        let draggedElement = null;
+        let draggedLeadId = null;
+        let draggedSourceStage = null;
+        let isDraggingCard = false;
 
-        // HTML5 DRAG & DROP FOR CARDS & COLUMNS
-        function dragCard(e) {
-            draggedElement = e.currentTarget;
+        // HTML5 DRAG & DROP FOR KANBAN LEAD CARDS
+        function dragLeadCard(e, leadId, stageName) {
+            draggedLeadId = leadId;
+            draggedSourceStage = stageName;
+            isDraggingCard = true;
             e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', leadId);
+            setTimeout(() => {
+                if (e.target) e.target.classList.add('opacity-40', 'scale-95');
+            }, 0);
         }
-        function allowDropCard(e) {
-            e.preventDefault();
-        }
-        function dropCard(e) {
-            e.preventDefault();
-            const target = e.currentTarget;
-            if (draggedElement && target && draggedElement !== target) {
-                const parent = target.parentNode;
-                const children = Array.from(parent.children);
-                const draggedIdx = children.indexOf(draggedElement);
-                const targetIdx = children.indexOf(target);
 
-                if (draggedIdx < targetIdx) {
-                    parent.insertBefore(draggedElement, target.nextSibling);
-                } else {
-                    parent.insertBefore(draggedElement, target);
+        function dragEndLeadCard(e) {
+            isDraggingCard = false;
+            if (e.target) e.target.classList.remove('opacity-40', 'scale-95');
+            document.querySelectorAll('.kanban-drop-zone').forEach(el => {
+                el.classList.remove('bg-emerald-50/80', 'border-2', 'border-dashed', 'border-emerald-400');
+            });
+        }
+
+        function allowDropLead(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            const zone = e.currentTarget;
+            if (zone && !zone.classList.contains('border-emerald-400')) {
+                zone.classList.add('bg-emerald-50/80', 'border-2', 'border-dashed', 'border-emerald-400');
+            }
+        }
+
+        function leaveDropLead(e) {
+            const zone = e.currentTarget;
+            if (zone && !zone.contains(e.relatedTarget)) {
+                zone.classList.remove('bg-emerald-50/80', 'border-2', 'border-dashed', 'border-emerald-400');
+            }
+        }
+
+        function dropLeadCard(e, targetStageName, targetStageId) {
+            e.preventDefault();
+            const zone = e.currentTarget;
+            if (zone) {
+                zone.classList.remove('bg-emerald-50/80', 'border-2', 'border-dashed', 'border-emerald-400');
+            }
+
+            if (!draggedLeadId) return;
+
+            const card = document.getElementById('lead-card-' + draggedLeadId);
+            if (!card) return;
+
+            // Remove placeholder if present
+            const placeholder = zone.querySelector('.kanban-empty-placeholder');
+            if (placeholder) placeholder.remove();
+
+            // Append card to new column zone
+            zone.appendChild(card);
+
+            // Recalculate column counters
+            recalculateKanbanCounts();
+
+            const leadIdToUpdate = draggedLeadId;
+
+            // Send AJAX stage update
+            fetch('/api/leads/' + leadIdToUpdate + '/stage', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ stage: targetStageName })
+            })
+            .then(res => res.json())
+            .then(data => {
+                showToastNotification('✅ Stage lead berhasil diubah ke ' + targetStageName);
+            })
+            .catch(err => {
+                showToastNotification('⚠️ Gagal memperbarui stage lead ke server.', 'error');
+            })
+            .finally(() => {
+                draggedLeadId = null;
+                isDraggingCard = false;
+            });
+        }
+
+        function recalculateKanbanCounts() {
+            document.querySelectorAll('.kanban-drop-zone').forEach(zone => {
+                const col = zone.closest('[id^="kanban-stage-col-"]');
+                if (col) {
+                    const countBadge = col.querySelector('.kanban-stage-count');
+                    const cards = zone.querySelectorAll('.kanban-lead-card');
+                    if (countBadge) countBadge.textContent = cards.length;
+                    
+                    // Show empty placeholder if no cards left
+                    if (cards.length === 0 && !zone.querySelector('.kanban-empty-placeholder')) {
+                        zone.innerHTML = `<div class="kanban-empty-placeholder text-xs text-slate-400 text-center py-8 italic">Tarik card ke sini</div>`;
+                    }
                 }
+            });
+        }
+
+        function quickEditLeadName(leadId, currentName) {
+            const newName = prompt('Edit Nama Lead:', currentName);
+            if (newName && newName.trim() !== '' && newName.trim() !== currentName) {
+                fetch('/leads/' + leadId + '/update', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ name: newName.trim() })
+                })
+                .then(() => {
+                    showToastNotification('✅ Nama lead berhasil diperbarui.');
+                    const cardTitle = document.querySelector('#lead-card-' + leadId + ' h3');
+                    if (cardTitle) cardTitle.textContent = newName.trim();
+                })
+                .catch(() => {
+                    showToastNotification('Gagal mengupdate nama lead.', 'error');
+                });
             }
         }
 
@@ -1639,8 +1835,9 @@
         function fetchChartData(period) {
             const currentParams = new URLSearchParams(window.location.search);
             const accountId = currentParams.get('account_id') || 'all';
+            const csId = currentParams.get('cs_id') || 'all';
 
-            fetch('/api/analytics/chart-data?period=' + period + '&account_id=' + accountId)
+            fetch('/api/analytics/chart-data?period=' + period + '&account_id=' + accountId + '&cs_id=' + csId)
                 .then(res => res.json())
                 .then(res => {
                     if (inquiryChartInstance) {
@@ -1861,12 +2058,11 @@
                         return;
                     }
 
-                    // 1. If Sales Admin: Show dedicated personal CS barcode card
-                    let myPersonalCardHtml = '';
+                    // 1. If Sales Admin: Show dedicated personal CS barcode card ONLY
                     if (currentUser && currentUser.role === 'SALES_ADMIN') {
                         const isOnline = currentUser.wa_status === 'CONNECTED';
                         const mySession = currentUser.session_id || ('session_user_' + currentUser.id);
-                        myPersonalCardHtml = `
+                        container.innerHTML = `
                         <div class="p-4 bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-400 rounded-2xl space-y-3 shadow-sm mb-4">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center gap-2.5">
@@ -1893,9 +2089,10 @@
                                 </button>
                             </div>
                         </div>`;
+                        return;
                     }
 
-                    // 2. Render Brands and their CS Team devices
+                    // 2. Render Brands and their CS Team devices (Supervisor / CEO Only)
                     const brandsHtml = accounts.map(acc => {
                         const csListHtml = acc.cs_team && acc.cs_team.length > 0
                             ? `<div class="mt-3 pt-3 border-t border-slate-200 space-y-2">
@@ -1950,7 +2147,7 @@
                         </div>`;
                     }).join('');
 
-                    container.innerHTML = myPersonalCardHtml + brandsHtml;
+                    container.innerHTML = brandsHtml;
                 });
         }
 
@@ -2449,23 +2646,42 @@
             });
         }
 
-        // Auto-refresh content without disrupting active tab state
+        // Auto-refresh content without disrupting chart or drag-and-drop state
         function fetchLeads() {
-            if (isModalOpen) return;
+            if (isModalOpen || isDraggingCard) return;
             const currentParams = window.location.search;
             fetch('/' + currentParams)
                 .then(response => response.text())
                 .then(html => {
+                    if (isDraggingCard || isModalOpen) return;
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
-                    const newContent = doc.querySelector('#dashboard-content');
-                    if (newContent) {
-                        document.querySelector('#dashboard-content').innerHTML = newContent.innerHTML;
-                        if (typeof switchTab === 'function' && currentActiveTab && currentActiveTab !== 'all') {
-                            switchTab(currentActiveTab);
-                        }
+
+                    // 1. Update Leads Table smoothly
+                    const newTable = doc.querySelector('#section-table');
+                    const curTable = document.querySelector('#section-table');
+                    if (newTable && curTable) {
+                        curTable.innerHTML = newTable.innerHTML;
                     }
-                });
+
+                    // 2. Update Kanban Board if not dragging
+                    const newKanban = doc.querySelector('#kanbanColumnsContainer');
+                    const curKanban = document.querySelector('#kanbanColumnsContainer');
+                    if (newKanban && curKanban && !isDraggingCard) {
+                        curKanban.innerHTML = newKanban.innerHTML;
+                    }
+
+                    // 3. Update Stat Cards
+                    const newStats = doc.querySelector('#section-analytics .grid');
+                    const curStats = document.querySelector('#section-analytics .grid');
+                    if (newStats && curStats) {
+                        curStats.innerHTML = newStats.innerHTML;
+                    }
+
+                    // 4. Update Chart Data smoothly without destroying canvas element
+                    fetchChartData(currentChartPeriod);
+                })
+                .catch(err => {});
         }
         setInterval(fetchLeads, 5000);
     </script>
