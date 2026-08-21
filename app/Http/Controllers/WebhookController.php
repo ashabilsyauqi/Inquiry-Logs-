@@ -18,15 +18,15 @@ class WebhookController extends Controller
         Log::info('Incoming WA Payload: ' . json_encode($request->all()));
 
         $sender = $request->input('sender') ?? $request->input('from');
-        $receiver = $request->input('receiver') ?? $request->input('to');
-        $message = trim($request->input('message') ?? $request->input('text'));
+        $receiver = $request->input('receiver') ?? $request->input('to') ?? $request->input('sessionId') ?? 'system';
+        $message = trim($request->input('message') ?? $request->input('text') ?? '');
         $senderNameInput = $request->input('senderName');
         $sessionId = $request->input('sessionId') ?? 'default';
         $isAdminCommand = $request->input('isAdminCommand') || str_starts_with($message, '/') || str_starts_with($message, '#');
         $isSelfChat = (bool)$request->input('isSelfChat');
 
-        if (!$sender || !$receiver || !$message) {
-            return response()->json(['status' => 'error', 'message' => 'Missing sender, receiver, or message'], 400);
+        if (!$sender || $message === '') {
+            return response()->json(['status' => 'error', 'message' => 'Missing sender or message'], 400);
         }
 
         $senderPhone = $this->sanitizePhone($sender);
@@ -53,6 +53,9 @@ class WebhookController extends Controller
             $waAccount = WaAccount::where('session_id', $sessionId)->first();
             if (!$waAccount && $receiverPhone) {
                 $waAccount = WaAccount::where('phone', $receiverPhone)->first();
+            }
+            if (!$waAccount) {
+                $waAccount = WaAccount::where('approval_status', 'APPROVED')->first();
             }
         }
 

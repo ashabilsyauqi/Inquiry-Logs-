@@ -13,7 +13,7 @@ app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.BRIDGE_PORT || 3001;
-const BASE_URL = process.env.APP_URL || 'https://crm.difitech.id';
+const BASE_URL = process.env.APP_URL || process.env.WEBHOOK_BASE_URL || 'http://127.0.0.1:8000';
 const WEBHOOK_URL = process.env.WEBHOOK_URL || (BASE_URL + '/api/wa-webhook');
 const DISCONNECT_ALERT_URL = process.env.DISCONNECT_ALERT_URL || (BASE_URL + '/api/wa-disconnect-alert');
 const STATUS_UPDATE_URL = process.env.STATUS_UPDATE_URL || (BASE_URL + '/api/wa-status-update');
@@ -133,11 +133,11 @@ async function createSession(sessionId = 'default') {
                 axios.post(WEBHOOK_URL, {
                     sessionId,
                     sender,
-                    receiver: sessionData.phone,
+                    receiver: sessionData.phone || sessionId || 'default',
                     senderName,
                     message: text,
                     isFromMe: false
-                }).catch(err => console.error(`[WA Bridge] Webhook post error:`, err.message));
+                }).catch(err => console.error(`[WA Bridge] Webhook post error (${WEBHOOK_URL}):`, err.message));
             }
         });
 
