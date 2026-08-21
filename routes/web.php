@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Http\Request;
 use App\Models\Lead;
+use App\Models\User;
 use App\Models\WaAccount;
 use App\Models\PipelineStage;
 use App\Models\StageTrigger;
