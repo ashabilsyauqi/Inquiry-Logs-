@@ -45,13 +45,12 @@
                         <a href="/?account_id=all" class="w-full flex items-center justify-between px-2.5 py-2 rounded-md {{ $accountId == 'all' ? 'bg-[#161b22] text-[#f0f6fc] font-semibold border-l-2 border-[#2f81f7]' : 'text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc]' }} transition text-left">
                             <span class="flex items-center gap-2.5">
                                 <svg class="w-4 h-4 fill-current text-[#2f81f7]" viewBox="0 0 16 16"><path d="M1.75 2.5h12.5a.25.25 0 01.25.25v10.5a.25.25 0 01-.25.25H1.75a.25.25 0 01-.25-.25V2.75c0-.138.112-.25.25-.25zM1.75 1A1.75 1.75 0 000 2.75v10.5C0 14.216.784 15 1.75 15h12.5A1.75 1.75 0 0016 13.25V2.75A1.75 1.75 0 0014.25 1H1.75zM4 4.75a.75.75 0 01.75-.75h6.5a.75.75 0 010 1.5h-6.5A.75.75 0 014 4.75zm0 3a.75.75 0 01.75-.75h6.5a.75.75 0 010 1.5h-6.5A.75.75 0 014 7.75zm0 3a.75.75 0 01.75-.75h4a.75.75 0 010 1.5h-4a.75.75 0 01-.75-.75z"></path></svg>
-                                <span>Running Brands</span>
+                                <span>🌐 General (Semua Brand)</span>
                             </span>
-                            <span class="text-[11px] bg-[#21262d] text-[#8b949e] px-2 py-0.5 rounded-full font-mono border border-[#30363d]">{{ $waAccounts->count() }}</span>
+                            <span class="text-[11px] bg-[#21262d] text-[#8b949e] px-2 py-0.5 rounded-full font-mono border border-[#30363d]">{{ $waAccounts->count() }} Brands</span>
                         </a>
                         @endif
 
-                        @if(!$user->isCeo() || $accountId != 'all')
                         <button onclick="switchTab('all')" id="nav-all" class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md bg-[#161b22] text-[#f0f6fc] font-semibold border-l-2 border-[#2f81f7] transition text-left">
                             <svg class="w-4 h-4 fill-current text-[#58a6ff]" viewBox="0 0 16 16"><path d="M8 0a8 8 0 100 16A8 8 0 008 0zM1.5 8a6.5 6.5 0 1113 0 6.5 6.5 0 01-13 0z"></path></svg>
                             <span>Overview All</span>
@@ -76,7 +75,6 @@
                             </span>
                             <span class="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[9px] font-bold px-1.5 py-0.5 rounded-full">AI vs Real</span>
                         </a>
-                        @endif
                     </div>
                 </div>
 
@@ -169,19 +167,33 @@
     <main class="flex-1 overflow-y-auto bg-slate-50" id="main-scroll-area">
         
         <!-- Top Header Bar -->
+        <!-- Top Header Bar -->
         <header class="bg-white border-b border-slate-200 px-6 py-3.5 sticky top-0 z-30 flex justify-between items-center shadow-sm">
             <div class="flex items-center gap-3">
+                <button onclick="toggleSidebar()" class="p-2 rounded-xl text-slate-600 hover:bg-slate-100 md:hidden">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                </button>
                 <div>
                     <div class="flex items-center gap-2">
                         <h2 class="text-lg font-extrabold text-slate-900 tracking-tight">
-                            {{ $user->isCeo() ? ($accountId == 'all' ? 'Executive Brand Portfolio' : 'Dashboard Brand: ' . ($activeAccount->name ?? '')) : 'Dashboard Brand: ' . ($user->waAccount->name ?? 'Default Account') }}
+                            @if($user->isCeo())
+                                {{ $accountId == 'all' ? 'Corporate Executive Dashboard (General)' : 'Dashboard Brand: ' . ($activeAccount->name ?? '') }}
+                            @elseif($user->role === 'SUPERVISOR')
+                                Dashboard Supervisor: {{ $activeAccount->name ?? ($user->waAccount->name ?? 'Brand') }}
+                            @else
+                                Dashboard CS: {{ $user->name }} ({{ $activeAccount->name ?? ($user->waAccount->name ?? 'Brand') }})
+                            @endif
                         </h2>
-                        @if($user->isCeo() && $accountId == 'all')
+                        @if($user->isCeo())
                         <span class="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase">CEO View</span>
                         @endif
                     </div>
                     <p class="text-xs text-slate-500 mt-0.5">
-                        {{ $user->isCeo() ? ($accountId == 'all' ? ' Ringkasan real-time performa seluruh running brands & pipeline WA.' : 'Analisis & Pipeline Khusus Brand ' . ($activeAccount->name ?? '')) : 'Pipeline Sales Khusus: ' . ($user->waAccount->name ?? 'Default Account') }}
+                        @if($user->isCeo())
+                            {{ $accountId == 'all' ? 'Ringkasan performa seluruh running brands & agregasi pipeline WA.' : 'Analisis & Kontrol Khusus Brand ' . ($activeAccount->name ?? '') }}
+                        @else
+                            {{ 'Pipeline Sales: ' . ($activeAccount->name ?? ($user->waAccount->name ?? 'Brand')) }}
+                        @endif
                     </p>
                 </div>
             </div>
@@ -199,6 +211,35 @@
         </header>
 
         <div class="max-w-7xl mx-auto px-6 py-6 space-y-6" id="dashboard-content">
+
+            <!-- CEO Brand Switcher Filter Bar -->
+            @if($user->isCeo())
+            <div class="bg-white rounded-2xl p-3 border border-slate-200 shadow-sm flex items-center gap-2 overflow-x-auto">
+                <span class="text-xs font-black uppercase text-slate-500 pl-2 whitespace-nowrap flex items-center gap-1">
+                    <span>🏢</span> Filter Brand:
+                </span>
+                <a href="/?filter={{ $filter }}&account_id=all" 
+                   class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 {{ $accountId === 'all' ? 'bg-slate-900 text-white shadow-sm ring-2 ring-slate-900/30' : 'bg-slate-100 hover:bg-slate-200 text-slate-700' }}">
+                    <span>🌐</span> General (Semua Brand)
+                    <span class="px-2 py-0.5 rounded-full text-[10px] {{ $accountId === 'all' ? 'bg-slate-700 text-white' : 'bg-slate-200 text-slate-700' }} font-black">
+                        {{ \App\Models\Lead::count() }}
+                    </span>
+                </a>
+                @foreach($waAccounts as $acc)
+                @php
+                    $isAccActive = ($accountId == $acc->id);
+                @endphp
+                <a href="/?filter={{ $filter }}&account_id={{ $acc->id }}" 
+                   class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 {{ $isAccActive ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-600/30' : 'bg-slate-100 hover:bg-slate-200 text-slate-700' }}">
+                    <span>{{ $acc->status === 'CONNECTED' ? '🟢' : '🟡' }}</span>
+                    {{ $acc->name }}
+                    <span class="px-2 py-0.5 rounded-full text-[10px] {{ $isAccActive ? 'bg-emerald-700 text-white' : 'bg-slate-200 text-slate-700' }} font-black">
+                        {{ $acc->leads->count() }}
+                    </span>
+                </a>
+                @endforeach
+            </div>
+            @endif
 
             <!-- Disconnection Alert Banner -->
             @php
@@ -383,19 +424,41 @@
             </section>
             @endif
 
-            <!-- 2. BRAND DASHBOARD VIEW (STAT CARDS, ADJUSTABLE PERIOD, TREND CHART, KANBAN, DATA TABLE) -->
-            @if(!$user->isCeo() || $accountId != 'all')
-            
-            @if($user->isCeo() && $accountId != 'all')
-            <div class="mb-3">
+            <!-- Active Pipeline Banner (General for CEO or Brand for Specific) -->
+            @if($user->isCeo() && $accountId === 'all')
+            <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 rounded-2xl p-6 text-white shadow-lg flex flex-col md:flex-row justify-between items-center gap-4 border border-slate-700/50">
+                <div>
+                    <div class="flex items-center gap-3">
+                        <h2 class="text-2xl font-black flex items-center gap-2">
+                            <span>🌐</span> Executive General Pipeline (Semua Brand)
+                        </h2>
+                        <span class="px-3 py-1 rounded-full text-xs font-black bg-indigo-500/30 text-indigo-300 border border-indigo-400/40">
+                            {{ $waAccounts->count() }} Brand Terhubung
+                        </span>
+                    </div>
+                    <p class="text-xs text-slate-300 mt-1">
+                        Monitoring global & agregasi pipeline seluruh running brand, lead WhatsApp, dan aktivitas tim CS secara terpusat.
+                    </p>
+                </div>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <button onclick="openBrandManagementModal()" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow transition whitespace-nowrap">
+                        🏢 Kelola Portfolio Brand
+                    </button>
+                    <button onclick="openDeviceModal()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl border border-slate-600 shadow transition whitespace-nowrap">
+                        📱 WA Device Hub
+                    </button>
+                </div>
+            </div>
+            @elseif($user->isCeo() && $accountId !== 'all')
+            <div class="mb-1 flex items-center justify-between">
                 <a href="/?filter={{ $filter }}&account_id=all" 
                    class="inline-flex items-center gap-2 px-3.5 py-2 text-xs rounded-xl font-bold bg-slate-900 text-white hover:bg-slate-800 shadow transition">
-                    ⬅️ Kembali ke Portfolio Brands CEO
+                    ⬅️ Kembali ke General (Semua Brand)
                 </a>
             </div>
             @endif
 
-            <!-- Active Pipeline Banner -->
+            <!-- Active Pipeline Banner for Brand -->
             @if($activeAccount)
             <div class="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-6 text-white shadow-lg flex flex-col md:flex-row justify-between items-center gap-4">
                 <div>
@@ -765,8 +828,6 @@
                     @endforeach
                 </div>
             </section>
-
-            @endif
 
         </div>
     </main>
