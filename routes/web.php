@@ -175,10 +175,15 @@ Route::middleware(['auth'])->group(function () {
         $activeAccount = null;
         if ($accountId !== 'all') {
             $query->where('wa_account_id', $accountId);
+            if ($user->role === 'SALES_ADMIN') {
+                $query->where('assigned_user_id', $user->id);
+            }
             $activeAccount = WaAccount::with(['pipelineStages.triggers'])->find($accountId);
             if ($activeAccount) {
                 $activeAccount->ensureDefaultStages();
             }
+        } elseif ($user->role === 'SALES_ADMIN') {
+            $query->where('assigned_user_id', $user->id);
         }
 
         $leads = $query->latest()->get();

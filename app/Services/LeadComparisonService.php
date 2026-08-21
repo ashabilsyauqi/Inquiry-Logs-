@@ -20,13 +20,18 @@ class LeadComparisonService
      * @param string|null $endDate
      * @return array
      */
-    public function generateComparisonData($accountId = 'all', $period = 'all_time', $startDate = null, $endDate = null): array
+    public function generateComparisonData($accountId = 'all', $period = 'all_time', $startDate = null, $endDate = null, $assignedUserId = null): array
     {
         $query = Lead::with('waAccount');
 
         // Filter by WA Account
         if ($accountId !== 'all' && is_numeric($accountId)) {
             $query->where('wa_account_id', $accountId);
+        }
+
+        // Filter by Assigned CS Admin
+        if ($assignedUserId) {
+            $query->where('assigned_user_id', $assignedUserId);
         }
 
         // Filter by Period

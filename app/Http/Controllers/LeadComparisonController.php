@@ -26,11 +26,15 @@ class LeadComparisonController extends Controller
         $endDate = $request->query('end_date');
 
         // Sales Admin Isolation: Force account_id to assigned WA account if not CEO
+        $assignedUserId = null;
         if (!$user->isCeo()) {
             $accountId = $user->wa_account_id ?? 'all';
+            if ($user->role === 'SALES_ADMIN') {
+                $assignedUserId = $user->id;
+            }
         }
 
-        $comparison = $this->comparisonService->generateComparisonData($accountId, $period, $startDate, $endDate);
+        $comparison = $this->comparisonService->generateComparisonData($accountId, $period, $startDate, $endDate, $assignedUserId);
 
         // Fetch WA Accounts for Filter Dropdown
         if ($user->isCeo()) {

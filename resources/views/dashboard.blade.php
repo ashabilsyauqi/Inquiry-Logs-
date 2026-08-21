@@ -400,12 +400,25 @@
             <div class="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-6 text-white shadow-lg flex flex-col md:flex-row justify-between items-center gap-4">
                 <div>
                     <div class="flex items-center gap-3">
+                        @if($user->role === 'SALES_ADMIN')
+                        <h2 class="text-2xl font-bold">Pipeline CS: {{ $user->name }} (Brand: {{ $activeAccount->name }})</h2>
+                        <span class="px-3 py-1 rounded-full text-xs font-bold {{ $user->wa_status == 'CONNECTED' ? 'bg-emerald-400 text-emerald-950' : 'bg-red-400 text-white' }}">
+                            {{ $user->wa_status == 'CONNECTED' ? '🟢 Online (' . ($user->wa_phone ? '+' . $user->wa_phone : 'Connected') . ')' : '🔴 WA CS Belum Terhubung' }}
+                        </span>
+                        @else
                         <h2 class="text-2xl font-bold">Pipeline Sales: {{ $activeAccount->name }}</h2>
                         <span class="px-3 py-1 rounded-full text-xs font-bold {{ $activeAccount->status == 'CONNECTED' ? 'bg-emerald-400 text-emerald-950' : 'bg-yellow-300 text-yellow-950' }}">
-                            {{ $activeAccount->status == 'CONNECTED' ? '🟢 Online (' . ($activeAccount->phone ?: 'Connected') . ')' : '🟡 Belum Scan QR' }}
+                            {{ $activeAccount->status == 'CONNECTED' ? '🟢 Online (' . ($activeAccount->phone ? '+' . $activeAccount->phone : 'Connected') . ')' : '🟡 Belum Scan QR' }}
                         </span>
+                        @endif
                     </div>
-                    <p class="text-xs text-emerald-100 mt-1">Daftar Leads & Stat Cards dikhususkan untuk saluran ini saja.</p>
+                    <p class="text-xs text-emerald-100 mt-1">
+                        @if($user->role === 'SALES_ADMIN')
+                        Daftar Leads & Stat Cards khusus untuk akun CS {{ $user->name }}.
+                        @else
+                        Daftar Leads & Stat Cards untuk seluruh saluran brand {{ $activeAccount->name }}.
+                        @endif
+                    </p>
                 </div>
                 
                 <div class="flex items-center gap-2">

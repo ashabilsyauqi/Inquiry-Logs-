@@ -23,6 +23,9 @@ class AnalyticsController extends Controller
         if ($accountId !== 'all') {
             $query->where('wa_account_id', $accountId);
         }
+        if ($user && $user->role === 'SALES_ADMIN') {
+            $query->where('assigned_user_id', $user->id);
+        }
 
         $labels = [];
         $data = [];
