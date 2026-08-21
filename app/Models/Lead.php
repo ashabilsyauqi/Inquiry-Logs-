@@ -14,6 +14,7 @@ class Lead extends Model
         'phone',
         'stage',
         'ai_suggested_stage',
+        'ai_concluded_stage',
         'ai_suggested_keyword',
         'ai_suggestion_reason',
         'ai_suggested_at',

@@ -68,6 +68,14 @@
                             <svg class="w-4 h-4 fill-current text-[#d29922]" viewBox="0 0 16 16"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v12.5A1.75 1.75 0 0114.25 16H1.75A1.75 1.75 0 010 14.25V1.75zm1.75-.25a.25.25 0 00-.25.25V5h13V1.75a.25.25 0 00-.25-.25H1.75zm13 4.75h-13v8c0 .138.112.25.25.25h12.5a.25.25 0 00.25-.25v-8z"></path></svg>
                             <span>Lead Master List</span>
                         </button>
+
+                        <a href="/ai-comparison" class="w-full flex items-center justify-between px-2.5 py-2 rounded-md text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc] transition text-left group">
+                            <span class="flex items-center gap-2.5">
+                                <svg class="w-4 h-4 fill-current text-amber-400 group-hover:scale-110 transition-transform" viewBox="0 0 16 16"><path d="M8 0a8 8 0 100 16A8 8 0 008 0zm.75 4.75a.75.75 0 00-1.5 0v3.5a.75.75 0 00.75.75h3a.75.75 0 000-1.5H8.75V4.75zM8 12a1 1 0 100-2 1 1 0 000 2z"></path></svg>
+                                <span class="font-medium text-amber-200/90 group-hover:text-white">Perbandingan AI</span>
+                            </span>
+                            <span class="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[9px] font-bold px-1.5 py-0.5 rounded-full">AI vs Real</span>
+                        </a>
                         @endif
                     </div>
                 </div>
@@ -179,6 +187,10 @@
             </div>
 
             <div class="flex items-center gap-2.5">
+                <a href="/ai-comparison" class="px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-xs rounded-xl shadow-sm transition flex items-center gap-1.5">
+                    <span>🤖</span> Perbandingan AI vs Real
+                </a>
+
                 <form method="POST" action="/logout" class="md:hidden">
                     @csrf
                     <button type="submit" class="px-3 py-2 bg-slate-100 text-slate-700 text-xs font-bold rounded-xl">Logout</button>

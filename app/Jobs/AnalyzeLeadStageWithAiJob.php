@@ -29,14 +29,17 @@ class AnalyzeLeadStageWithAiJob implements ShouldQueue
 
         $result = $aiService->analyzeLeadStage($lead);
 
-        if ($result['has_suggestion'] && $result['suggested_stage'] !== $lead->stage) {
-            $lead->ai_suggested_stage = $result['suggested_stage'];
-            $lead->ai_suggested_keyword = $result['suggested_keyword'];
-            $lead->ai_suggestion_reason = $result['reason'];
-            $lead->ai_suggested_at = now();
+        if ($result['has_suggestion']) {
+            $lead->ai_concluded_stage = $result['suggested_stage'];
+            if ($result['suggested_stage'] !== $lead->stage) {
+                $lead->ai_suggested_stage = $result['suggested_stage'];
+                $lead->ai_suggested_keyword = $result['suggested_keyword'];
+                $lead->ai_suggestion_reason = $result['reason'];
+                $lead->ai_suggested_at = now();
+                
+                Log::info("🤖 AI Notification Issued for Lead {$lead->id} ({$lead->name}): Suggested '{$result['suggested_stage']}' (Keyword: {$result['suggested_keyword']})");
+            }
             $lead->save();
-
-            Log::info("🤖 AI Notification Issued for Lead {$lead->id} ({$lead->name}): Suggested '{$result['suggested_stage']}' (Keyword: {$result['suggested_keyword']})");
         }
     }
 }

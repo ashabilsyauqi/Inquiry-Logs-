@@ -10,6 +10,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AnalyticsController;
 use App\Http\Controllers\WebhookController;
+use App\Http\Controllers\LeadComparisonController;
 use Carbon\Carbon;
 
 // Guest Routes
@@ -493,5 +494,10 @@ Route::middleware(['auth'])->group(function () {
             ], 500);
         }
     });
+
+    // AI vs Real Leads Comparison Routes
+    Route::get('/ai-comparison', [LeadComparisonController::class, 'index'])->name('ai-comparison.index');
+    Route::get('/api/ai-comparison', [LeadComparisonController::class, 'apiData'])->name('ai-comparison.api');
+    Route::post('/ai-comparison/snapshot', [LeadComparisonController::class, 'storeSnapshot'])->name('ai-comparison.snapshot');
 });
 
