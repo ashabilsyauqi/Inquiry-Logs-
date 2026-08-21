@@ -59,10 +59,12 @@
                             <svg class="w-4 h-4 fill-current text-[#bc8cff]" viewBox="0 0 16 16"><path d="M1.75 1.5a.75.75 0 00-.75.75v11.5c0 .414.336.75.75.75h11.5a.75.75 0 000-1.5H2.5V2.25a.75.75 0 00-.75-.75zm3 4a.75.75 0 00-.75.75v5c0 .414.336.75.75.75h1.5a.75.75 0 00.75-.75v-5a.75.75 0 00-.75-.75h-1.5zm4-2a.75.75 0 00-.75.75v7c0 .414.336.75.75.75h1.5a.75.75 0 00.75-.75v-7a.75.75 0 00-.75-.75h-1.5zm4 4a.75.75 0 00-.75.75v3c0 .414.336.75.75.75h1.5a.75.75 0 00.75-.75v-3a.75.75 0 00-.75-.75h-1.5z"></path></svg>
                             <span>Analytics & Insights</span>
                         </button>
+                        @if($activeAccount)
                         <button onclick="switchTab('kanban')" id="nav-kanban" class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc] transition text-left">
                             <svg class="w-4 h-4 fill-current text-[#3fb950]" viewBox="0 0 16 16"><path d="M0 2.75C0 1.784.784 1 1.75 1h12.5C15.216 1 16 1.784 16 2.75v10.5A1.75 1.75 0 0114.25 15H1.75A1.75 1.75 0 010 13.25V2.75zm1.75-.25a.25.25 0 00-.25.25v10.5c0 .138.112.25.25.25h3.5v-11h-3.5zm5 0v11h3.5v-11h-3.5zm5 0v11h2.75a.25.25 0 00.25-.25V2.75a.25.25 0 00-.25-.25h-2.75z"></path></svg>
                             <span>Kanban Pipeline</span>
                         </button>
+                        @endif
                         <button onclick="switchTab('table')" id="nav-table" class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc] transition text-left">
                             <svg class="w-4 h-4 fill-current text-[#d29922]" viewBox="0 0 16 16"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v12.5A1.75 1.75 0 0114.25 16H1.75A1.75 1.75 0 010 14.25V1.75zm1.75-.25a.25.25 0 00-.25.25V5h13V1.75a.25.25 0 00-.25-.25H1.75zm13 4.75h-13v8c0 .138.112.25.25.25h12.5a.25.25 0 00.25-.25v-8z"></path></svg>
                             <span>Lead Master List</span>
@@ -568,6 +570,7 @@
             <!-- SECTION 1: STAT CARDS & INTERACTIVE TREND CHART -->
             <section id="section-analytics" class="space-y-6">
                 <!-- Dynamic Custom Stat Cards -->
+                @if($activeAccount)
                 <div class="grid grid-cols-1 md:grid-cols-5 gap-5">
                     <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 flex items-center justify-between">
                         <div>
@@ -594,6 +597,43 @@
                     </div>
                     @endforeach
                 </div>
+                @else
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-5">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 flex items-center justify-between">
+                        <div>
+                            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Total Leads Global</p>
+                            <h3 class="text-3xl font-bold text-slate-900 mt-1">{{ $leads->count() }}</h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 text-lg font-bold">👥</div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 flex items-center justify-between border-l-4 border-l-blue-500">
+                        <div>
+                            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Inbound Hari Ini</p>
+                            <h3 class="text-3xl font-bold text-blue-600 mt-1">{{ $leads->where('created_at', '>=', \Carbon\Carbon::today())->count() }}</h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center text-lg font-bold">📥</div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 flex items-center justify-between border-l-4 border-l-emerald-500">
+                        <div>
+                            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Total Closing / Deal</p>
+                            <h3 class="text-3xl font-bold text-emerald-600 mt-1">
+                                {{ $leads->filter(fn($l) => stripos($l->stage, 'deal') !== false || stripos($l->stage, 'closing') !== false)->count() }}
+                            </h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg font-bold">🎯</div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5 flex items-center justify-between border-l-4 border-l-indigo-500">
+                        <div>
+                            <p class="text-xs text-slate-500 font-semibold uppercase tracking-wider">Running Brands</p>
+                            <h3 class="text-3xl font-bold text-indigo-600 mt-1">{{ $waAccounts->count() }}</h3>
+                        </div>
+                        <div class="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg font-bold">🏢</div>
+                    </div>
+                </div>
+                @endif
 
                 <!-- Interactive Trend Chart Card -->
                 <div class="bg-white rounded-2xl p-6 border border-slate-200/80 shadow-sm">
@@ -715,12 +755,13 @@
                 </div>
             </section>
             
-            <!-- SECTION 3: INTERACTIVE & DRAGGABLE KANBAN BOARD WITH INLINE DOUBLE-CLICK TITLE EDIT & DIRECT ENTRY SELECTOR -->
+            <!-- SECTION 3: INTERACTIVE & DRAGGABLE KANBAN BOARD (ONLY FOR SPECIFIC BRAND) -->
+            @if($activeAccount)
             <section id="section-kanban" class="space-y-4">
                 <div class="flex justify-between items-center">
                     <div>
                         <h2 class="text-xl font-bold text-slate-900">
-                            Kanban Board {{ $activeAccount ? '(' . $activeAccount->name . ')' : '(Semua Pipeline)' }}
+                            Kanban Board (Brand: {{ $activeAccount->name }})
                         </h2>
                         <p class="text-xs text-slate-500">🖐️ <strong>Drag & Drop Aktif</strong>: Tarik kartu lead ke kolom stage lain untuk memindahkan stage secara instan, atau klik kartu untuk edit detail lead.</p>
                     </div>
@@ -828,6 +869,7 @@
                     @endforeach
                 </div>
             </section>
+            @endif
 
         </div>
     </main>
