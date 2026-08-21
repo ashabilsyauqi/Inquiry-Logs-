@@ -20,7 +20,7 @@ class DatabaseSeeder extends Seeder
             ['role' => 'CEO'],
             [
                 'name' => 'CEO / Owner (Wijaya)',
-                'email' => 'wijaya@difitech.co.id',
+                'email' => 'ashabil@difitech.co.id',
                 'password' => \Illuminate\Support\Facades\Hash::make('@Difitech2026'),
                 'role' => 'CEO',
                 'status' => 'APPROVED'

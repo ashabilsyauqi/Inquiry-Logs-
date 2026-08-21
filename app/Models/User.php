@@ -18,6 +18,9 @@ class User extends Authenticatable
         'role',
         'status',
         'wa_account_id',
+        'session_id',
+        'wa_status',
+        'wa_phone',
     ];
 
     protected $hidden = [

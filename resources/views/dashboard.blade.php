@@ -414,9 +414,15 @@
                         ⚙️ Stage & Keyword Trigger
                     </button>
                     @endif
+                    @if(!$user->isCeo() && $user->role === 'SALES_ADMIN')
+                    <button onclick="startScanQr('{{ $user->session_id ?? ('session_user_' . $user->id) }}'); openDeviceModal();" class="px-4 py-2.5 bg-white text-emerald-800 hover:bg-emerald-50 font-extrabold text-xs rounded-xl shadow-md transition flex items-center gap-2 whitespace-nowrap">
+                        📲 Connect WA CS / Scan Barcode
+                    </button>
+                    @else
                     <button onclick="startScanQr('{{ $activeAccount->session_id }}'); openDeviceModal();" class="px-4 py-2.5 bg-white text-emerald-800 hover:bg-emerald-50 font-extrabold text-xs rounded-xl shadow-md transition flex items-center gap-2 whitespace-nowrap">
                         📲 Connect WA / Scan QR
                     </button>
+                    @endif
                 </div>
             </div>
             @endif
@@ -1825,10 +1831,16 @@
         function loadWaAccounts() {
             fetch('/wa-accounts')
                 .then(res => res.json())
-                .then(accounts => {
+                .then(payload => {
                     const container = document.getElementById('accountsListContainer');
                     if (!container) return;
-                    if (accounts.length === 0) {
+
+                    const accounts = payload.accounts || (Array.isArray(payload) ? payload : []);
+                    const currentUser = payload.currentUser || null;
+                    const isCeo = payload.isCeo;
+                    const isSupervisor = payload.isSupervisor;
+
+                    if (accounts.length === 0 && !currentUser) {
                         container.innerHTML = `
                             <div class="p-4 bg-slate-50 rounded-xl text-center text-slate-500 text-xs">
                                 Belum ada perangkat WA terhubung untuk brand ini.
@@ -1836,42 +1848,96 @@
                         return;
                     }
 
-                    container.innerHTML = accounts.map(acc => {
+                    // 1. If Sales Admin: Show dedicated personal CS barcode card
+                    let myPersonalCardHtml = '';
+                    if (currentUser && currentUser.role === 'SALES_ADMIN') {
+                        const isOnline = currentUser.wa_status === 'CONNECTED';
+                        const mySession = currentUser.session_id || ('session_user_' + currentUser.id);
+                        myPersonalCardHtml = `
+                        <div class="p-4 bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-400 rounded-2xl space-y-3 shadow-sm mb-4">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2.5">
+                                    <span class="px-2.5 py-1 bg-emerald-600 text-white rounded-lg text-xs font-black shadow-sm">👤 SAYA (ADMIN CS)</span>
+                                    <div>
+                                        <div class="font-black text-slate-900 text-sm">${escapeHtml(currentUser.name)} (${escapeHtml(currentUser.email)})</div>
+                                        <div class="text-[11px] text-slate-500">Brand: <strong>${escapeHtml(currentUser.brand_name || 'Brand')}</strong></div>
+                                    </div>
+                                </div>
+                                <span class="px-3 py-1 text-xs rounded-full ${isOnline ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-red-100 text-red-800 border border-red-300'} font-black">
+                                    ${isOnline ? '🟢 WA Online ' + (currentUser.wa_phone ? '(+' + currentUser.wa_phone + ')' : '') : '🔴 WA Terputus / Belum Login'}
+                                </span>
+                            </div>
+                            <div class="p-3.5 bg-white border border-emerald-200 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                                <div>
+                                    <div class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                                        <span>📲 Barcode WhatsApp Pribadi CS</span>
+                                        <span class="px-2 py-0.5 bg-slate-100 text-slate-600 text-[10px] rounded-md font-mono">${mySession}</span>
+                                    </div>
+                                    <div class="text-[11px] text-slate-500 mt-1">Scan barcode khusus ini menggunakan WhatsApp di HP Anda untuk login session pribadi.</div>
+                                </div>
+                                <button onclick="startScanQr('${mySession}', ${currentUser.id})" class="px-4 py-2.5 ${isOnline ? 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300' : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-md animate-pulse'} text-xs font-black rounded-xl transition whitespace-nowrap">
+                                    ${isOnline ? '🔄 Re-Scan Barcode Saya' : '📲 Scan Barcode WA Saya'}
+                                </button>
+                            </div>
+                        </div>`;
+                    }
+
+                    // 2. Render Brands and their CS Team devices
+                    const brandsHtml = accounts.map(acc => {
                         const csListHtml = acc.cs_team && acc.cs_team.length > 0
-                            ? `<div class="mt-2.5 pt-2.5 border-t border-slate-100 space-y-1">
-                                <div class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Tim Admin CS (${acc.cs_team.length}):</div>
-                                <div class="flex flex-wrap gap-1.5">
-                                    ${acc.cs_team.map(cs => `
-                                        <span class="inline-flex items-center gap-1.5 px-2 py-1 bg-slate-100 text-slate-700 rounded-lg text-[11px] font-semibold">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                            ${cs.name} (${cs.email})
-                                        </span>
-                                    `).join('')}
+                            ? `<div class="mt-3 pt-3 border-t border-slate-200 space-y-2">
+                                <div class="text-[11px] font-black uppercase tracking-wider text-slate-500 flex items-center justify-between">
+                                    <span>👥 Perangkat Admin CS (${acc.cs_team.length} Admin):</span>
+                                    <span class="text-[10px] font-normal text-slate-400">Setiap CS memiliki barcode login sendiri</span>
+                                </div>
+                                <div class="space-y-2">
+                                    ${acc.cs_team.map(cs => {
+                                        const csOnline = cs.wa_status === 'CONNECTED';
+                                        const csSession = cs.session_id || ('session_user_' + cs.id);
+                                        return `
+                                        <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 hover:bg-slate-100/70 transition">
+                                            <div>
+                                                <div class="font-bold text-slate-800 text-xs flex items-center gap-2">
+                                                    👤 ${escapeHtml(cs.name)}
+                                                    <span class="px-2 py-0.5 text-[10px] rounded-full ${csOnline ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-amber-100 text-amber-800 border border-amber-300'} font-bold">
+                                                        ${csOnline ? '🟢 Online ' + (cs.wa_phone ? '(+' + cs.wa_phone + ')' : '') : '🔴 Belum Terhubung / Scan QR'}
+                                                    </span>
+                                                </div>
+                                                <div class="text-[11px] text-slate-500 mt-0.5">${escapeHtml(cs.email)} &bull; <span class="font-mono text-[10px] text-slate-400">${csSession}</span></div>
+                                            </div>
+                                            <button onclick="startScanQr('${csSession}', ${cs.id})" class="px-3.5 py-1.5 ${csOnline ? 'bg-white text-slate-700 hover:bg-slate-200 border border-slate-300' : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm'} text-[11px] font-bold rounded-lg transition whitespace-nowrap">
+                                                ${csOnline ? '🔄 Re-Scan Barcode' : '📲 Scan Barcode CS'}
+                                            </button>
+                                        </div>
+                                    `}).join('')}
                                 </div>
                                </div>`
-                            : `<div class="mt-1 text-[11px] text-slate-400">Belum ada Admin CS terdaftar di tim.</div>`;
+                            : `<div class="mt-2 text-[11px] text-slate-400">Belum ada Admin CS terdaftar di tim brand ini.</div>`;
 
                         return `
-                        <div class="p-4 bg-white border border-slate-200 rounded-xl space-y-2 hover:border-emerald-300 transition shadow-sm">
+                        <div class="p-4 bg-white border border-slate-200 rounded-2xl space-y-2 hover:border-emerald-300 transition shadow-sm mb-3">
                             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                                 <div>
                                     <div class="font-bold text-slate-800 text-sm flex items-center gap-2">
-                                        🏢 ${acc.name}
-                                        <span class="px-2.5 py-0.5 text-xs rounded-full ${acc.status === 'CONNECTED' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-amber-100 text-amber-800 border border-amber-300'} font-bold">
-                                            ${acc.status === 'CONNECTED' ? '🟢 Online ' + (acc.phone ? '(+' + acc.phone + ')' : '') : '🔴 Terputus / Scan QR'}
+                                        🏢 Brand: ${escapeHtml(acc.name)}
+                                        <span class="px-2.5 py-0.5 text-xs rounded-full ${acc.status === 'CONNECTED' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-100 text-slate-600 border border-slate-300'} font-bold">
+                                            ${acc.status === 'CONNECTED' ? '🟢 Brand Hub Online' : '🏢 Brand Induk'}
                                         </span>
                                     </div>
-                                    <div class="text-[11px] text-slate-400 mt-0.5 font-mono">Session ID: ${acc.session_id}</div>
+                                    <div class="text-[11px] text-slate-400 mt-0.5 font-mono">Brand Session: ${acc.session_id}</div>
                                 </div>
+                                ${(isCeo || isSupervisor) ? `
                                 <div class="flex items-center gap-2">
-                                    <button onclick="startScanQr('${acc.session_id}', ${acc.id})" class="px-3.5 py-1.5 ${acc.status === 'CONNECTED' ? 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300' : 'bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm'} text-xs font-bold rounded-lg transition whitespace-nowrap">
-                                        ${acc.status === 'CONNECTED' ? '🔄 Re-Scan QR' : '📲 Scan / Connect WA'}
+                                    <button onclick="startScanQr('${acc.session_id}', ${acc.id})" class="px-3.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 text-xs font-bold rounded-lg transition whitespace-nowrap">
+                                        📲 Scan Brand Master QR
                                     </button>
-                                </div>
+                                </div>` : ''}
                             </div>
                             ${csListHtml}
-                        </div>
-                    `}).join('');
+                        </div>`;
+                    }).join('');
+
+                    container.innerHTML = myPersonalCardHtml + brandsHtml;
                 });
         }
 

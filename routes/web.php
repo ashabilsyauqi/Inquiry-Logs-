@@ -28,6 +28,21 @@ Route::post('/api/wa-status-update', function (Request $request) {
     $phone = $request->input('phone');
 
     if ($sessionId) {
+        // 1. Sync User CS Session
+        $user = User::where('session_id', $sessionId)->first();
+        if (!$user && str_starts_with($sessionId, 'session_user_')) {
+            $uId = (int)str_replace('session_user_', '', $sessionId);
+            $user = User::find($uId);
+        }
+        if ($user) {
+            $user->wa_status = $status;
+            if ($phone) {
+                $user->wa_phone = preg_replace('/[^0-9]/', '', $phone);
+            }
+            $user->save();
+        }
+
+        // 2. Sync WaAccount Brand Session
         $account = WaAccount::where('session_id', $sessionId)->first();
         if (!$account && is_numeric($sessionId)) {
             $account = WaAccount::find($sessionId);
@@ -38,10 +53,11 @@ Route::post('/api/wa-status-update', function (Request $request) {
                 $account->phone = preg_replace('/[^0-9]/', '', $phone);
             }
             $account->save();
-            return response()->json(['status' => 'success', 'account' => $account]);
         }
+
+        return response()->json(['status' => 'success']);
     }
-    return response()->json(['status' => 'error', 'message' => 'Account not found'], 404);
+    return response()->json(['status' => 'error', 'message' => 'Account or session not found'], 404);
 });
 
 // Authenticated CRM Routes
@@ -52,24 +68,37 @@ Route::middleware(['auth'])->group(function () {
         $filter = $request->query('filter', 'all');
         $accountId = $request->query('account_id', 'all');
 
-        // Sales Admin Auto WA Account Provisioning
-        if (!$user->isCeo() && !$user->wa_account_id) {
-            $waAccount = WaAccount::create([
-                'name' => 'WA ' . $user->name,
-                'session_id' => 'session_user_' . $user->id,
-                'status' => 'DISCONNECTED'
-            ]);
-            $waAccount->ensureDefaultStages();
-            $user->wa_account_id = $waAccount->id;
+        // Ensure user has their personal session_id
+        if (!$user->session_id) {
+            $user->session_id = 'session_user_' . $user->id;
             $user->save();
         }
 
-        // Sales Admin Isolation: Force account_id to assigned WA account
+        // Sales Admin Auto WA Account Provisioning if not yet linked to any Brand
+        if (!$user->isCeo() && !$user->wa_account_id) {
+            $firstBrand = WaAccount::where('approval_status', 'APPROVED')->first();
+            if ($firstBrand) {
+                $user->wa_account_id = $firstBrand->id;
+                $user->save();
+            } else {
+                $waAccount = WaAccount::create([
+                    'name' => 'Brand ' . $user->name,
+                    'session_id' => 'session_brand_' . time(),
+                    'status' => 'DISCONNECTED',
+                    'approval_status' => 'APPROVED'
+                ]);
+                $waAccount->ensureDefaultStages();
+                $user->wa_account_id = $waAccount->id;
+                $user->save();
+            }
+        }
+
+        // Sales Admin Isolation: Force account_id to assigned Brand WA account
         if (!$user->isCeo()) {
             $accountId = $user->wa_account_id;
         }
 
-        // Instant 2-Way Status Sync: Auto-sync ALL WA accounts status with wa-bridge server
+        // Instant 2-Way Status Sync: Auto-sync Brand & User sessions with wa-bridge server
         $allApprovedAccs = WaAccount::where('approval_status', 'APPROVED')->get();
         foreach ($allApprovedAccs as $acc) {
             if ($acc->session_id) {
@@ -86,16 +115,14 @@ Route::middleware(['auth'])->group(function () {
                                     if (!empty($data['phone'])) {
                                         $acc->phone = preg_replace('/[^0-9]/', '', $data['phone']);
                                     }
-                                    // Reset email timestamp when connected so next disconnect triggers instant email!
                                     $acc->last_disconnect_email_sent_at = null;
                                 }
                                 $acc->save();
 
-                                // Instant Email Alert on Disconnection Transition
                                 if ($oldStatus === 'CONNECTED' && $bridgeStatus === 'DISCONNECTED') {
                                     $alertReq = new Request([
                                         'sessionId' => $acc->session_id ?: $acc->id,
-                                        'reason' => 'Perangkat WA terputus dari HP (Deteksi Otomatis Langsung)',
+                                        'reason' => 'Perangkat WA Brand terputus dari HP (Deteksi Otomatis Langsung)',
                                         'forceTest' => false
                                     ]);
                                     (new WebhookController())->handleDisconnectAlert($alertReq);
@@ -105,6 +132,27 @@ Route::middleware(['auth'])->group(function () {
                     }
                 } catch (\Throwable $e) {}
             }
+        }
+
+        // Auto-sync User CS sessions
+        $allUsersWithSession = User::whereNotNull('session_id')->get();
+        foreach ($allUsersWithSession as $u) {
+            try {
+                $res = \Illuminate\Support\Facades\Http::timeout(1)->get('http://127.0.0.1:3001/api/qr?session=' . $u->session_id);
+                if ($res->successful()) {
+                    $data = $res->json();
+                    $bridgeStatus = $data['sessionStatus'] ?? null;
+                    if ($bridgeStatus && in_array($bridgeStatus, ['CONNECTED', 'DISCONNECTED'])) {
+                        if ($u->wa_status !== $bridgeStatus) {
+                            $u->wa_status = $bridgeStatus;
+                            if ($bridgeStatus === 'CONNECTED' && !empty($data['phone'])) {
+                                $u->wa_phone = preg_replace('/[^0-9]/', '', $data['phone']);
+                            }
+                            $u->save();
+                        }
+                    }
+                }
+            } catch (\Throwable $e) {}
         }
 
         // Auto-check for disconnected WA accounts & dispatch email alerts based on interval (10s / 30m)
@@ -208,15 +256,36 @@ Route::middleware(['auth'])->group(function () {
     // WA Accounts Routes
     Route::get('/wa-accounts', function () {
         $user = Auth::user();
+
+        if (!$user->session_id) {
+            $user->session_id = 'session_user_' . $user->id;
+            $user->save();
+        }
+
         if ($user->isCeo()) {
-            return response()->json(WaAccount::with(['pipelineStages.triggers', 'csTeam'])->where('approval_status', 'APPROVED')->get());
+            $accounts = WaAccount::with(['pipelineStages.triggers', 'csTeam'])->where('approval_status', 'APPROVED')->get();
+        } elseif ($user->role === 'SUPERVISOR') {
+            $accounts = WaAccount::with(['pipelineStages.triggers', 'csTeam'])->where('id', $user->wa_account_id)->get();
+        } else {
+            $accounts = WaAccount::with(['pipelineStages.triggers', 'csTeam'])->where('id', $user->wa_account_id)->get();
         }
 
-        if ($user->role === 'SUPERVISOR') {
-            return response()->json(WaAccount::with(['pipelineStages.triggers', 'csTeam'])->where('id', $user->wa_account_id)->get());
-        }
-
-        return response()->json(WaAccount::where('id', $user->wa_account_id)->get());
+        return response()->json([
+            'accounts' => $accounts,
+            'currentUser' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'session_id' => $user->session_id,
+                'wa_status' => $user->wa_status ?? 'DISCONNECTED',
+                'wa_phone' => $user->wa_phone,
+                'wa_account_id' => $user->wa_account_id,
+                'brand_name' => $user->waAccount->name ?? 'Default Brand',
+            ],
+            'isCeo' => $user->isCeo(),
+            'isSupervisor' => ($user->role === 'SUPERVISOR'),
+        ]);
     });
 
     Route::post('/wa-accounts', function (Request $request) {

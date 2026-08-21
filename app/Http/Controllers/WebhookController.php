@@ -32,15 +32,33 @@ class WebhookController extends Controller
         $senderPhone = $this->sanitizePhone($sender);
         $receiverPhone = $this->sanitizePhone($receiver);
 
-        // Find or create target WaAccount
-        $waAccount = WaAccount::where('session_id', $sessionId)->first();
-        if (!$waAccount && $receiverPhone) {
-            $waAccount = WaAccount::where('phone', $receiverPhone)->first();
+        // Find CS User if this session belongs to an individual CS Admin
+        $csUser = User::where('session_id', $sessionId)->first();
+        if (!$csUser && str_starts_with($sessionId, 'session_user_')) {
+            $uId = (int)str_replace('session_user_', '', $sessionId);
+            $csUser = User::find($uId);
+        }
+
+        if ($csUser) {
+            $csUser->wa_status = 'CONNECTED';
+            if ($receiverPhone && !$csUser->wa_phone) {
+                $csUser->wa_phone = $receiverPhone;
+            }
+            $csUser->save();
+
+            $assignedUserId = $csUser->id;
+            $waAccount = $csUser->waAccount;
+        } else {
+            $assignedUserId = null;
+            $waAccount = WaAccount::where('session_id', $sessionId)->first();
+            if (!$waAccount && $receiverPhone) {
+                $waAccount = WaAccount::where('phone', $receiverPhone)->first();
+            }
         }
 
         if (!$waAccount) {
             $waAccount = WaAccount::create([
-                'name' => 'WA Account ' . ($receiverPhone ?: $sessionId),
+                'name' => 'WA Brand ' . ($receiverPhone ?: $sessionId),
                 'phone' => $receiverPhone ?: null,
                 'session_id' => $sessionId,
                 'status' => 'CONNECTED'
@@ -48,14 +66,14 @@ class WebhookController extends Controller
             $waAccount->ensureDefaultStages();
         } else {
             $waAccount->ensureDefaultStages();
-            if ($receiverPhone && !$waAccount->phone) {
+            if ($receiverPhone && !$waAccount->phone && !$csUser) {
                 $waAccount->phone = $receiverPhone;
                 $waAccount->status = 'CONNECTED';
                 $waAccount->save();
             }
         }
 
-        $myNumber = $waAccount->phone ?: $receiverPhone;
+        $myNumber = ($csUser && $csUser->wa_phone) ? $csUser->wa_phone : ($waAccount->phone ?: $receiverPhone);
         $isFromMe = $request->input('isFromMe') || ($senderPhone === $myNumber);
 
         // 1. DEDICATED SELF-CHAT ADMIN CONTROL PANEL HASHTAG COMMANDS (#deal 08123456789)
@@ -197,13 +215,19 @@ class WebhookController extends Controller
             if (!$lead) {
                 $displayName = $this->formatDisplayPhone($leadPhone);
                 $lead = Lead::create([
-                    'wa_account_id' => $waAccount->id,
+                    'wa_account_id' => $waAccount ? $waAccount->id : null,
+                    'assigned_user_id' => $assignedUserId,
                     'name'  => $displayName,
                     'phone' => $leadPhone,
                     'stage' => $matchedStageName ?: $defaultStageName
                 ]);
-            } elseif ($matchedStageName) {
-                $lead->stage = $matchedStageName;
+            } else {
+                if ($assignedUserId && !$lead->assigned_user_id) {
+                    $lead->assigned_user_id = $assignedUserId;
+                }
+                if ($matchedStageName) {
+                    $lead->stage = $matchedStageName;
+                }
                 $lead->save();
             }
         } else {
@@ -212,14 +236,18 @@ class WebhookController extends Controller
 
             if (!$lead) {
                 $lead = Lead::create([
-                    'wa_account_id' => $waAccount->id,
+                    'wa_account_id' => $waAccount ? $waAccount->id : null,
+                    'assigned_user_id' => $assignedUserId,
                     'name'  => $displayName,
                     'phone' => $leadPhone,
                     'stage' => $matchedStageName ?: $defaultStageName
                 ]);
             } else {
-                if (!$lead->wa_account_id) {
+                if (!$lead->wa_account_id && $waAccount) {
                     $lead->wa_account_id = $waAccount->id;
+                }
+                if ($assignedUserId && !$lead->assigned_user_id) {
+                    $lead->assigned_user_id = $assignedUserId;
                 }
                 if ($senderNameInput && (str_contains($lead->name, 'Lead') || preg_match('/^[0-9]+$/', $lead->name))) {
                     $lead->name = $senderNameInput;

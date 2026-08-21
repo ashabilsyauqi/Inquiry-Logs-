@@ -133,7 +133,10 @@ class UserController extends Controller
             'role' => 'SALES_ADMIN',
             'status' => 'APPROVED', // CS registered by Supervisor are AUTO-APPROVED
             'wa_account_id' => $brandId,
+            'wa_status' => 'DISCONNECTED',
         ]);
+        $csUser->session_id = 'session_user_' . $csUser->id;
+        $csUser->save();
 
         return response()->json([
             'status' => 'success',
