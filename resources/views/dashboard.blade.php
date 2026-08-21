@@ -616,6 +616,17 @@
                                 <div class="mt-2.5 text-[10px] font-bold text-slate-600 bg-slate-200/70 inline-block px-2 py-0.5 rounded">
                                     {{ $lead->waAccount->name ?? 'Default Account' }}
                                 </div>
+
+                                @if($lead->ai_suggested_stage)
+                                <div class="mt-2.5 p-2 bg-amber-50 border border-amber-300 rounded-lg text-amber-900 text-xs flex flex-col gap-1 shadow-sm">
+                                    <div class="flex items-center gap-1.5 font-extrabold text-[11px] text-amber-800">
+                                        <span>🤖</span> AI Alert: CS Lupa Ketik {{ $lead->ai_suggested_keyword ?: '#' . $lead->ai_suggested_stage }}
+                                    </div>
+                                    <p class="text-[10px] text-amber-700 leading-tight">
+                                        Indikasi <strong>{{ $lead->ai_suggested_stage }}</strong>: {{ $lead->ai_suggestion_reason }}
+                                    </p>
+                                </div>
+                                @endif
                             </div>
                             @endforeach
                             @if($stageLeads->isEmpty())
