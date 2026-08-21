@@ -108,30 +108,44 @@ Route::middleware(['auth'])->group(function () {
                     if ($res->successful()) {
                         $data = $res->json();
                         $bridgeStatus = $data['sessionStatus'] ?? null;
-                        if ($bridgeStatus && in_array($bridgeStatus, ['CONNECTED', 'DISCONNECTED'])) {
-                            if ($acc->status !== $bridgeStatus) {
-                                $oldStatus = $acc->status;
-                                $acc->status = $bridgeStatus;
-                                if ($bridgeStatus === 'CONNECTED') {
-                                    if (!empty($data['phone'])) {
-                                        $acc->phone = preg_replace('/[^0-9]/', '', $data['phone']);
-                                    }
-                                    $acc->last_disconnect_email_sent_at = null;
-                                }
-                                $acc->save();
+                        $realStatus = ($bridgeStatus === 'CONNECTED') ? 'CONNECTED' : 'DISCONNECTED';
 
-                                if ($oldStatus === 'CONNECTED' && $bridgeStatus === 'DISCONNECTED') {
-                                    $alertReq = new Request([
-                                        'sessionId' => $acc->session_id ?: $acc->id,
-                                        'reason' => 'Perangkat WA Brand terputus dari HP (Deteksi Otomatis Langsung)',
-                                        'forceTest' => false
-                                    ]);
-                                    (new WebhookController())->handleDisconnectAlert($alertReq);
+                        if ($acc->status !== $realStatus) {
+                            $oldStatus = $acc->status;
+                            $acc->status = $realStatus;
+                            if ($realStatus === 'CONNECTED') {
+                                if (!empty($data['phone'])) {
+                                    $acc->phone = preg_replace('/[^0-9]/', '', $data['phone']);
                                 }
+                                $acc->last_disconnect_email_sent_at = null;
+                            } else {
+                                $acc->phone = null;
+                            }
+                            $acc->save();
+
+                            if ($oldStatus === 'CONNECTED' && $realStatus === 'DISCONNECTED') {
+                                $alertReq = new Request([
+                                    'sessionId' => $acc->session_id ?: $acc->id,
+                                    'reason' => 'Perangkat WA Brand terputus dari HP (Deteksi Otomatis Langsung)',
+                                    'forceTest' => false
+                                ]);
+                                (new WebhookController())->handleDisconnectAlert($alertReq);
                             }
                         }
+                    } else {
+                        if ($acc->status !== 'DISCONNECTED') {
+                            $acc->status = 'DISCONNECTED';
+                            $acc->phone = null;
+                            $acc->save();
+                        }
                     }
-                } catch (\Throwable $e) {}
+                } catch (\Throwable $e) {
+                    if ($acc->status !== 'DISCONNECTED') {
+                        $acc->status = 'DISCONNECTED';
+                        $acc->phone = null;
+                        $acc->save();
+                    }
+                }
             }
         }
 
@@ -143,17 +157,30 @@ Route::middleware(['auth'])->group(function () {
                 if ($res->successful()) {
                     $data = $res->json();
                     $bridgeStatus = $data['sessionStatus'] ?? null;
-                    if ($bridgeStatus && in_array($bridgeStatus, ['CONNECTED', 'DISCONNECTED'])) {
-                        if ($u->wa_status !== $bridgeStatus) {
-                            $u->wa_status = $bridgeStatus;
-                            if ($bridgeStatus === 'CONNECTED' && !empty($data['phone'])) {
-                                $u->wa_phone = preg_replace('/[^0-9]/', '', $data['phone']);
-                            }
-                            $u->save();
+                    $realStatus = ($bridgeStatus === 'CONNECTED') ? 'CONNECTED' : 'DISCONNECTED';
+                    if ($u->wa_status !== $realStatus) {
+                        $u->wa_status = $realStatus;
+                        if ($realStatus === 'CONNECTED' && !empty($data['phone'])) {
+                            $u->wa_phone = preg_replace('/[^0-9]/', '', $data['phone']);
+                        } elseif ($realStatus !== 'CONNECTED') {
+                            $u->wa_phone = null;
                         }
+                        $u->save();
+                    }
+                } else {
+                    if ($u->wa_status !== 'DISCONNECTED') {
+                        $u->wa_status = 'DISCONNECTED';
+                        $u->wa_phone = null;
+                        $u->save();
                     }
                 }
-            } catch (\Throwable $e) {}
+            } catch (\Throwable $e) {
+                if ($u->wa_status !== 'DISCONNECTED') {
+                    $u->wa_status = 'DISCONNECTED';
+                    $u->wa_phone = null;
+                    $u->save();
+                }
+            }
         }
 
         // Auto-check for disconnected WA accounts & dispatch email alerts based on interval (10s / 30m)
