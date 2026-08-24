@@ -29,17 +29,23 @@ class AnalyzeLeadStageWithAiJob implements ShouldQueue
 
         $result = $aiService->analyzeLeadStage($lead);
 
-        if ($result['has_suggestion']) {
-            $lead->ai_concluded_stage = $result['suggested_stage'];
-            if ($result['suggested_stage'] !== $lead->stage) {
-                $lead->ai_suggested_stage = $result['suggested_stage'];
-                $lead->ai_suggested_keyword = $result['suggested_keyword'];
-                $lead->ai_suggestion_reason = $result['reason'];
-                $lead->ai_suggested_at = now();
-                
-                Log::info("🤖 AI Notification Issued for Lead {$lead->id} ({$lead->name}): Suggested '{$result['suggested_stage']}' (Keyword: {$result['suggested_keyword']})");
-            }
-            $lead->save();
+        if (!empty($result['concluded_stage'])) {
+            $lead->ai_concluded_stage = $result['concluded_stage'];
         }
+
+        if (!empty($result['has_suggestion'])) {
+            $lead->ai_suggested_stage = $result['suggested_stage'];
+            $lead->ai_suggested_keyword = $result['suggested_keyword'];
+            $lead->ai_suggestion_reason = $result['reason'];
+            $lead->ai_suggested_at = now();
+            
+            Log::info("🤖 AI Notification Issued for Lead {$lead->id} ({$lead->name}): Suggested '{$result['suggested_stage']}' (Keyword: {$result['suggested_keyword']})");
+        } else if ($lead->stage === ($result['concluded_stage'] ?? $lead->stage)) {
+            $lead->ai_suggested_stage = null;
+            $lead->ai_suggested_keyword = null;
+            $lead->ai_suggestion_reason = null;
+        }
+
+        $lead->save();
     }
 }

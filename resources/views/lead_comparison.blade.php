@@ -34,6 +34,14 @@
             </div>
 
             <div class="flex items-center gap-2.5 flex-wrap">
+                <!-- Form Scan Ulang AI Real -->
+                <form method="POST" action="{{ route('ai-comparison.scan-all') }}">
+                    @csrf
+                    <button type="submit" class="px-3.5 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl transition shadow-sm flex items-center gap-1.5">
+                        <span>⚡</span> Analisis Ulang AI (Scan Chat Real)
+                    </button>
+                </form>
+
                 <!-- Form Simpan Snapshot Mingguan -->
                 <form method="POST" action="{{ route('ai-comparison.snapshot') }}" onsubmit="return confirm('Simpan snapshot data perbandingan saat ini ke arsip database mingguan?')">
                     @csrf

@@ -271,20 +271,20 @@ class WebhookController extends Controller
                 'is_from_me' => $isFromMe,
             ]);
 
-            // Clear AI suggestion if CS typed a keyword trigger that changed stage
-            if ($matchedStageName) {
-                $lead->ai_suggested_stage = null;
-                $lead->ai_suggested_keyword = null;
-                $lead->ai_suggestion_reason = null;
-                $lead->ai_suggested_at = null;
-                $lead->save();
-            } else {
-                // Dispatch AI Background Job to analyze chat context for missed keyword triggers
-                try {
-                    \App\Jobs\AnalyzeLeadStageWithAiJob::dispatch($lead->id);
-                } catch (\Exception $e) {
-                    Log::error("Failed dispatching AnalyzeLeadStageWithAiJob: " . $e->getMessage());
+            // Analyze conversation context with AI immediately
+            try {
+                if ($matchedStageName) {
+                    $lead->ai_concluded_stage = $matchedStageName;
+                    $lead->ai_suggested_stage = null;
+                    $lead->ai_suggested_keyword = null;
+                    $lead->ai_suggestion_reason = null;
+                    $lead->ai_suggested_at = null;
+                    $lead->save();
+                } else {
+                    \App\Jobs\AnalyzeLeadStageWithAiJob::dispatchSync($lead->id);
                 }
+            } catch (\Exception $e) {
+                Log::error("Failed running AnalyzeLeadStageWithAiJob: " . $e->getMessage());
             }
         }
 

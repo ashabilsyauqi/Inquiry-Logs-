@@ -26,16 +26,23 @@ class GeminiAiService
      */
     public function analyzeLeadStage(Lead $lead): array
     {
-        if (empty($this->apiKey)) {
-            Log::info("GeminiAiService: GEMINI_API_KEY is not set. Skipping AI analysis.");
-            return ['has_suggestion' => false, 'suggested_stage' => null, 'suggested_keyword' => null, 'reason' => null];
-        }
-
         $waAccountId = $lead->wa_account_id;
         $stages = PipelineStage::where('wa_account_id', $waAccountId)->orderBy('order', 'asc')->get();
 
         if ($stages->isEmpty()) {
-            return ['has_suggestion' => false, 'suggested_stage' => null, 'suggested_keyword' => null, 'reason' => null];
+            return ['has_suggestion' => false, 'concluded_stage' => $lead->stage, 'suggested_stage' => null, 'suggested_keyword' => null, 'reason' => null];
+        }
+
+        // Retrieve last 10 chat messages
+        $messages = $lead->messages()->latest()->take(10)->get()->reverse();
+
+        if ($messages->isEmpty()) {
+            return ['has_suggestion' => false, 'concluded_stage' => $lead->stage, 'suggested_stage' => null, 'suggested_keyword' => null, 'reason' => null];
+        }
+
+        if (empty($this->apiKey)) {
+            Log::info("GeminiAiService: GEMINI_API_KEY not set. Using Intelligent Indonesian Slang & NLP Heuristic Engine.");
+            return $this->analyzeWithHeuristics($lead, $stages, $messages);
         }
 
         // Get active triggers (keywords mapped to stages)
@@ -50,13 +57,6 @@ class GeminiAiService
             $stageListStr .= "- {$stageOrder}. {$stage->name}{$keywordHint}\n";
         }
 
-        // Retrieve last 10 chat messages
-        $messages = $lead->messages()->latest()->take(10)->get()->reverse();
-
-        if ($messages->isEmpty()) {
-            return ['has_suggestion' => false, 'suggested_stage' => null, 'suggested_keyword' => null, 'reason' => null];
-        }
-
         $transcriptStr = "";
         foreach ($messages as $msg) {
             $senderTag = $msg->is_from_me ? "[CS/Admin]" : "[Customer ({$lead->name})]";
@@ -64,29 +64,34 @@ class GeminiAiService
         }
 
         $prompt = <<<PROMPT
-Kamu adalah Asisten AI Pintar CRM Sales. Tugasmu adalah membaca percakapan WhatsApp antara CS/Admin dan Customer, lalu menentukan apakah percakapan ini menunjukkan indikasi kemajuan stage sales, tetapi Admin CS LUPA/BELUM mengetik keyword trigger.
+Kamu adalah Analis AI Ahli Sales Pipeline CRM. Tugasmu adalah menganalisis transkrip percakapan WhatsApp antara CS/Admin dan Customer/Lead secara cerdas dan mendalam, termasuk memahami bahasa gaul, singkatan, typo, dan istilah slang Indonesia.
 
-STAGES DALAM SISTEM CRM:
+DAFTAR STAGES DALAM SISTEM CRM:
 {$stageListStr}
 
-STAGE LEAD SAAT INI: "{$lead->stage}"
+STAGE LEAD SAAT INI DI CRM: "{$lead->stage}"
 
 TRANSKRIP CHAT TERAKHIR:
 {$transcriptStr}
 
-INSTRUKSI PENTING:
-1. Evaluasi apakah percakapan di atas sudah mencapai tahap/stage yang LEBIH MAJU dibanding stage saat ini ("{$lead->stage}").
-2. Jika percakapan sudah menunjukkan indikasi kuat (misal: customer minta nomor rekening/transfer = Deal, kesepakatan janji temu = Meeting), dan Admin CS BELUM mengetik keyword trigger (seperti #deal, /meeting), maka berikan rekomendasi!
-3. Format balasan WAJIB berupa JSON saja (tanpa markdown backtick / tanpa penjelasan tambahan):
+PANDUAN PEMAHAMAN BAHASA SLANG / INFORMAL INDONESIA:
+- Meeting / Janji Temu: "gmeet", "labgsung gmeet", "gmeetz", "zoom", "call", "meet", "jadwal meet", "diskusi online" -> Stage: Meeting Call
+- Penawaran / Proposal / Pricing: "tawarannyah", "offer", "kirim offer", "proposal", "pricelist", "biaya", "harga paket", "invoice" -> Stage: Kirim Penawaran
+- Tanya Jawab / Konsultasi: "mau tanya", "diskusi keperluan", "info layanan", "tanya-tanya", "speknya gimana" -> Stage: Tanya Jawab / Konsultasi
+- Deal / Kesepakatan / Closing: "oke deal", "deal ya", "acc", "fix ambil", "minta rekening", "siap transfer", "terima kasih pak (setelah deal)", "gas bungkus" -> Stage: Deal atau Closing
 
+TUGAS UTAMA:
+1. Tentukan "concluded_stage": Stage mana dari daftar CRM yang PALING TEPAT menggambarkan posisi akhir percakapan ini saat ini?
+2. Apakah stage hasil kesimpulan AI berbeda dengan stage saat ini ("{$lead->stage}")? Jika berbeda (artinya Admin CS belum/lupa mengupdate stage via keyword trigger), maka set "has_suggestion": true. Jika sudah sama persis, set "has_suggestion": false.
+
+KEMBALIKAN HANYA FORMAT JSON MURNI (TANPA MARKDOWN, TANPA PENJELASAN DI LUAR JSON):
 {
+  "concluded_stage": "Nama Stage Yang Paling Tepat dari Daftar CRM",
   "has_suggestion": true atau false,
   "suggested_stage": "Nama Stage Yang Disarankan",
-  "suggested_keyword": "#keyword_trigger_yang_harus_diketik",
-  "reason": "Alasan singkat dalam bahasa Indonesia mengapa stage ini disarankan"
+  "suggested_keyword": "#keyword_trigger",
+  "reason": "Alasan singkat dan jelas dalam bahasa Indonesia mengapa percakapan ini berada di stage tersebut"
 }
-
-Pasti pastikan "has_suggestion" bernilai false jika stage saat ini sudah sesuai atau belum ada indikasi perubahan stage yang jelas.
 PROMPT;
 
         try {
@@ -99,7 +104,7 @@ PROMPT;
                     ]
                 ],
                 'generationConfig' => [
-                    'temperature' => 0.2,
+                    'temperature' => 0.1,
                     'responseMimeType' => 'application/json'
                 ]
             ]);
@@ -112,12 +117,16 @@ PROMPT;
                 $jsonText = trim(str_replace(['```json', '```'], '', $candidates));
                 $data = json_decode($jsonText, true);
 
-                if (is_array($data) && !empty($data['has_suggestion']) && !empty($data['suggested_stage'])) {
+                if (is_array($data) && !empty($data['concluded_stage'])) {
+                    $concludedStage = $data['concluded_stage'];
+                    $hasSuggestion = (bool)($data['has_suggestion'] ?? ($concludedStage !== $lead->stage));
+                    
                     return [
-                        'has_suggestion' => true,
-                        'suggested_stage' => $data['suggested_stage'],
-                        'suggested_keyword' => $data['suggested_keyword'] ?? '#' . strtolower($data['suggested_stage']),
-                        'reason' => $data['reason'] ?? 'Terdeteksi indikasi perubahan stage dari isi chat.'
+                        'concluded_stage' => $concludedStage,
+                        'has_suggestion' => $hasSuggestion,
+                        'suggested_stage' => $data['suggested_stage'] ?? $concludedStage,
+                        'suggested_keyword' => $data['suggested_keyword'] ?? '#' . strtolower($concludedStage),
+                        'reason' => $data['reason'] ?? "Indikasi percakapan menunjukkan kesepakatan stage {$concludedStage}."
                     ];
                 }
             } else {
@@ -127,6 +136,98 @@ PROMPT;
             Log::error("Gemini API Exception: " . $e->getMessage());
         }
 
-        return ['has_suggestion' => false, 'suggested_stage' => null, 'suggested_keyword' => null, 'reason' => null];
+        return $this->analyzeWithHeuristics($lead, $stages, $messages);
+    }
+
+    /**
+     * Fallback NLP Heuristic Analysis for Indonesian Slang & Dialogue Context
+     */
+    public function analyzeWithHeuristics(Lead $lead, $stages, $messages): array
+    {
+        if ($messages->isEmpty()) {
+            return ['has_suggestion' => false, 'concluded_stage' => $lead->stage, 'suggested_stage' => null, 'suggested_keyword' => null, 'reason' => null];
+        }
+
+        $fullText = strtolower($messages->pluck('message')->implode(' '));
+
+        // 1. Check for Deal / Closing Indications
+        $dealPattern = '/\b(oke\s+deal|deal\s+ya|deal\s+mas|deal\s+gan|deal\s+pak|fix\s+ambil|jadi\s+ambil|jadi\s+pesan|siap\s+transfer|minta\s+no\s*rek|minta\s+rekening|udah\s+transfer|sudah\s+transfer|transfer\s+ke|kirim\s+bukti|bukti\s+transfer|acc\s+ya|gas\s+bungkus|terima\s+kasih\s+pak)\b/i';
+        if (preg_match($dealPattern, $fullText)) {
+            $matchedStage = $stages->first(fn($s) => stripos($s->name, 'deal') !== false || stripos($s->name, 'closing') !== false);
+            if ($matchedStage) {
+                $hasSuggestion = ($lead->stage !== $matchedStage->name);
+                return [
+                    'concluded_stage' => $matchedStage->name,
+                    'has_suggestion' => $hasSuggestion,
+                    'suggested_stage' => $matchedStage->name,
+                    'suggested_keyword' => '#deal',
+                    'reason' => 'Percakapan menunjukkan kesepakatan order/pembayaran (Deal). Customer/CS menyatakan persetujuan (' . $this->extractSnippet($fullText, $dealPattern) . ') namun stage di CRM saat ini masih "' . $lead->stage . '".'
+                ];
+            }
+        }
+
+        // 2. Check for Proposal / Penawaran Indications
+        $offerPattern = '/\b(tawarannyah|kirim\s+tawaran|kirim\s+offer|kirimkan\s+offer|saya\s+kirimkan\s+offer|penawaran|proposal|pricelist|price\s*list|daftar\s+harga|harga\s+paket|biayanya|estimasi\s+biaya|invoice|quotation|quote)\b/i';
+        if (preg_match($offerPattern, $fullText)) {
+            $matchedStage = $stages->first(fn($s) => stripos($s->name, 'penawaran') !== false || stripos($s->name, 'offer') !== false || stripos($s->name, 'proposal') !== false);
+            if ($matchedStage) {
+                $hasSuggestion = ($lead->stage !== $matchedStage->name);
+                return [
+                    'concluded_stage' => $matchedStage->name,
+                    'has_suggestion' => $hasSuggestion,
+                    'suggested_stage' => $matchedStage->name,
+                    'suggested_keyword' => '#kirim penawaran',
+                    'reason' => 'Terdeteksi pengiriman penawaran harga/proposal paket (' . $this->extractSnippet($fullText, $offerPattern) . ') antara CS dan customer.'
+                ];
+            }
+        }
+
+        // 3. Check for Meeting / Gmeet / Zoom Indications
+        $meetingPattern = '/\b(gmeet|gmeetz|labgsung\s+gmeet|langsung\s+gmeet|zoom|google\s+meet|jadwal\s+meet|jadwalin\s+meet|demo\s+produk|presentasi|video\s+call|ketemuan\s+online|call\s+wa|teleponan)\b/i';
+        if (preg_match($meetingPattern, $fullText)) {
+            $matchedStage = $stages->first(fn($s) => stripos($s->name, 'meeting') !== false || stripos($s->name, 'meet') !== false || stripos($s->name, 'call') !== false);
+            if ($matchedStage) {
+                $hasSuggestion = ($lead->stage !== $matchedStage->name);
+                return [
+                    'concluded_stage' => $matchedStage->name,
+                    'has_suggestion' => $hasSuggestion,
+                    'suggested_stage' => $matchedStage->name,
+                    'suggested_keyword' => '/meeting',
+                    'reason' => 'Terdeteksi ajakan atau kesepakatan sesi meeting online / Google Meet (' . $this->extractSnippet($fullText, $meetingPattern) . ') antara CS dan customer.'
+                ];
+            }
+        }
+
+        // 4. Check for Tanya Jawab / Konsultasi Indications
+        $tanyaPattern = '/\b(mau\s+tanya|tanya\s+dong|konsultasi|diskusi\s+keperluan|info\s+lengkap|spesifikasi|speknya|fiturnya|apakah\s+bisa)\b/i';
+        if (preg_match($tanyaPattern, $fullText)) {
+            $matchedStage = $stages->first(fn($s) => stripos($s->name, 'tanya') !== false || stripos($s->name, 'konsultasi') !== false);
+            if ($matchedStage) {
+                $hasSuggestion = ($lead->stage !== $matchedStage->name);
+                return [
+                    'concluded_stage' => $matchedStage->name,
+                    'has_suggestion' => $hasSuggestion,
+                    'suggested_stage' => $matchedStage->name,
+                    'suggested_keyword' => '#tanya jawab',
+                    'reason' => 'Percakapan berada pada tahap diskusi konsultasi kebutuhan dan tanya jawab produk.'
+                ];
+            }
+        }
+
+        return [
+            'concluded_stage' => $lead->stage,
+            'has_suggestion' => false,
+            'suggested_stage' => null,
+            'suggested_keyword' => null,
+            'reason' => null
+        ];
+    }
+
+    private function extractSnippet(string $text, string $pattern): string
+    {
+        if (preg_match($pattern, $text, $matches)) {
+            return $matches[0];
+        }
+        return 'kata kunci';
     }
 }

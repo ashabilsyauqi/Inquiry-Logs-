@@ -120,23 +120,28 @@ async function createSession(sessionId = 'default') {
         sock.ev.on('messages.upsert', async (m) => {
             if (m.type !== 'notify') return;
             for (const msg of m.messages) {
-                if (!msg.message || msg.key.fromMe) continue;
+                if (!msg.message) continue;
                 const remoteJid = msg.key.remoteJid || '';
                 if (remoteJid.endsWith('@g.us') || remoteJid.includes('status@broadcast')) continue;
 
-                const sender = remoteJid.replace('@s.whatsapp.net', '').replace(/[^0-9]/g, '');
+                const isFromMe = Boolean(msg.key.fromMe);
+                const remotePhone = remoteJid.replace('@s.whatsapp.net', '').replace(/[^0-9]/g, '');
                 const text = msg.message.conversation || msg.message.extendedTextMessage?.text || msg.message.imageMessage?.caption || '';
-                const senderName = msg.pushName || sender;
+                if (!text.trim()) continue;
 
-                console.log(`[WA Bridge] [${sessionId}] Incoming message from ${sender}: ${text}`);
+                const senderName = isFromMe ? 'Admin CS' : (msg.pushName || remotePhone);
+                const sender = isFromMe ? (sessionData.phone || 'admin') : remotePhone;
+                const receiver = isFromMe ? remotePhone : (sessionData.phone || sessionId || 'default');
+
+                console.log(`[WA Bridge] [${sessionId}] ${isFromMe ? 'Outgoing (CS)' : 'Incoming'} message [${remotePhone}]: ${text}`);
 
                 axios.post(WEBHOOK_URL, {
                     sessionId,
                     sender,
-                    receiver: sessionData.phone || sessionId || 'default',
+                    receiver,
                     senderName,
                     message: text,
-                    isFromMe: false
+                    isFromMe
                 }).catch(err => console.error(`[WA Bridge] Webhook post error (${WEBHOOK_URL}):`, err.message));
             }
         });

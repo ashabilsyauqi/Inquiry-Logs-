@@ -80,6 +80,50 @@ class LeadComparisonController extends Controller
         return redirect()->back()->with('success', 'Snapshot mingguan berhasil disimpan pada tanggal ' . $snapshot->report_date->format('d M Y') . '!');
     }
 
+    public function scanAllLeads(Request $request)
+    {
+        $user = Auth::user();
+        $query = \App\Models\Lead::with('messages');
+
+        if (!$user->isCeo()) {
+            if ($user->role === 'SALES_ADMIN') {
+                $query->where('assigned_user_id', $user->id);
+            } elseif ($user->wa_account_id) {
+                $query->where('wa_account_id', $user->wa_account_id);
+            }
+        }
+
+        $leads = $query->get();
+        $aiService = new \App\Services\GeminiAiService();
+        $scannedCount = 0;
+        $discrepancyCount = 0;
+
+        foreach ($leads as $lead) {
+            if ($lead->messages->count() > 0) {
+                $result = $aiService->analyzeLeadStage($lead);
+                if (!empty($result['concluded_stage'])) {
+                    $lead->ai_concluded_stage = $result['concluded_stage'];
+                }
+                if (!empty($result['has_suggestion'])) {
+                    $lead->ai_suggested_stage = $result['suggested_stage'];
+                    $lead->ai_suggested_keyword = $result['suggested_keyword'];
+                    $lead->ai_suggestion_reason = $result['reason'];
+                    $lead->ai_suggested_at = now();
+                    $discrepancyCount++;
+                } else if ($lead->stage === ($result['concluded_stage'] ?? $lead->stage)) {
+                    $lead->ai_suggested_stage = null;
+                    $lead->ai_suggested_keyword = null;
+                    $lead->ai_suggestion_reason = null;
+                }
+                $lead->save();
+                $scannedCount++;
+            }
+        }
+
+        $msg = "⚡ Pemindaian AI selesai! {$scannedCount} percakapan lead berhasil dianalisis dengan kecerdasan Gemini. Ditemukan {$discrepancyCount} lead dengan selisih stage / indikasi lupa trigger.";
+        return redirect()->back()->with('success', $msg);
+    }
+
     public function simulate(Request $request)
     {
         $type = $request->input('type', 'deal_missed'); // deal_missed, meeting_missed, deal_resolved
