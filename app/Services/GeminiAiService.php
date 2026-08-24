@@ -148,69 +148,75 @@ PROMPT;
             return ['has_suggestion' => false, 'concluded_stage' => $lead->stage, 'suggested_stage' => null, 'suggested_keyword' => null, 'reason' => null];
         }
 
-        $fullText = strtolower($messages->pluck('message')->implode(' '));
-
-        // 1. Check for Deal / Closing Indications
-        $dealPattern = '/\b(oke\s+deal|deal\s+ya|deal\s+mas|deal\s+gan|deal\s+pak|fix\s+ambil|jadi\s+ambil|jadi\s+pesan|siap\s+transfer|minta\s+no\s*rek|minta\s+rekening|udah\s+transfer|sudah\s+transfer|transfer\s+ke|kirim\s+bukti|bukti\s+transfer|acc\s+ya|gas\s+bungkus|terima\s+kasih\s+pak)\b/i';
-        if (preg_match($dealPattern, $fullText)) {
-            $matchedStage = $stages->first(fn($s) => stripos($s->name, 'deal') !== false || stripos($s->name, 'closing') !== false);
-            if ($matchedStage) {
-                $hasSuggestion = ($lead->stage !== $matchedStage->name);
-                return [
-                    'concluded_stage' => $matchedStage->name,
-                    'has_suggestion' => $hasSuggestion,
-                    'suggested_stage' => $matchedStage->name,
-                    'suggested_keyword' => '#deal',
-                    'reason' => 'Percakapan menunjukkan kesepakatan order/pembayaran (Deal). Customer/CS menyatakan persetujuan (' . $this->extractSnippet($fullText, $dealPattern) . ') namun stage di CRM saat ini masih "' . $lead->stage . '".'
-                ];
-            }
-        }
-
-        // 2. Check for Proposal / Penawaran Indications
+        // Evaluate intent from the most recent messages (chronological precedence)
+        $recentMessages = $messages->reverse(); // newest first
+        
+        $dealPattern = '/\b(oke\s+deal|deal\s+ya|deal\s+mas|deal\s+gan|deal\s+pak|deal|fix\s+ambil|jadi\s+ambil|jadi\s+pesan|siap\s+transfer|minta\s+no\s*rek|minta\s+rekening|udah\s+transfer|sudah\s+transfer|transfer\s+ke|kirim\s+bukti|bukti\s+transfer|acc\s+ya|gas\s+bungkus|terima\s+kasih\s+pak)\b/i';
+        $meetingPattern = '/\b(gmeet|gmeetz|labgsung\s+gmeet|langsung\s+gmeet|zoom|google\s+meet|jadwal\s+meet|jadwalin\s+meet|demo\s+produk|presentasi|video\s+call|ketemuan\s+online|call\s+wa|teleponan|meeting\s+lagi|meet\s+lagi|gmeet\s+lagi)\b/i';
         $offerPattern = '/\b(tawarannyah|kirim\s+tawaran|kirim\s+offer|kirimkan\s+offer|saya\s+kirimkan\s+offer|penawaran|proposal|pricelist|price\s*list|daftar\s+harga|harga\s+paket|biayanya|estimasi\s+biaya|invoice|quotation|quote)\b/i';
-        if (preg_match($offerPattern, $fullText)) {
-            $matchedStage = $stages->first(fn($s) => stripos($s->name, 'penawaran') !== false || stripos($s->name, 'offer') !== false || stripos($s->name, 'proposal') !== false);
-            if ($matchedStage) {
-                $hasSuggestion = ($lead->stage !== $matchedStage->name);
-                return [
-                    'concluded_stage' => $matchedStage->name,
-                    'has_suggestion' => $hasSuggestion,
-                    'suggested_stage' => $matchedStage->name,
-                    'suggested_keyword' => '#kirim penawaran',
-                    'reason' => 'Terdeteksi pengiriman penawaran harga/proposal paket (' . $this->extractSnippet($fullText, $offerPattern) . ') antara CS dan customer.'
-                ];
-            }
-        }
-
-        // 3. Check for Meeting / Gmeet / Zoom Indications
-        $meetingPattern = '/\b(gmeet|gmeetz|labgsung\s+gmeet|langsung\s+gmeet|zoom|google\s+meet|jadwal\s+meet|jadwalin\s+meet|demo\s+produk|presentasi|video\s+call|ketemuan\s+online|call\s+wa|teleponan)\b/i';
-        if (preg_match($meetingPattern, $fullText)) {
-            $matchedStage = $stages->first(fn($s) => stripos($s->name, 'meeting') !== false || stripos($s->name, 'meet') !== false || stripos($s->name, 'call') !== false);
-            if ($matchedStage) {
-                $hasSuggestion = ($lead->stage !== $matchedStage->name);
-                return [
-                    'concluded_stage' => $matchedStage->name,
-                    'has_suggestion' => $hasSuggestion,
-                    'suggested_stage' => $matchedStage->name,
-                    'suggested_keyword' => '/meeting',
-                    'reason' => 'Terdeteksi ajakan atau kesepakatan sesi meeting online / Google Meet (' . $this->extractSnippet($fullText, $meetingPattern) . ') antara CS dan customer.'
-                ];
-            }
-        }
-
-        // 4. Check for Tanya Jawab / Konsultasi Indications
         $tanyaPattern = '/\b(mau\s+tanya|tanya\s+dong|konsultasi|diskusi\s+keperluan|info\s+lengkap|spesifikasi|speknya|fiturnya|apakah\s+bisa)\b/i';
-        if (preg_match($tanyaPattern, $fullText)) {
-            $matchedStage = $stages->first(fn($s) => stripos($s->name, 'tanya') !== false || stripos($s->name, 'konsultasi') !== false);
-            if ($matchedStage) {
-                $hasSuggestion = ($lead->stage !== $matchedStage->name);
-                return [
-                    'concluded_stage' => $matchedStage->name,
-                    'has_suggestion' => $hasSuggestion,
-                    'suggested_stage' => $matchedStage->name,
-                    'suggested_keyword' => '#tanya jawab',
-                    'reason' => 'Percakapan berada pada tahap diskusi konsultasi kebutuhan dan tanya jawab produk.'
-                ];
+
+        foreach ($recentMessages as $msg) {
+            $text = strtolower($msg->message);
+
+            // 1. Check Meeting Intent in recent chat (e.g. client asks for meeting after deal)
+            if (preg_match($meetingPattern, $text)) {
+                $matchedStage = $stages->first(fn($s) => stripos($s->name, 'meeting') !== false || stripos($s->name, 'meet') !== false || stripos($s->name, 'call') !== false);
+                if ($matchedStage) {
+                    $hasSuggestion = ($lead->stage !== $matchedStage->name);
+                    return [
+                        'concluded_stage' => $matchedStage->name,
+                        'has_suggestion' => $hasSuggestion,
+                        'suggested_stage' => $matchedStage->name,
+                        'suggested_keyword' => '/meeting',
+                        'reason' => 'Percakapan terbaru menunjukkan ajakan/jadwal meeting (' . $this->extractSnippet($text, $meetingPattern) . ').'
+                    ];
+                }
+            }
+
+            // 2. Check Deal / Closing Intent in recent chat
+            if (preg_match($dealPattern, $text)) {
+                $matchedStage = $stages->first(fn($s) => stripos($s->name, 'deal') !== false || stripos($s->name, 'closing') !== false);
+                if ($matchedStage) {
+                    $hasSuggestion = ($lead->stage !== $matchedStage->name);
+                    return [
+                        'concluded_stage' => $matchedStage->name,
+                        'has_suggestion' => $hasSuggestion,
+                        'suggested_stage' => $matchedStage->name,
+                        'suggested_keyword' => '#deal',
+                        'reason' => 'Percakapan terbaru menunjukkan kesepakatan order/pembayaran (' . $this->extractSnippet($text, $dealPattern) . ').'
+                    ];
+                }
+            }
+
+            // 3. Check Proposal / Offer Intent in recent chat
+            if (preg_match($offerPattern, $text)) {
+                $matchedStage = $stages->first(fn($s) => stripos($s->name, 'penawaran') !== false || stripos($s->name, 'offer') !== false || stripos($s->name, 'proposal') !== false);
+                if ($matchedStage) {
+                    $hasSuggestion = ($lead->stage !== $matchedStage->name);
+                    return [
+                        'concluded_stage' => $matchedStage->name,
+                        'has_suggestion' => $hasSuggestion,
+                        'suggested_stage' => $matchedStage->name,
+                        'suggested_keyword' => '#kirim penawaran',
+                        'reason' => 'Percakapan terbaru membahas pengiriman penawaran/proposal (' . $this->extractSnippet($text, $offerPattern) . ').'
+                    ];
+                }
+            }
+
+            // 4. Check Tanya Jawab Intent in recent chat
+            if (preg_match($tanyaPattern, $text)) {
+                $matchedStage = $stages->first(fn($s) => stripos($s->name, 'tanya') !== false || stripos($s->name, 'konsultasi') !== false);
+                if ($matchedStage) {
+                    $hasSuggestion = ($lead->stage !== $matchedStage->name);
+                    return [
+                        'concluded_stage' => $matchedStage->name,
+                        'has_suggestion' => $hasSuggestion,
+                        'suggested_stage' => $matchedStage->name,
+                        'suggested_keyword' => '#tanya jawab',
+                        'reason' => 'Percakapan terbaru berada pada tahap diskusi konsultasi dan tanya jawab produk.'
+                    ];
+                }
             }
         }
 
