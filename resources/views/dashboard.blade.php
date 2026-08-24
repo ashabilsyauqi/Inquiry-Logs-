@@ -487,11 +487,9 @@
                 </div>
                 
                 <div class="flex items-center gap-2">
-                    @if($user->isCeo() || $user->role === 'SUPERVISOR')
                     <button onclick="openBrandSettingsModal({{ $activeAccount->id }})" class="px-3.5 py-2 bg-emerald-800/60 hover:bg-emerald-900 text-white text-xs font-bold rounded-xl border border-emerald-500/50 shadow transition whitespace-nowrap">
                         ⚙️ Stage & Keyword Trigger
                     </button>
-                    @endif
                     @if(!$user->isCeo() && $user->role === 'SALES_ADMIN')
                     <button onclick="startScanQr('{{ $user->session_id ?? ('session_user_' . $user->id) }}'); openDeviceModal();" class="px-4 py-2.5 bg-white text-emerald-800 hover:bg-emerald-50 font-extrabold text-xs rounded-xl shadow-md transition flex items-center gap-2 whitespace-nowrap">
                         📲 Connect WA CS / Scan Barcode
@@ -1967,7 +1965,8 @@
         function loadBrandSettingsData(brandId) {
             fetch('/wa-accounts')
                 .then(res => res.json())
-                .then(accounts => {
+                .then(payload => {
+                    const accounts = payload.accounts || (Array.isArray(payload) ? payload : []);
                     const acc = accounts.find(a => a.id == brandId);
                     if (!acc) return;
 
@@ -2423,7 +2422,8 @@
 
             fetch('/wa-accounts')
                 .then(res => res.json())
-                .then(data => {
+                .then(payload => {
+                    const data = payload.accounts || (Array.isArray(payload) ? payload : []);
                     allBrandsCache = data;
                     if (!data || data.length === 0) {
                         tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400">Belum ada brand terdaftar. Klik "+ Tambah Brand Baru" di atas.</td></tr>`;
