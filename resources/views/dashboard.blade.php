@@ -758,19 +758,24 @@
             <section id="section-kanban" class="space-y-4">
                 <div class="flex justify-between items-center">
                     <div>
-                        <h2 class="text-xl font-bold text-slate-900">
-                            Kanban Board (Brand: {{ $activeAccount->name }})
-                        </h2>
-                        <p class="text-xs text-slate-500">🖐️ <strong>Drag & Drop Aktif</strong>: Tarik kartu lead ke kolom stage lain untuk memindahkan stage secara instan, atau klik kartu untuk edit detail lead.</p>
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-xl font-bold text-slate-900">
+                                Kanban Board (Brand: {{ $activeAccount->name }})
+                            </h2>
+                            <span class="bg-slate-100 text-slate-700 text-xs font-bold px-2.5 py-0.5 rounded-full border border-slate-200">
+                                {{ $leads->count() }} Lead di {{ $stages->count() }} Kolom
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-0.5">🖐️ <strong>Drag & Drop Aktif</strong>: Geser horizontal untuk melihat semua {{ $stages->count() }} kolom stage, tarik kartu untuk ubah status secara instan.</p>
                     </div>
                 </div>
                 
-                <div class="flex flex-col md:flex-row gap-6 overflow-x-auto pb-4" id="kanbanColumnsContainer">
+                <div class="flex flex-col md:flex-row gap-5 overflow-x-auto pb-4 pt-1" id="kanbanColumnsContainer" style="scrollbar-width: thin; scrollbar-color: #cbd5e1 #f8fafc;">
                     @foreach($stages as $stage)
                     @php
                         $stageLeads = $leads->where('stage', $stage->name);
                     @endphp
-                    <div id="kanban-stage-col-{{ $stage->id }}" class="flex-1 min-w-[280px] bg-white rounded-2xl shadow-sm p-4 border-t-4 border-emerald-500 border-x border-b border-slate-200/80 flex flex-col">
+                    <div id="kanban-stage-col-{{ $stage->id }}" class="flex-1 min-w-[260px] max-w-[320px] bg-white rounded-2xl shadow-sm p-4 border-t-4 border-emerald-500 border-x border-b border-slate-200/80 flex flex-col">
                         <!-- Kanban Column Header with Inline Editing & Entry Selector -->
                         <div class="border-b border-slate-100 pb-3 mb-4">
                             <div class="flex justify-between items-center">
