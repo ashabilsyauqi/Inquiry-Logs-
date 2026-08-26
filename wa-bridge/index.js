@@ -20,6 +20,7 @@ const STATUS_UPDATE_URL = process.env.STATUS_UPDATE_URL || (BASE_URL + '/api/wa-
 
 // Map to store sessions: sessionId -> { sessionId, sock, status, qrDataUrl, phone }
 const sessions = new Map();
+const lidToPhoneMap = new Map();
 
 function sendDisconnectAlert(sessionId, reason) {
     axios.post(DISCONNECT_ALERT_URL, { sessionId, reason })
@@ -125,7 +126,28 @@ async function createSession(sessionId = 'default') {
                 if (remoteJid.endsWith('@g.us') || remoteJid.includes('status@broadcast')) continue;
 
                 const isFromMe = Boolean(msg.key.fromMe);
-                const remotePhone = remoteJid.replace('@s.whatsapp.net', '').replace(/[^0-9]/g, '');
+                
+                let remotePhone = '';
+                if (remoteJid.endsWith('@s.whatsapp.net')) {
+                    remotePhone = remoteJid.replace('@s.whatsapp.net', '').replace(/[^0-9]/g, '');
+                } else if (msg.key.participant && msg.key.participant.endsWith('@s.whatsapp.net')) {
+                    remotePhone = msg.key.participant.replace('@s.whatsapp.net', '').replace(/[^0-9]/g, '');
+                } else if (msg.participant && msg.participant.endsWith('@s.whatsapp.net')) {
+                    remotePhone = msg.participant.replace('@s.whatsapp.net', '').replace(/[^0-9]/g, '');
+                } else {
+                    const cleanId = remoteJid.split('@')[0].replace(/[^0-9]/g, '');
+                    remotePhone = lidToPhoneMap.get(cleanId) || cleanId;
+                }
+
+                if (remoteJid.endsWith('@lid') && (msg.key.participant || msg.participant)) {
+                    const participantPhone = (msg.key.participant || msg.participant).replace('@s.whatsapp.net', '').replace(/[^0-9]/g, '');
+                    const cleanLid = remoteJid.replace('@lid', '').replace(/[^0-9]/g, '');
+                    if (participantPhone && cleanLid) {
+                        lidToPhoneMap.set(cleanLid, participantPhone);
+                        remotePhone = participantPhone;
+                    }
+                }
+
                 const text = msg.message.conversation || msg.message.extendedTextMessage?.text || msg.message.imageMessage?.caption || '';
                 if (!text.trim()) continue;
 
