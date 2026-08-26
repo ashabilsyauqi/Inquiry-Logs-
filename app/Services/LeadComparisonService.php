@@ -34,19 +34,26 @@ class LeadComparisonService
             $query->where('assigned_user_id', $assignedUserId);
         }
 
-        // Filter by Period
+        // Filter by Period & Custom Date Range
         $now = Carbon::now();
-        if ($period === 'today') {
+        if ($startDate && $endDate) {
+            $period = 'custom';
+            $query->whereBetween('created_at', [
+                Carbon::parse($startDate)->startOfDay(),
+                Carbon::parse($endDate)->endOfDay()
+            ]);
+        } elseif ($startDate) {
+            $period = 'custom';
+            $query->where('created_at', '>=', Carbon::parse($startDate)->startOfDay());
+        } elseif ($endDate) {
+            $period = 'custom';
+            $query->where('created_at', '<=', Carbon::parse($endDate)->endOfDay());
+        } elseif ($period === 'today') {
             $query->whereDate('created_at', Carbon::today());
         } elseif ($period === 'this_week') {
             $query->whereBetween('created_at', [$now->copy()->startOfWeek(), $now->copy()->endOfWeek()]);
         } elseif ($period === 'this_month') {
             $query->whereMonth('created_at', $now->month)->whereYear('created_at', $now->year);
-        } elseif ($period === 'custom' && $startDate && $endDate) {
-            $query->whereBetween('created_at', [
-                Carbon::parse($startDate)->startOfDay(),
-                Carbon::parse($endDate)->endOfDay()
-            ]);
         }
 
         $leads = $query->latest()->get();
@@ -136,6 +143,8 @@ class LeadComparisonService
             'stage_comparison' => $stageComparison,
             'discrepant_leads' => $discrepancies,
             'period' => $period,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
             'account_id' => $accountId,
             'generated_at' => Carbon::now()->format('d M Y H:i:s')
         ];

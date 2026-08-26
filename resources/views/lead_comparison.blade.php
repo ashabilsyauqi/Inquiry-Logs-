@@ -70,80 +70,83 @@
         </div>
         @endif
 
-        <!-- Interactive Simulation Box for Testing -->
-        <div class="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-blue-500/10 p-5 rounded-2xl border border-amber-300 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div class="space-y-1">
-                <div class="flex items-center gap-2">
-                    <span class="text-base">🧪</span>
-                    <h3 class="text-sm font-extrabold text-slate-900 tracking-tight">Simulator Uji Coba: Skenario CS & Deteksi AI</h3>
-                    <span class="bg-amber-100 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-300">Testing Mode</span>
-                </div>
-                <p class="text-xs text-slate-600">
-                    Uji bagaimana AI mendeteksi pesan chat saat CS lupa mengetik keyword trigger, dan bagaimana laporan selaras kembali saat keyword diketik.
-                </p>
-            </div>
+        <!-- Filter & Date Range Controls Strip -->
+        <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+            <form method="GET" action="{{ route('ai-comparison.index') }}" class="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+                <div class="flex flex-wrap items-center gap-3">
+                    <!-- Brand Filter -->
+                    <div class="flex items-center gap-2">
+                        <label class="text-xs font-extrabold text-slate-500 uppercase tracking-wider">Brand / WA:</label>
+                        <select name="account_id" onchange="this.form.submit()" class="bg-slate-50 border border-slate-200 text-slate-800 text-xs font-semibold rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-amber-500 focus:outline-none shadow-sm">
+                            @if($user->isCeo())
+                            <option value="all" {{ $accountId == 'all' ? 'selected' : '' }}>🏢 Semua Brand (Portfolio)</option>
+                            @endif
+                            @foreach($waAccounts as $acc)
+                            <option value="{{ $acc->id }}" {{ $accountId == $acc->id ? 'selected' : '' }}>
+                                📱 {{ $acc->name }} ({{ $acc->phone ?? 'No Phone' }})
+                            </option>
+                            @endforeach
+                        </select>
+                    </div>
 
-            <div class="flex items-center gap-2 flex-wrap">
-                <form method="POST" action="{{ route('ai-comparison.simulate') }}">
-                    @csrf
-                    <input type="hidden" name="type" value="deal_missed">
-                    <button type="submit" class="px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl transition shadow-sm flex items-center gap-1">
-                        <span>⚡</span> Simulasikan CS Lupa #deal
-                    </button>
-                </form>
+                    <!-- Period Presets Filter -->
+                    <div class="flex items-center gap-2">
+                        <label class="text-xs font-extrabold text-slate-500 uppercase tracking-wider">Periode:</label>
+                        <select name="period" id="periodSelect" onchange="handlePeriodChange(this)" class="bg-slate-50 border border-slate-200 text-slate-800 text-xs font-semibold rounded-xl px-3 py-2.5 focus:ring-2 focus:ring-amber-500 focus:outline-none shadow-sm">
+                            <option value="all_time" {{ $period == 'all_time' ? 'selected' : '' }}>📅 Semua Waktu</option>
+                            <option value="today" {{ $period == 'today' ? 'selected' : '' }}>🕒 Hari Ini</option>
+                            <option value="this_week" {{ $period == 'this_week' ? 'selected' : '' }}>📆 Minggu Ini</option>
+                            <option value="this_month" {{ $period == 'this_month' ? 'selected' : '' }}>🗓️ Bulan Ini</option>
+                            <option value="custom" {{ $period == 'custom' || $startDate || $endDate ? 'selected' : '' }}>⏳ Kustom Rentang Tanggal</option>
+                        </select>
+                    </div>
 
-                <form method="POST" action="{{ route('ai-comparison.simulate') }}">
-                    @csrf
-                    <input type="hidden" name="type" value="meeting_missed">
-                    <button type="submit" class="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition shadow-sm flex items-center gap-1">
-                        <span>📅</span> Simulasikan CS Lupa /meeting
-                    </button>
-                </form>
+                    <!-- Custom Date Range (Start Date to End Date) -->
+                    <div class="flex items-center gap-2 bg-slate-50/80 p-1.5 rounded-xl border border-slate-200">
+                        <span class="text-xs font-bold text-slate-500 pl-1.5">Dari:</span>
+                        <input type="date" name="start_date" id="startDateInput" value="{{ $startDate }}" class="bg-white border border-slate-200 text-slate-800 text-xs font-semibold rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-amber-500 focus:outline-none shadow-sm" onchange="document.getElementById('periodSelect').value = 'custom'">
+                        
+                        <span class="text-xs font-bold text-slate-500">Sampai:</span>
+                        <input type="date" name="end_date" id="endDateInput" value="{{ $endDate }}" class="bg-white border border-slate-200 text-slate-800 text-xs font-semibold rounded-lg px-2.5 py-1.5 focus:ring-2 focus:ring-amber-500 focus:outline-none shadow-sm" onchange="document.getElementById('periodSelect').value = 'custom'">
+                    </div>
 
-                <form method="POST" action="{{ route('ai-comparison.simulate') }}">
-                    @csrf
-                    <input type="hidden" name="type" value="deal_resolved">
-                    <button type="submit" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition shadow-sm flex items-center gap-1">
-                        <span>🎯</span> Simulasikan CS Ketik Keyword
-                    </button>
-                </form>
-            </div>
-        </div>
+                    <!-- Filter & Reset Buttons -->
+                    <div class="flex items-center gap-2">
+                        <button type="submit" class="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition shadow-sm flex items-center gap-1.5">
+                            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 16 16"><path d="M1.5 1.5A.5.5 0 0 1 2 1h12a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-.128.334L10 8.692V13.5a.5.5 0 0 1-.342.474l-3 1A.5.5 0 0 1 6 14.5V8.692L1.628 3.834A.5.5 0 0 1 1.5 3.5v-2z"/></svg>
+                            <span>Terapkan Filter</span>
+                        </button>
 
-        <!-- Filter Controls Strip -->
-        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-            <form method="GET" action="{{ route('ai-comparison.index') }}" class="flex flex-wrap items-center gap-3 w-full md:w-auto">
-                <!-- Brand Filter -->
-                <div class="flex items-center gap-2">
-                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Brand / WA:</label>
-                    <select name="account_id" onchange="this.form.submit()" class="bg-slate-50 border border-slate-200 text-slate-800 text-xs font-semibold rounded-xl px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:outline-none">
-                        @if($user->isCeo())
-                        <option value="all" {{ $accountId == 'all' ? 'selected' : '' }}>🏢 Semua Brand (Portfolio)</option>
+                        @if($startDate || $endDate || $period !== 'all_time' || $accountId !== 'all')
+                        <a href="{{ route('ai-comparison.index') }}" class="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold text-xs rounded-xl transition flex items-center gap-1" title="Reset Semua Filter">
+                            <span>🔄</span> Reset
+                        </a>
                         @endif
-                        @foreach($waAccounts as $acc)
-                        <option value="{{ $acc->id }}" {{ $accountId == $acc->id ? 'selected' : '' }}>
-                            📱 {{ $acc->name }} ({{ $acc->phone ?? 'No Phone' }})
-                        </option>
-                        @endforeach
-                    </select>
+                    </div>
                 </div>
 
-                <!-- Period Filter -->
-                <div class="flex items-center gap-2">
-                    <label class="text-xs font-bold text-slate-500 uppercase tracking-wider">Periode:</label>
-                    <select name="period" onchange="this.form.submit()" class="bg-slate-50 border border-slate-200 text-slate-800 text-xs font-semibold rounded-xl px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:outline-none">
-                        <option value="all_time" {{ $period == 'all_time' ? 'selected' : '' }}>📅 Semua Waktu</option>
-                        <option value="this_week" {{ $period == 'this_week' ? 'selected' : '' }}>📆 Minggu Ini</option>
-                        <option value="this_month" {{ $period == 'this_month' ? 'selected' : '' }}>🗓️ Bulan Ini</option>
-                        <option value="today" {{ $period == 'today' ? 'selected' : '' }}>🕒 Hari Ini</option>
-                    </select>
+                <div class="flex items-center justify-between lg:justify-end gap-2 text-xs text-slate-500 font-medium">
+                    @if($startDate || $endDate)
+                    <span class="bg-blue-50 text-blue-700 border border-blue-200 font-bold px-2.5 py-1 rounded-lg text-[11px]">
+                        📅 Rentang: {{ $startDate ? \Carbon\Carbon::parse($startDate)->format('d M Y') : 'Awal' }} — {{ $endDate ? \Carbon\Carbon::parse($endDate)->format('d M Y') : 'Sekarang' }}
+                    </span>
+                    @endif
+                    <div class="text-right text-[11px] text-slate-400">
+                        Update: <span class="font-mono text-slate-600 font-bold">{{ $comparison['generated_at'] }}</span>
+                    </div>
                 </div>
             </form>
-
-            <div class="text-right text-xs text-slate-400 font-medium">
-                Terakhir diperbarui: <span class="font-mono text-slate-600 font-bold">{{ $comparison['generated_at'] }}</span>
-            </div>
         </div>
+
+        <script>
+            function handlePeriodChange(select) {
+                if (select.value !== 'custom') {
+                    document.getElementById('startDateInput').value = '';
+                    document.getElementById('endDateInput').value = '';
+                    select.form.submit();
+                }
+            }
+        </script>
 
         <!-- 4 KPI Summary Cards Strip -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
