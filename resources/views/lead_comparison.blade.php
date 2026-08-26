@@ -310,14 +310,18 @@
                                 </span>
                             </td>
                             <td class="py-3.5 px-4">
-                                <span class="bg-amber-100 text-amber-900 border border-amber-300 font-extrabold px-2.5 py-1 rounded-md text-[11px] flex items-center gap-1 w-max">
-                                    <span>🤖</span> {{ $lead['ai_stage'] }}
-                                </span>
-                                @if(!empty($lead['ai_keyword']))
-                                <div class="text-[10px] text-amber-700 font-mono mt-1">
-                                    Trigger: {{ $lead['ai_keyword'] }}
+                                <div class="flex flex-col gap-1">
+                                    <div class="text-xs font-bold text-slate-800 flex items-center gap-1.5 flex-wrap">
+                                        <span class="text-sm">🤖</span>
+                                        <span>Leads ini sudah sampai di <span class="bg-blue-100 text-blue-800 border border-blue-300 font-extrabold px-2 py-0.5 rounded text-[11px] inline-block">[{{ $lead['ai_stage'] }}]</span></span>
+                                    </div>
+                                    @if(!empty($lead['ai_keyword']))
+                                    <div class="text-[11px] text-amber-700 font-mono mt-0.5 flex items-center gap-1">
+                                        <span>💡 Saran Trigger CS:</span>
+                                        <span class="bg-amber-50 text-amber-900 font-bold px-1.5 py-0.5 rounded border border-amber-200">{{ $lead['ai_keyword'] }}</span>
+                                    </div>
+                                    @endif
                                 </div>
-                                @endif
                             </td>
                             <td class="py-3.5 px-4 text-slate-600 max-w-xs">
                                 <p class="line-clamp-2 text-[11px] italic">"{{ $lead['ai_reason'] }}"</p>
