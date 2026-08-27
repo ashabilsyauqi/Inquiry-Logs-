@@ -41,6 +41,13 @@ Route::post('/api/wa-status-update', function (Request $request) {
                 $user->wa_phone = preg_replace('/[^0-9]/', '', $phone);
             }
             $user->save();
+
+            // Auto-assign any unassigned leads in user's brand to this CS user
+            if ($user->wa_account_id) {
+                Lead::where('wa_account_id', $user->wa_account_id)
+                    ->whereNull('assigned_user_id')
+                    ->update(['assigned_user_id' => $user->id]);
+            }
         }
 
         // 2. Sync WaAccount Brand Session
@@ -54,6 +61,14 @@ Route::post('/api/wa-status-update', function (Request $request) {
                 $account->phone = preg_replace('/[^0-9]/', '', $phone);
             }
             $account->save();
+
+            // Auto-assign unassigned leads to brand's CS Admin
+            $csAdmin = User::where('wa_account_id', $account->id)->where('role', 'SALES_ADMIN')->first();
+            if ($csAdmin) {
+                Lead::where('wa_account_id', $account->id)
+                    ->whereNull('assigned_user_id')
+                    ->update(['assigned_user_id' => $csAdmin->id]);
+            }
         }
 
         return response()->json(['status' => 'success']);
@@ -237,11 +252,26 @@ Route::middleware(['auth'])->group(function () {
             $csTeam = User::where('wa_account_id', $activeAccount->id)
                           ->where('role', 'SALES_ADMIN')
                           ->get();
+
+            // Auto-heal: If brand has CS admin(s) and any leads are unassigned, bind them to the brand's CS
+            if ($csTeam->isNotEmpty()) {
+                $primaryCs = $csTeam->first();
+                Lead::where('wa_account_id', $activeAccount->id)
+                    ->whereNull('assigned_user_id')
+                    ->update(['assigned_user_id' => $primaryCs->id]);
+            }
+
             foreach ($csTeam as $cs) {
                 $cs->leads_count = Lead::where('wa_account_id', $activeAccount->id)
                                        ->where('assigned_user_id', $cs->id)
                                        ->count();
             }
+        }
+
+        // Re-evaluate query if user is SALES_ADMIN to include newly bound leads
+        if ($user->role === 'SALES_ADMIN') {
+            $query->where('assigned_user_id', $user->id);
+            $leads = $query->latest()->get();
         }
 
         $totalLeads = $leads->count();

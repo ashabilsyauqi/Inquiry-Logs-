@@ -49,13 +49,19 @@ class WebhookController extends Controller
             $assignedUserId = $csUser->id;
             $waAccount = $csUser->waAccount;
         } else {
-            $assignedUserId = null;
             $waAccount = WaAccount::where('session_id', $sessionId)->first();
             if (!$waAccount && $receiverPhone) {
                 $waAccount = WaAccount::where('phone', $receiverPhone)->first();
             }
             if (!$waAccount) {
                 $waAccount = WaAccount::where('approval_status', 'APPROVED')->first();
+            }
+
+            if ($waAccount) {
+                $brandCs = User::where('wa_account_id', $waAccount->id)->where('role', 'SALES_ADMIN')->first();
+                $assignedUserId = $brandCs ? $brandCs->id : null;
+            } else {
+                $assignedUserId = null;
             }
         }
 
