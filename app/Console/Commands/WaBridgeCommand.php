@@ -19,26 +19,25 @@ class WaBridgeCommand extends Command
             return $this->checkStatus($bridgeUrl, $port);
         }
 
-        if ($this->option('restart')) {
-            $this->info("🔄 Menghentikan proses WA Bridge yang berjalan...");
-            $this->killExistingProcess($port);
-            usleep(500000);
-            return $this->startBridge($bridgeUrl, $port);
-        }
-
-        // Default or Watchdog check
         if ($this->isListening($port)) {
-            if (!$this->option('watchdog')) {
-                $this->info("✅ WA Bridge sudah aktif dan berjalan di {$bridgeUrl} (Port: {$port})");
-            }
+            $this->info("🟢 WA Bridge sudah ONLINE dan aktif di {$bridgeUrl} (Port: {$port})");
             return Command::SUCCESS;
         }
 
-        if ($this->option('watchdog')) {
-            $this->warn("⚠️ WA Bridge offline. Menjalankan auto-start watchdog...");
+        if ($this->option('restart') || $this->option('start') || $this->option('watchdog')) {
+            if (!function_exists('shell_exec') && !function_exists('exec')) {
+                $this->warn("⚠️ Fungsi PHP shell_exec/exec dinonaktifkan di php.ini server cPanel.");
+                $this->line("💡 Jalankan manual di Terminal cPanel:");
+                $this->info("   cd ~/crm.difitech.id/wa-bridge && nohup node index.js > ../storage/logs/wa-bridge.log 2>&1 &");
+                return Command::FAILURE;
+            }
+
+            $this->info("🔄 Memulai WA Bridge di Port {$port}...");
+            $this->killExistingProcess($port);
+            return $this->startBridge($bridgeUrl, $port);
         }
 
-        return $this->startBridge($bridgeUrl, $port);
+        return $this->checkStatus($bridgeUrl, $port);
     }
 
     protected function checkStatus($bridgeUrl, $port)
@@ -54,7 +53,8 @@ class WaBridgeCommand extends Command
             }
         } else {
             $this->error("🔴 WA Bridge OFFLINE di {$bridgeUrl} (Port {$port} tidak merespons)");
-            $this->line("💡 Jalankan: php artisan wa:bridge --restart");
+            $this->line("💡 Jalankan di Terminal Server:");
+            $this->info("   cd ~/crm.difitech.id/wa-bridge && nohup node index.js > ../storage/logs/wa-bridge.log 2>&1 &");
             return Command::FAILURE;
         }
     }
@@ -73,14 +73,18 @@ class WaBridgeCommand extends Command
             return Command::FAILURE;
         }
 
-        // Find node executable
-        $nodePath = trim(shell_exec('which node 2>/dev/null') ?: '');
-        if (!$nodePath) {
-            $nodePath = 'node';
+        $nodePath = 'node';
+        if (function_exists('shell_exec')) {
+            $detected = trim(@shell_exec('which node 2>/dev/null') ?: '');
+            if ($detected) $nodePath = $detected;
         }
 
         $cmd = "cd " . escapeshellarg($bridgeDir) . " && ({$nodePath} index.js >> " . escapeshellarg($logFile) . " 2>&1 &)";
-        pclose(popen($cmd, 'r'));
+        if (function_exists('popen')) {
+            @pclose(@popen($cmd, 'r'));
+        } elseif (function_exists('exec')) {
+            @exec($cmd);
+        }
 
         $this->line("⏳ Memverifikasi konektivitas socket port {$port}...");
         $attempts = 0;
@@ -103,7 +107,7 @@ class WaBridgeCommand extends Command
             return Command::SUCCESS;
         } else {
             $this->error("⚠️ WA Bridge belum merespons dalam {$maxAttempts} detik.");
-            $this->line("   Silakan cek log: tail -n 20 {$logFile}");
+            $this->line("   Silakan jalankan manual: cd ~/crm.difitech.id/wa-bridge && nohup node index.js &");
             return Command::FAILURE;
         }
     }
@@ -120,12 +124,14 @@ class WaBridgeCommand extends Command
 
     protected function killExistingProcess($port)
     {
-        $pids = trim(shell_exec("lsof -t -i:{$port} 2>/dev/null") ?: '');
-        if ($pids) {
-            foreach (explode("\n", $pids) as $pid) {
-                $pid = trim($pid);
-                if ($pid && is_numeric($pid)) {
-                    shell_exec("kill -9 {$pid} 2>/dev/null");
+        if (function_exists('shell_exec')) {
+            $pids = trim(@shell_exec("lsof -t -i:{$port} 2>/dev/null") ?: '');
+            if ($pids) {
+                foreach (explode("\n", $pids) as $pid) {
+                    $pid = trim($pid);
+                    if ($pid && is_numeric($pid)) {
+                        @shell_exec("kill -9 {$pid} 2>/dev/null");
+                    }
                 }
             }
         }
