@@ -204,12 +204,27 @@ class WebhookController extends Controller
         // 3. BI-DIRECTIONAL & NON-LINEAR KEYWORD STAGE TRIGGERS (Skip or Jump Back Stage)
         $lowerMessage = strtolower($message);
         $activeTriggers = StageTrigger::where('wa_account_id', $waAccount->id)->with('pipelineStage')->get();
+        if ($activeTriggers->isEmpty()) {
+            $activeTriggers = StageTrigger::whereNull('wa_account_id')->with('pipelineStage')->get();
+        }
         $matchedStageName = null;
 
         foreach ($activeTriggers as $trigger) {
-            if ($trigger->pipelineStage && str_contains($lowerMessage, strtolower($trigger->keyword))) {
+            if ($trigger->pipelineStage && !empty($trigger->keyword) && str_contains($lowerMessage, strtolower($trigger->keyword))) {
                 $matchedStageName = $trigger->pipelineStage->name;
                 break;
+            }
+        }
+
+        // Fallback: Direct stage name keyword matching (e.g. CS types "#deal", "deal", "/meeting", etc.)
+        if (!$matchedStageName && $waAccount) {
+            $stages = $waAccount->pipelineStages;
+            foreach ($stages as $st) {
+                $cleanStName = strtolower(trim($st->name));
+                if (strlen($cleanStName) >= 3 && (str_contains($lowerMessage, '#' . $cleanStName) || str_contains($lowerMessage, '/' . $cleanStName) || str_contains($lowerMessage, $cleanStName))) {
+                    $matchedStageName = $st->name;
+                    break;
+                }
             }
         }
 

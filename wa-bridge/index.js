@@ -12,25 +12,61 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Load environment variables from parent Laravel .env if available
+const envPath = path.join(__dirname, '../.env');
+if (fs.existsSync(envPath)) {
+    try {
+        const envContent = fs.readFileSync(envPath, 'utf-8');
+        envContent.split(/\r?\n/).forEach(line => {
+            const trimmed = line.trim();
+            if (trimmed && !trimmed.startsWith('#')) {
+                const eqIdx = trimmed.indexOf('=');
+                if (eqIdx > 0) {
+                    const key = trimmed.substring(0, eqIdx).trim();
+                    const val = trimmed.substring(eqIdx + 1).trim().replace(/^["']|["']$/g, '');
+                    if (!process.env[key]) {
+                        process.env[key] = val;
+                    }
+                }
+            }
+        });
+        console.log(`[WA Bridge] Successfully loaded parent Laravel environment from ${envPath}`);
+    } catch (e) {
+        console.error('[WA Bridge] Error parsing ../.env:', e.message);
+    }
+}
+
 const PORT = process.env.BRIDGE_PORT || 3001;
-const BASE_URL = process.env.APP_URL || process.env.WEBHOOK_BASE_URL || 'http://127.0.0.1:8000';
+let BASE_URL = process.env.APP_URL || process.env.WEBHOOK_BASE_URL;
+if (!BASE_URL) {
+    BASE_URL = 'http://127.0.0.1:8000';
+}
+BASE_URL = BASE_URL.replace(/\/+$/, '');
+
 const WEBHOOK_URL = process.env.WEBHOOK_URL || (BASE_URL + '/api/wa-webhook');
 const DISCONNECT_ALERT_URL = process.env.DISCONNECT_ALERT_URL || (BASE_URL + '/api/wa-disconnect-alert');
 const STATUS_UPDATE_URL = process.env.STATUS_UPDATE_URL || (BASE_URL + '/api/wa-status-update');
+
+console.log(`[WA Bridge] Backend Base URL: ${BASE_URL}`);
+console.log(`[WA Bridge] Webhook URL: ${WEBHOOK_URL}`);
+console.log(`[WA Bridge] Status Update URL: ${STATUS_UPDATE_URL}`);
 
 // Map to store sessions: sessionId -> { sessionId, sock, status, qrDataUrl, phone }
 const sessions = new Map();
 const lidToPhoneMap = new Map();
 
 function sendDisconnectAlert(sessionId, reason) {
+    console.log(`[WA Bridge] Sending disconnect alert for [${sessionId}]: ${reason}`);
     axios.post(DISCONNECT_ALERT_URL, { sessionId, reason })
+        .then(() => console.log(`[WA Bridge] [${sessionId}] Disconnect alert sent.`))
         .catch(err => console.error(`[WA Bridge] Failed sending disconnect alert for ${sessionId}:`, err.message));
 }
 
 function sendConnectStatusUpdate(sessionId, status, phone = null) {
+    console.log(`[WA Bridge] Sending status update for [${sessionId}]: ${status} (${phone || 'No phone'})`);
     axios.post(STATUS_UPDATE_URL, { sessionId, status, phone })
         .then(() => console.log(`[WA Bridge] [${sessionId}] Status '${status}' synced to Laravel DB.`))
-        .catch(err => console.error(`[WA Bridge] Failed syncing status for ${sessionId}:`, err.message));
+        .catch(err => console.error(`[WA Bridge] Failed syncing status for ${sessionId} (${STATUS_UPDATE_URL}):`, err.message));
 }
 
 async function createSession(sessionId = 'default') {
