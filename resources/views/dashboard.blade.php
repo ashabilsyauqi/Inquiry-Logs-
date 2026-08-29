@@ -30,8 +30,8 @@
                         <p class="text-[10px] text-[#8b949e] font-mono">Enterprise Suite</p>
                     </div>
                 </div>
-                <span class="text-[10px] font-mono text-[#8b949e] bg-[#21262d] px-2 py-0.5 rounded border border-[#30363d]">
-                    v2.4
+                <span class="text-[10px] font-mono text-[#58a6ff] bg-[#1f6feb]/20 px-2 py-0.5 rounded border border-[#1f6feb]/40 font-bold">
+                    v2.0
                 </span>
             </div>
 
@@ -41,11 +41,11 @@
                 <div>
                     <p class="px-2 text-[10px] font-semibold uppercase tracking-wider text-[#8b949e] mb-2">Repositories & Pipelines</p>
                     <div class="space-y-1">
-                        @if($user->isCeo())
+                        @if($user->isCeo() || ($user->isSupervisor() && $waAccounts->count() > 1))
                         <a href="/?account_id=all" class="w-full flex items-center justify-between px-2.5 py-2 rounded-md {{ $accountId == 'all' ? 'bg-[#161b22] text-[#f0f6fc] font-semibold border-l-2 border-[#2f81f7]' : 'text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc]' }} transition text-left">
                             <span class="flex items-center gap-2.5">
                                 <svg class="w-4 h-4 fill-current text-[#2f81f7]" viewBox="0 0 16 16"><path d="M1.75 2.5h12.5a.25.25 0 01.25.25v10.5a.25.25 0 01-.25.25H1.75a.25.25 0 01-.25-.25V2.75c0-.138.112-.25.25-.25zM1.75 1A1.75 1.75 0 000 2.75v10.5C0 14.216.784 15 1.75 15h12.5A1.75 1.75 0 0016 13.25V2.75A1.75 1.75 0 0014.25 1H1.75zM4 4.75a.75.75 0 01.75-.75h6.5a.75.75 0 010 1.5h-6.5A.75.75 0 014 4.75zm0 3a.75.75 0 01.75-.75h6.5a.75.75 0 010 1.5h-6.5A.75.75 0 014 7.75zm0 3a.75.75 0 01.75-.75h4a.75.75 0 010 1.5h-4a.75.75 0 01-.75-.75z"></path></svg>
-                                <span>🌐 General (Semua Brand)</span>
+                                <span>{{ $user->isCeo() ? '🌐 General (Semua Brand)' : '🌐 Semua Brand Saya' }}</span>
                             </span>
                             <span class="text-[11px] bg-[#21262d] text-[#8b949e] px-2 py-0.5 rounded-full font-mono border border-[#30363d]">{{ $waAccounts->count() }} Brands</span>
                         </a>
@@ -214,34 +214,86 @@
 
         <div class="max-w-7xl mx-auto px-6 py-6 space-y-6" id="dashboard-content">
 
-            <!-- CEO Brand Switcher Filter Bar -->
-            @if($user->isCeo())
-            <div class="bg-white rounded-2xl p-3 border border-slate-200 shadow-sm flex items-center gap-2 overflow-x-auto">
-                <span class="text-xs font-black uppercase text-slate-500 pl-2 whitespace-nowrap flex items-center gap-1">
-                    <span>🏢</span> Filter Brand:
-                </span>
-                <a href="/?filter={{ $filter }}&account_id=all" 
-                   class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 {{ $accountId === 'all' ? 'bg-slate-900 text-white shadow-sm ring-2 ring-slate-900/30' : 'bg-slate-100 hover:bg-slate-200 text-slate-700' }}">
-                    <span>🌐</span> General (Semua Brand)
-                    <span class="px-2 py-0.5 rounded-full text-[10px] {{ $accountId === 'all' ? 'bg-slate-700 text-white' : 'bg-slate-200 text-slate-700' }} font-black">
-                        {{ \App\Models\Lead::count() }}
+            <!-- Enterprise Multi-Brand Switcher & Lead Temperature Funnel Toolbar (v2.0) -->
+            <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-sm space-y-3.5">
+                @if($user->isCeo() || ($user->isSupervisor() && $waAccounts->count() > 1))
+                <!-- 1. Multi-Brand Selector Tabs -->
+                <div class="flex items-center gap-2 overflow-x-auto pb-1" style="scrollbar-width: thin;">
+                    <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 pl-1 whitespace-nowrap flex items-center gap-1.5">
+                        <span>🏢</span> Brand:
                     </span>
-                </a>
-                @foreach($waAccounts as $acc)
-                @php
-                    $isAccActive = ($accountId == $acc->id);
-                @endphp
-                <a href="/?filter={{ $filter }}&account_id={{ $acc->id }}" 
-                   class="px-3.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 {{ $isAccActive ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-600/30' : 'bg-slate-100 hover:bg-slate-200 text-slate-700' }}">
-                    <span>{{ $acc->status === 'CONNECTED' ? '🟢' : '🟡' }}</span>
-                    {{ $acc->name }}
-                    <span class="px-2 py-0.5 rounded-full text-[10px] {{ $isAccActive ? 'bg-emerald-700 text-white' : 'bg-slate-200 text-slate-700' }} font-black">
-                        {{ $acc->leads->count() }}
-                    </span>
-                </a>
-                @endforeach
+                    <a href="/?filter={{ $filter }}&account_id=all&temperature={{ $temperatureFilter }}" 
+                       class="px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 {{ $accountId === 'all' ? 'bg-slate-900 text-white shadow-sm ring-2 ring-slate-900/20' : 'bg-slate-100 hover:bg-slate-200 text-slate-700' }}">
+                        <span>🌐</span> {{ $user->isCeo() ? 'Semua Brand (Portfolio)' : 'Semua Brand Saya' }}
+                        <span class="px-2 py-0.5 rounded-full text-[10px] {{ $accountId === 'all' ? 'bg-slate-700 text-white' : 'bg-slate-200 text-slate-700' }} font-bold">
+                            {{ $user->isCeo() ? \App\Models\Lead::count() : \App\Models\Lead::whereIn('wa_account_id', $waAccounts->pluck('id'))->count() }}
+                        </span>
+                    </a>
+                    @foreach($waAccounts as $acc)
+                    @php
+                        $isAccActive = ($accountId == $acc->id);
+                    @endphp
+                    <a href="/?filter={{ $filter }}&account_id={{ $acc->id }}&temperature={{ $temperatureFilter }}" 
+                       class="px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 {{ $isAccActive ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-600/30' : 'bg-slate-100 hover:bg-slate-200 text-slate-700' }}">
+                        <span>{{ $acc->status === 'CONNECTED' ? '🟢' : '🟡' }}</span>
+                        {{ $acc->name }}
+                        <span class="px-2 py-0.5 rounded-full text-[10px] {{ $isAccActive ? 'bg-emerald-700 text-white' : 'bg-slate-200 text-slate-700' }} font-bold">
+                            {{ $acc->leads->count() }}
+                        </span>
+                    </a>
+                    @endforeach
+                </div>
+                @endif
+
+                <!-- 2. Dynamic Lead Temperature Funnel Filter (Cold ❄️ -> Warm 🌤️ -> Hot 🔥) -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 {{ ($user->isCeo() || ($user->isSupervisor() && $waAccounts->count() > 1)) ? 'border-t border-slate-100' : '' }}">
+                    <div class="flex items-center gap-2 overflow-x-auto" style="scrollbar-width: thin;">
+                        <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 pl-1 whitespace-nowrap flex items-center gap-1.5">
+                            <span>🌡️</span> Suhu Prospek:
+                        </span>
+
+                        <!-- All Temperatures -->
+                        <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature=all&cs_id={{ $csId }}" 
+                           class="px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 {{ $temperatureFilter === 'all' ? 'bg-slate-900 text-white shadow-sm' : 'bg-slate-100 hover:bg-slate-200 text-slate-700' }}">
+                            <span>📊</span> Semua Suhu
+                            <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ $temperatureFilter === 'all' ? 'bg-slate-700 text-white' : 'bg-slate-200 text-slate-600' }} font-bold">
+                                {{ $totalLeads }}
+                            </span>
+                        </a>
+
+                        <!-- Hot Leads (Rose/Red) -->
+                        <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature=hot&cs_id={{ $csId }}" 
+                           class="px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 {{ $temperatureFilter === 'hot' ? 'bg-rose-600 text-white shadow-sm ring-2 ring-rose-400/40' : 'bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200' }}">
+                            <span>🔥</span> Hot Lead (Closing)
+                            <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ $temperatureFilter === 'hot' ? 'bg-rose-700 text-white' : 'bg-rose-200 text-rose-900' }} font-extrabold">
+                                {{ $hotCount }}
+                            </span>
+                        </a>
+
+                        <!-- Warm Leads (Amber/Orange) -->
+                        <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature=warm&cs_id={{ $csId }}" 
+                           class="px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 {{ $temperatureFilter === 'warm' ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-400/40' : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200' }}">
+                            <span>🌤️</span> Warm Lead (Diskusi)
+                            <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ $temperatureFilter === 'warm' ? 'bg-amber-600 text-white' : 'bg-amber-200 text-amber-900' }} font-extrabold">
+                                {{ $warmCount }}
+                            </span>
+                        </a>
+
+                        <!-- Cold Leads (Sky/Blue) -->
+                        <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature=cold&cs_id={{ $csId }}" 
+                           class="px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 {{ $temperatureFilter === 'cold' ? 'bg-sky-600 text-white shadow-sm ring-2 ring-sky-400/40' : 'bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200' }}">
+                            <span>❄️</span> Cold Lead (Awal)
+                            <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ $temperatureFilter === 'cold' ? 'bg-sky-700 text-white' : 'bg-sky-200 text-sky-900' }} font-extrabold">
+                                {{ $coldCount }}
+                            </span>
+                        </a>
+                    </div>
+
+                    <div class="text-[11px] text-slate-400 flex items-center gap-1.5 pl-1">
+                        <span>🎯 Gradasi Biru ❄️ &rarr; Kuning 🌤️ &rarr; Merah 🔥 disesuaikan otomatis dengan jumlah stage brand.</span>
+                    </div>
+                </div>
             </div>
-            @endif
 
             <!-- Disconnection Alert Banner -->
             @php
@@ -693,12 +745,14 @@
                                 <th class="px-6 py-3 font-semibold">Brand Pipeline</th>
                                 <th class="px-6 py-3 font-semibold">Admin CS</th>
                                 <th class="px-6 py-3 font-semibold">Stage Status</th>
+                                <th class="px-6 py-3 font-semibold">Suhu Prospek</th>
                                 <th class="px-6 py-3 font-semibold">Waktu Dibuat</th>
                                 <th class="px-6 py-3 font-semibold text-center">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 text-sm">
                             @foreach($leads as $lead)
+                            @php $temp = $lead->temperature; @endphp
                             <tr class="hover:bg-slate-50/80 cursor-pointer transition" onclick="openLeadDetailModal({{ $lead->id }})">
                                 <td class="px-6 py-4">
                                     <div class="font-bold text-slate-800 flex items-center gap-2">
@@ -735,6 +789,12 @@
                                         {{ $lead->stage }}
                                     </span>
                                 </td>
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold {{ $temp['badge_class'] }}">
+                                        <span>{{ $temp['icon'] }}</span>
+                                        <span>{{ $temp['label'] }}</span>
+                                    </span>
+                                </td>
                                 <td class="px-6 py-4 text-slate-500 text-xs">{{ $lead->created_at->format('d M, H:i') }}</td>
                                 <td class="px-6 py-4 text-center" onclick="event.stopPropagation()">
                                     <button onclick="openLeadDetailModal({{ $lead->id }})" class="text-blue-600 hover:text-blue-800 font-semibold text-xs bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg transition border border-blue-200">
@@ -745,7 +805,7 @@
                             @endforeach
                             @if($leads->isEmpty())
                             <tr>
-                                <td colspan="7" class="px-6 py-8 text-center text-slate-400 italic">Belum ada data lead di pipeline ini.</td>
+                                <td colspan="8" class="px-6 py-8 text-center text-slate-400 italic">Belum ada data lead di pipeline ini.</td>
                             </tr>
                             @endif
                         </tbody>
@@ -774,8 +834,9 @@
                     @foreach($stages as $stage)
                     @php
                         $stageLeads = $leads->where('stage', $stage->name);
+                        $stageTemp = $stage->temperature;
                     @endphp
-                    <div id="kanban-stage-col-{{ $stage->id }}" class="flex-1 min-w-[260px] max-w-[320px] bg-white rounded-2xl shadow-sm p-4 border-t-4 border-emerald-500 border-x border-b border-slate-200/80 flex flex-col">
+                    <div id="kanban-stage-col-{{ $stage->id }}" class="flex-1 min-w-[270px] max-w-[330px] bg-white rounded-2xl shadow-sm p-4 border-t-4 border-slate-200 border-x border-b border-slate-200/80 flex flex-col relative" style="border-top-color: {{ $stageTemp['hex'] }};">
                         <!-- Kanban Column Header with Inline Editing & Entry Selector -->
                         <div class="border-b border-slate-100 pb-3 mb-4">
                             <div class="flex justify-between items-center">
@@ -788,21 +849,25 @@
                                         {{ $stage->name }}
                                     </span>
                                 </h2>
-                                <span class="kanban-stage-count bg-emerald-100 text-emerald-800 text-xs py-0.5 px-2.5 rounded-full font-bold flex-shrink-0">{{ $stageLeads->count() }}</span>
+                                <span class="kanban-stage-count bg-slate-100 text-slate-800 text-xs py-0.5 px-2.5 rounded-full font-bold flex-shrink-0">{{ $stageLeads->count() }}</span>
                             </div>
 
-                            <!-- Direct Entry Stage Selector Badge -->
-                            <div class="mt-2 flex items-center justify-between">
+                            <!-- Temperature Stage Indicator & Entry Badge -->
+                            <div class="mt-2.5 flex items-center justify-between gap-1 flex-wrap">
+                                <span class="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full {{ $stageTemp['badge_class'] }}">
+                                    <span>{{ $stageTemp['icon'] }}</span>
+                                    <span>{{ $stageTemp['label'] }}</span>
+                                </span>
+
                                 @if(!empty($stage->is_default))
                                     <span title="Inquiry WA baru akan otomatis masuk ke stage ini" class="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-full border border-emerald-300 flex items-center gap-1">
-                                        🟢 Entry Stage WA
+                                        🟢 Entry Stage
                                     </span>
                                 @else
                                     <button onclick="setAsDefaultStageDirect({{ $stage->id }})" title="Klik untuk jadikan pintu masuk inquiry WA baru" class="text-[10px] font-semibold text-slate-500 hover:text-emerald-700 bg-slate-100 hover:bg-emerald-50 px-2 py-0.5 rounded border border-slate-200 transition">
-                                        ⭐ Set Entry Stage
+                                        ⭐ Set Entry
                                     </button>
                                 @endif
-                                <span class="text-[10px] text-slate-400 italic">Double-click title</span>
                             </div>
                         </div>
 
@@ -815,14 +880,15 @@
                              ondrop="dropLeadCard(event, '{{ $stage->name }}', {{ $stage->id }})" 
                              class="kanban-drop-zone space-y-3 flex-1 min-h-[160px] p-1.5 rounded-xl transition">
                             @foreach($stageLeads as $lead)
+                            @php $leadTemp = $lead->temperature; @endphp
                             <div id="lead-card-{{ $lead->id }}" 
                                  draggable="true" 
                                  ondragstart="dragLeadCard(event, {{ $lead->id }}, '{{ $stage->name }}')" 
                                  ondragend="dragEndLeadCard(event)" 
                                  onclick="openLeadDetailModal({{ $lead->id }})" 
-                                 class="kanban-lead-card bg-slate-50 hover:bg-emerald-50/60 hover:shadow-md transition duration-150 p-4 rounded-xl shadow-sm border border-slate-200/80 cursor-grab active:cursor-grabbing select-none relative group">
+                                 class="kanban-lead-card bg-slate-50 hover:bg-white hover:shadow-md transition duration-150 p-4 rounded-xl shadow-xs border border-slate-200/90 cursor-grab active:cursor-grabbing select-none relative group">
                                 <div class="flex justify-between items-start">
-                                    <h3 class="font-bold text-slate-800 text-sm group-hover:text-emerald-800 transition">{{ $lead->name }}</h3>
+                                    <h3 class="font-bold text-slate-800 text-sm group-hover:text-slate-950 transition">{{ $lead->name }}</h3>
                                     <div class="flex items-center gap-1">
                                         @if($lead->priority > 0)
                                             <div class="text-yellow-400 text-xs flex mt-0.5">
@@ -848,6 +914,17 @@
                                         👤 {{ $lead->assignedUser->name }}
                                     </span>
                                     @endif
+                                </div>
+
+                                <!-- Dynamic Lead Temperature Badge on Card -->
+                                <div class="mt-2.5 pt-2 border-t border-slate-200/60 flex items-center justify-between">
+                                    <span class="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full {{ $leadTemp['badge_class'] }}">
+                                        <span>{{ $leadTemp['icon'] }}</span>
+                                        <span>{{ $leadTemp['label'] }}</span>
+                                    </span>
+                                    <span class="text-[10px] font-bold font-mono text-slate-400">
+                                        {{ $leadTemp['progress'] }}% Funnel
+                                    </span>
                                 </div>
 
                                 @if($lead->ai_suggested_stage)
@@ -1128,61 +1205,86 @@
         </div>
     </div>
 
-    <!-- CEO Brand Management Modal (Full CRUD) -->
+    <!-- CEO Brand Management Modal (Full CRUD & Multi-Brand Supervisor Allocation) -->
     @if($user->isCeo())
     <div id="brandManagementModal" class="fixed inset-0 bg-slate-950/70 hidden flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div class="px-6 py-5 bg-gradient-to-r from-emerald-800 to-teal-800 text-white flex justify-between items-center">
+            <div class="px-6 py-5 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex justify-between items-center">
                 <div>
                     <h3 class="text-xl font-bold flex items-center gap-2">
-                        🏢 Brand & Account Management (CEO)
+                        🏢 Brand & Supervisor Management (CEO)
                     </h3>
-                    <p class="text-xs text-emerald-100 mt-0.5">Kelola Akun Brand, Nomor WA Terhubung, & Fitur CRUD</p>
+                    <p class="text-xs text-indigo-200 mt-0.5">Kelola Akun Brand, Alokasi Multi-Brand untuk Supervisor, & Fitur CRUD</p>
                 </div>
-                <button onclick="closeBrandManagementModal()" class="text-emerald-100 hover:text-white text-2xl font-bold">&times;</button>
+                <button onclick="closeBrandManagementModal()" class="text-indigo-200 hover:text-white text-2xl font-bold">&times;</button>
+            </div>
+
+            <!-- Modal Nav Tabs -->
+            <div class="px-6 pt-4 bg-slate-50 border-b border-slate-200 flex gap-2">
+                <button onclick="switchBrandModalTab('brands')" id="tab-btn-brands" class="px-4 py-2 text-xs font-bold border-b-2 border-indigo-600 text-indigo-600 transition">
+                    🏢 Daftar Brand (CRUD)
+                </button>
+                <button onclick="switchBrandModalTab('supervisors')" id="tab-btn-supervisors" class="px-4 py-2 text-xs font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition">
+                    👥 Alokasi Supervisor (Multi-Brand)
+                </button>
             </div>
 
             <div class="p-6 overflow-y-auto flex-1 space-y-6">
-                <!-- Create New Brand Section -->
-                <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 space-y-3">
-                    <h4 class="font-bold text-emerald-900 text-sm flex items-center gap-2">
-                        ➕ Tambah Brand Baru
-                    </h4>
-                    <div class="grid grid-cols-1 sm:grid-cols-5 gap-3">
-                        <div class="sm:col-span-2">
-                            <input type="text" id="newBrandNameInput" placeholder="Nama Brand (Contoh: Skincare CS 1)" class="w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
+                <!-- TAB 1: BRANDS CRUD -->
+                <div id="brandModalTabBrands" class="space-y-6">
+                    <!-- Create New Brand Section -->
+                    <div class="bg-indigo-50/60 border border-indigo-200 rounded-xl p-4 space-y-3">
+                        <h4 class="font-bold text-indigo-900 text-sm flex items-center gap-2">
+                            ➕ Tambah Brand Baru
+                        </h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-5 gap-3">
+                            <div class="sm:col-span-2">
+                                <input type="text" id="newBrandNameInput" placeholder="Nama Brand (Contoh: Nabata Carpet)" class="w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+                            <div class="sm:col-span-2">
+                                <input type="text" id="newBrandPhoneInput" placeholder="Nomor WA (Opsional: 628123...)" class="w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none">
+                            </div>
+                            <div class="sm:col-span-1">
+                                <button onclick="createNewBrandSubmit()" class="w-full px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-lg transition shadow-sm">
+                                    + Simpan
+                                </button>
+                            </div>
                         </div>
-                        <div class="sm:col-span-2">
-                            <input type="text" id="newBrandPhoneInput" placeholder="Nomor WA (Opsional: 628123...)" class="w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
-                        </div>
-                        <div class="sm:col-span-1">
-                            <button onclick="createNewBrandSubmit()" class="w-full px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg transition shadow-sm">
-                                + Simpan
-                            </button>
+                    </div>
+
+                    <!-- Brand Accounts Table List -->
+                    <div>
+                        <h4 class="font-bold text-slate-800 text-sm mb-3">Daftar Brand & Akun WA Terdaftar</h4>
+                        <div class="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-100 text-slate-600 font-bold border-b border-slate-200">
+                                    <tr>
+                                        <th class="p-3">Nama Brand</th>
+                                        <th class="p-3">Nomor WA</th>
+                                        <th class="p-3">Status Device</th>
+                                        <th class="p-3">Session ID</th>
+                                        <th class="p-3 text-right">Aksi (CRUD)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="brandManagementTableBody" class="divide-y divide-slate-100 bg-white">
+                                    <tr>
+                                        <td colspan="5" class="p-6 text-center text-slate-400">Memuat data brand...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
 
-                <!-- Brand Accounts Table List -->
-                <div>
-                    <h4 class="font-bold text-slate-800 text-sm mb-3">Daftar Brand & Akun WA Terdaftar</h4>
-                    <div class="border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                        <table class="w-full text-left text-xs">
-                            <thead class="bg-slate-100 text-slate-600 font-bold border-b border-slate-200">
-                                <tr>
-                                    <th class="p-3">Nama Brand</th>
-                                    <th class="p-3">Nomor WA</th>
-                                    <th class="p-3">Status Device</th>
-                                    <th class="p-3">Session ID</th>
-                                    <th class="p-3 text-right">Aksi (CRUD)</th>
-                                </tr>
-                            </thead>
-                            <tbody id="brandManagementTableBody" class="divide-y divide-slate-100 bg-white">
-                                <tr>
-                                    <td colspan="5" class="p-6 text-center text-slate-400">Memuat data brand...</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                <!-- TAB 2: MULTI-BRAND SUPERVISOR ALLOCATION -->
+                <div id="brandModalTabSupervisors" class="hidden space-y-4">
+                    <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-xl text-xs text-emerald-800">
+                        <p class="font-bold">💡 Multi-Brand Supervisor Allocation:</p>
+                        <p class="mt-0.5">Centang brand yang ingin ditugaskan kepada setiap Supervisor / Brand Manager (misal: Pak Siswandi). Supervisor tersebut dapat memantau dan mengelola seluruh brand yang dicentang hanya dengan 1 akun.</p>
+                    </div>
+
+                    <div id="supervisorAllocationContainer" class="space-y-4">
+                        <div class="p-6 text-center text-slate-400 text-xs">Memuat data supervisor & brand...</div>
                     </div>
                 </div>
             </div>
@@ -2407,18 +2509,141 @@
             if (activeQrPollInterval) clearInterval(activeQrPollInterval);
         }
 
-        // --- BRAND MANAGEMENT (CEO FULL CRUD) ---
+        // --- BRAND MANAGEMENT (CEO FULL CRUD & MULTI-BRAND SUPERVISOR) ---
         let allBrandsCache = [];
+        let allSupervisorsCache = [];
 
         function openBrandManagementModal() {
             const modal = document.getElementById('brandManagementModal');
             if (modal) modal.classList.remove('hidden');
+            switchBrandModalTab('brands');
             loadBrandManagementTable();
         }
 
         function closeBrandManagementModal() {
             const modal = document.getElementById('brandManagementModal');
             if (modal) modal.classList.add('hidden');
+        }
+
+        function switchBrandModalTab(tab) {
+            const tabBrands = document.getElementById('brandModalTabBrands');
+            const tabSups = document.getElementById('brandModalTabSupervisors');
+            const btnBrands = document.getElementById('tab-btn-brands');
+            const btnSups = document.getElementById('tab-btn-supervisors');
+
+            if (tab === 'brands') {
+                if (tabBrands) tabBrands.classList.remove('hidden');
+                if (tabSups) tabSups.classList.add('hidden');
+                if (btnBrands) {
+                    btnBrands.className = "px-4 py-2 text-xs font-bold border-b-2 border-indigo-600 text-indigo-600 transition";
+                }
+                if (btnSups) {
+                    btnSups.className = "px-4 py-2 text-xs font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition";
+                }
+                loadBrandManagementTable();
+            } else {
+                if (tabBrands) tabBrands.classList.add('hidden');
+                if (tabSups) tabSups.classList.remove('hidden');
+                if (btnBrands) {
+                    btnBrands.className = "px-4 py-2 text-xs font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition";
+                }
+                if (btnSups) {
+                    btnSups.className = "px-4 py-2 text-xs font-bold border-b-2 border-indigo-600 text-indigo-600 transition";
+                }
+                loadSupervisorAllocations();
+            }
+        }
+
+        function loadSupervisorAllocations() {
+            const container = document.getElementById('supervisorAllocationContainer');
+            if (!container) return;
+
+            fetch('/admin/supervisors')
+                .then(res => res.json())
+                .then(data => {
+                    const supervisors = data.supervisors || [];
+                    const brands = data.brands || [];
+                    allSupervisorsCache = supervisors;
+
+                    if (supervisors.length === 0) {
+                        container.innerHTML = `
+                            <div class="bg-slate-50 p-6 rounded-2xl text-center border border-slate-200">
+                                <p class="text-xs text-slate-500 font-medium">Belum ada akun pengguna dengan role <strong>SUPERVISOR</strong> terdaftar.</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    container.innerHTML = supervisors.map(sup => {
+                        const assignedBrandIds = (sup.supervised_brands || []).map(b => b.id);
+                        return `
+                            <div class="bg-white rounded-xl p-4 border border-slate-200/90 shadow-xs space-y-3">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2.5">
+                                        <div class="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs">
+                                            👤
+                                        </div>
+                                        <div>
+                                            <h5 class="font-bold text-slate-900 text-xs">${sup.name}</h5>
+                                            <p class="text-[10px] text-slate-500 font-mono">${sup.email} &bull; ${sup.phone || '-'}</p>
+                                        </div>
+                                    </div>
+                                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                                        ${assignedBrandIds.length} Brand Aktif
+                                    </span>
+                                </div>
+
+                                <div class="pt-2 border-t border-slate-100">
+                                    <label class="block text-[11px] font-bold text-slate-700 mb-2">Pilih Brand yang Dikelola oleh ${sup.name}:</label>
+                                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                                        ${brands.map(b => {
+                                            const isChecked = assignedBrandIds.includes(b.id);
+                                            return `
+                                                <label class="flex items-center gap-2 p-2 rounded-lg border ${isChecked ? 'bg-indigo-50/60 border-indigo-300 text-indigo-900' : 'bg-slate-50 border-slate-200 text-slate-700'} hover:bg-indigo-50 transition cursor-pointer text-xs">
+                                                    <input type="checkbox" 
+                                                           onchange="toggleSupervisorBrand(${sup.id}, ${b.id}, this.checked)" 
+                                                           ${isChecked ? 'checked' : ''} 
+                                                           class="rounded text-indigo-600 focus:ring-indigo-500">
+                                                    <span class="font-medium truncate">🏢 ${b.name}</span>
+                                                </label>
+                                            `;
+                                        }).join('')}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                })
+                .catch(err => {
+                    container.innerHTML = `<div class="p-4 text-xs text-red-600">Gagal memuat data supervisor.</div>`;
+                });
+        }
+
+        function toggleSupervisorBrand(supervisorId, brandId, isChecked) {
+            const supervisor = allSupervisorsCache.find(s => s.id === supervisorId);
+            if (!supervisor) return;
+
+            let currentBrandIds = (supervisor.supervised_brands || []).map(b => b.id);
+            if (isChecked) {
+                if (!currentBrandIds.includes(brandId)) currentBrandIds.push(brandId);
+            } else {
+                currentBrandIds = currentBrandIds.filter(id => id !== brandId);
+            }
+
+            fetch('/admin/supervisors/' + supervisorId + '/brands', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                body: JSON.stringify({ brand_ids: currentBrandIds })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showToastNotification(`✅ Akses brand untuk supervisor ${supervisor.name} berhasil diperbarui!`);
+                    loadSupervisorAllocations();
+                } else {
+                    alert('Gagal memperbarui akses supervisor.');
+                }
+            });
         }
 
         function loadBrandManagementTable() {

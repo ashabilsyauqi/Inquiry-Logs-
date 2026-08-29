@@ -214,36 +214,54 @@ Route::middleware(['auth'])->group(function () {
             $query->whereYear('created_at', Carbon::now()->year);
         }
 
+        $accessibleBrands = $user->getAccessibleBrands();
+        $accessibleBrandIds = $accessibleBrands->pluck('id')->toArray();
+
         $activeAccount = null;
         $csId = $request->query('cs_id', 'all');
+        $temperatureFilter = $request->query('temperature', 'all');
 
         if ($accountId !== 'all') {
-            $query->where('wa_account_id', $accountId);
-            if ($user->role === 'SALES_ADMIN') {
+            if (in_array((int)$accountId, $accessibleBrandIds) || $user->isCeo()) {
+                $query->where('wa_account_id', $accountId);
+                if ($user->isSalesAdmin()) {
+                    $query->where('assigned_user_id', $user->id);
+                } elseif ($csId !== 'all' && is_numeric($csId)) {
+                    $query->where('assigned_user_id', $csId);
+                }
+                $activeAccount = WaAccount::with(['pipelineStages.triggers', 'supervisors'])->find($accountId);
+                if ($activeAccount) {
+                    $activeAccount->ensureDefaultStages();
+                }
+            } else {
+                // Fallback to first accessible brand if unauthorized
+                if ($accessibleBrands->isNotEmpty()) {
+                    $firstBrand = $accessibleBrands->first();
+                    $accountId = $firstBrand->id;
+                    $query->where('wa_account_id', $accountId);
+                    $activeAccount = $firstBrand;
+                }
+            }
+        } elseif ($accountId === 'all') {
+            if (!$user->isCeo()) {
+                $query->whereIn('wa_account_id', $accessibleBrandIds);
+            }
+            if ($user->isSalesAdmin()) {
                 $query->where('assigned_user_id', $user->id);
             } elseif ($csId !== 'all' && is_numeric($csId)) {
                 $query->where('assigned_user_id', $csId);
             }
-            $activeAccount = WaAccount::with(['pipelineStages.triggers'])->find($accountId);
-            if ($activeAccount) {
-                $activeAccount->ensureDefaultStages();
-            }
-        } elseif ($user->role === 'SALES_ADMIN') {
-            $query->where('assigned_user_id', $user->id);
-        } elseif ($csId !== 'all' && is_numeric($csId)) {
-            $query->where('assigned_user_id', $csId);
         }
 
-        $leads = $query->latest()->get();
-
-        // CEO sees all APPROVED WA Accounts with lead counts & metrics
+        // WA Accounts available for current user's switcher
         if ($user->isCeo()) {
-            $waAccounts = WaAccount::with(['leads', 'pipelineStages.triggers'])->where('approval_status', 'APPROVED')->get();
+            $waAccounts = WaAccount::with(['leads', 'pipelineStages.triggers', 'supervisors'])->where('approval_status', 'APPROVED')->get();
             foreach ($waAccounts as $acc) {
                 $acc->ensureDefaultStages();
             }
         } else {
-            $waAccounts = $user->wa_account_id ? WaAccount::with(['leads', 'pipelineStages.triggers'])->where('id', $user->wa_account_id)->where('approval_status', 'APPROVED')->get() : collect();
+            $waAccounts = $accessibleBrands;
+            $waAccounts->load(['leads', 'pipelineStages.triggers', 'supervisors']);
         }
 
         // CS Team members for Supervisor / CEO selection cards
@@ -269,17 +287,37 @@ Route::middleware(['auth'])->group(function () {
         }
 
         // Re-evaluate query if user is SALES_ADMIN to include newly bound leads
-        if ($user->role === 'SALES_ADMIN') {
+        if ($user->isSalesAdmin()) {
             $query->where('assigned_user_id', $user->id);
-            $leads = $query->latest()->get();
         }
 
-        $totalLeads = $leads->count();
+        $allLeads = $query->latest()->get();
+
+        // Calculate Temperature Metrics for the current brand / view
+        $coldCount = 0;
+        $warmCount = 0;
+        $hotCount = 0;
+
+        foreach ($allLeads as $l) {
+            $t = $l->temperature['key'] ?? 'cold';
+            if ($t === 'cold') $coldCount++;
+            elseif ($t === 'warm') $warmCount++;
+            elseif ($t === 'hot') $hotCount++;
+        }
+
+        // Apply Temperature Filter if selected
+        if (in_array($temperatureFilter, ['cold', 'warm', 'hot'])) {
+            $leads = $allLeads->filter(fn($l) => ($l->temperature['key'] ?? '') === $temperatureFilter)->values();
+        } else {
+            $leads = $allLeads;
+        }
+
+        $totalLeads = $allLeads->count();
 
         // Determine pipeline stages for current view
         if ($activeAccount) {
             $stages = $activeAccount->pipelineStages;
-        } elseif ($user->isCeo() && $accountId === 'all') {
+        } elseif (($user->isCeo() || $user->isSupervisor()) && $accountId === 'all') {
             $stages = PipelineStage::whereNull('wa_account_id')->orWhereIn('wa_account_id', $waAccounts->pluck('id'))->get()->unique('name');
             if ($stages->isEmpty()) {
                 $stages = collect([
@@ -300,7 +338,7 @@ Route::middleware(['auth'])->group(function () {
 
         return view('dashboard', compact(
             'leads', 'filter', 'accountId', 'activeAccount', 'waAccounts', 'user', 'stages',
-            'totalLeads', 'csTeam', 'csId'
+            'totalLeads', 'csTeam', 'csId', 'coldCount', 'warmCount', 'hotCount', 'temperatureFilter'
         ));
     });
 
@@ -670,6 +708,54 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/api/ai-comparison', [LeadComparisonController::class, 'apiData'])->name('ai-comparison.api');
     Route::post('/ai-comparison/snapshot', [LeadComparisonController::class, 'storeSnapshot'])->name('ai-comparison.snapshot');
     Route::post('/ai-comparison/scan-all', [LeadComparisonController::class, 'scanAllLeads'])->name('ai-comparison.scan-all');
+
+    // Multi-Brand Supervisor Management Routes (CEO Access)
+    Route::get('/admin/supervisors', function () {
+        if (!Auth::user() || !Auth::user()->isCeo()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+        $supervisors = User::where('role', 'SUPERVISOR')->with('supervisedBrands')->get();
+        $brands = WaAccount::where('approval_status', 'APPROVED')->get();
+        return response()->json([
+            'supervisors' => $supervisors,
+            'brands' => $brands
+        ]);
+    });
+
+    Route::post('/admin/supervisors/{id}/brands', function (Request $request, $id) {
+        if (!Auth::user() || !Auth::user()->isCeo()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+        $supervisor = User::where('role', 'SUPERVISOR')->findOrFail($id);
+        $brandIds = $request->input('brand_ids', []);
+        $supervisor->supervisedBrands()->sync($brandIds);
+
+        if (!empty($brandIds) && (!$supervisor->wa_account_id || !in_array($supervisor->wa_account_id, $brandIds))) {
+            $supervisor->wa_account_id = $brandIds[0];
+            $supervisor->save();
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Akses brand untuk supervisor {$supervisor->name} berhasil diperbarui!",
+            'supervisor' => $supervisor->load('supervisedBrands')
+        ]);
+    });
+
+    Route::post('/admin/brands/{id}/supervisors', function (Request $request, $id) {
+        if (!Auth::user() || !Auth::user()->isCeo()) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+        $account = WaAccount::findOrFail($id);
+        $supervisorIds = $request->input('supervisor_ids', []);
+        $account->supervisors()->sync($supervisorIds);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => "Supervisor untuk brand {$account->name} berhasil diperbarui!",
+            'account' => $account->load('supervisors')
+        ]);
+    });
     Route::post('/ai-comparison/simulate', [LeadComparisonController::class, 'simulate'])->name('ai-comparison.simulate');
 });
 

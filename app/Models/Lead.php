@@ -38,5 +38,10 @@ class Lead extends Model
     {
         return $this->hasMany(LeadMessage::class);
     }
+
+    public function getTemperatureAttribute(): array
+    {
+        return \App\Services\LeadTemperatureService::getTemperature($this);
+    }
 }
 

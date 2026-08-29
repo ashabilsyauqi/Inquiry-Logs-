@@ -105,6 +105,7 @@ class LeadComparisonService
                     'account_name' => $lead->waAccount->name ?? 'Default WA',
                     'real_stage' => $realStage,
                     'ai_stage' => $aiStage,
+                    'temperature' => $lead->temperature,
                     'ai_keyword' => $lead->ai_suggested_keyword,
                     'ai_reason' => $lead->ai_suggestion_reason ?? 'Indikasi percakapan menunjukkan kemajuan stage ke ' . $aiStage,
                     'created_at' => $lead->created_at ? $lead->created_at->format('d M Y H:i') : '-',

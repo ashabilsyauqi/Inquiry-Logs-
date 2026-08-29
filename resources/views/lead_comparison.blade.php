@@ -415,6 +415,7 @@
                             <tr class="bg-slate-50 text-slate-400 uppercase font-bold text-[10px] border-b border-slate-200">
                                 <th class="py-3 px-4">Nama & Nomor</th>
                                 <th class="py-3 px-4">Brand WA</th>
+                                <th class="py-3 px-4">Suhu Prospek</th>
                                 <th class="py-3 px-4">Stage CS (Real)</th>
                                 <th class="py-3 px-4">Kesimpulan AI</th>
                                 <th class="py-3 px-4">Alasan & Indikasi AI</th>
@@ -423,6 +424,7 @@
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             @forelse($comparison['discrepant_leads'] as $lead)
+                            @php $temp = $lead['temperature'] ?? ['key' => 'cold', 'label' => 'Cold Lead', 'icon' => '❄️', 'badge_class' => 'bg-sky-50 text-sky-700 border-sky-200']; @endphp
                             <tr class="hover:bg-amber-50/20 transition">
                                 <td class="py-3 px-4 font-bold text-slate-800">
                                     <div>{{ $lead['name'] }}</div>
@@ -431,6 +433,12 @@
                                 <td class="py-3 px-4">
                                     <span class="bg-slate-100 text-slate-600 font-semibold px-2 py-0.5 rounded text-[10px]">
                                         {{ $lead['account_name'] }}
+                                    </span>
+                                </td>
+                                <td class="py-3 px-4">
+                                    <span class="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full {{ $temp['badge_class'] }}">
+                                        <span>{{ $temp['icon'] }}</span>
+                                        <span>{{ $temp['label'] }}</span>
                                     </span>
                                 </td>
                                 <td class="py-3 px-4">

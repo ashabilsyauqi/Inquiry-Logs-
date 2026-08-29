@@ -30,4 +30,14 @@ class PipelineStage extends Model
     {
         return $this->hasMany(StageTrigger::class);
     }
+
+    public function getTemperatureAttribute(): array
+    {
+        $total = self::where('wa_account_id', $this->wa_account_id)->count();
+        if ($total === 0) {
+            $total = 4;
+        }
+        $index = max(0, $this->order - 1);
+        return \App\Services\LeadTemperatureService::getStageTemperature($index, $total);
+    }
 }
