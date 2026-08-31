@@ -346,12 +346,16 @@
             </div>
             @endif
 
-            <!-- 1. CEO EXECUTIVE LANDING PAGE (MINI WIDGETS & EXECUTIVE SUMMARY) -->
-            @if($user->isCeo() && $accountId == 'all')
+            <!-- 1. EXECUTIVE / SUPERVISOR LANDING PAGE (MINI WIDGETS & BRAND CARDS OVERVIEW) -->
+            @if(($user->isCeo() || $user->isSupervisor()) && $accountId == 'all')
             <section class="space-y-6">
                 <!-- Corporate Executive KPI Summary Strip -->
                 @php
-                    $allLeads = \App\Models\Lead::all();
+                    if ($user->isCeo()) {
+                        $allLeads = \App\Models\Lead::all();
+                    } else {
+                        $allLeads = \App\Models\Lead::whereIn('wa_account_id', $waAccounts->pluck('id'))->get();
+                    }
                     $totalLeadsCount = $allLeads->count();
                     $todayLeadsCount = $allLeads->where('created_at', '>=', \Carbon\Carbon::today())->count();
                     $dealsTotalCount = $allLeads->where('stage', 'Deal')->count();
@@ -360,7 +364,7 @@
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
                     <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between">
                         <div class="flex justify-between items-center text-slate-500 mb-1">
-                            <span class="text-xs font-bold uppercase tracking-wider">Running Brands</span>
+                            <span class="text-xs font-bold uppercase tracking-wider">{{ $user->isCeo() ? 'Running Brands' : 'Brand Disupervisi' }}</span>
                             <span class="text-base">🏢</span>
                         </div>
                         <div class="flex items-baseline gap-2">
@@ -409,13 +413,13 @@
                 <div class="flex justify-between items-center border-t border-slate-200 pt-6">
                     <div>
                         <h3 class="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                            🏢 Portfolio Overview Per Brand
+                            🏢 {{ $user->isCeo() ? 'Portfolio Overview Per Brand' : 'Brand yang Saya Supervisikan' }}
                         </h3>
-                        <p class="text-xs text-slate-500 mt-0.5">Pilih brand untuk masuk ke kontrol pipeline & kanban khusus.</p>
+                        <p class="text-xs text-slate-500 mt-0.5">{{ $user->isCeo() ? 'Pilih brand untuk masuk ke kontrol pipeline & kanban khusus.' : 'Pilih kartu brand di bawah untuk membuka sales pipeline, kanban board, dan tim CS.' }}</p>
                     </div>
                     <div class="flex gap-2">
                         <button onclick="openBrandManagementModal()" class="px-3.5 py-1.5 bg-slate-900 text-white font-bold text-xs rounded-xl hover:bg-slate-800 transition">
-                            + kelola Brand
+                            + Kelola Brand
                         </button>
                     </div>
                 </div>
@@ -439,7 +443,7 @@
                                     </div>
                                     <div class="truncate">
                                         <h4 class="font-bold text-slate-900 text-sm truncate leading-tight">{{ $acc->name }}</h4>
-                                        <p class="text-[10px] text-slate-400 font-mono truncate">{{ $acc->phone ?: 'Disconnected' }}</p>
+                                        <p class="text-[10px] text-slate-400 font-mono truncate">{{ $acc->phone ? '+' . $acc->phone : 'Disconnected' }}</p>
                                     </div>
                                 </div>
                                 <span class="w-2.5 h-2.5 rounded-full {{ $acc->status == 'CONNECTED' ? 'bg-emerald-500' : 'bg-amber-400' }} flex-shrink-0" title="{{ $acc->status == 'CONNECTED' ? 'Online' : 'Terputus' }}"></span>
@@ -466,13 +470,13 @@
                             </div>
                         </div>
 
-                        <!-- Sleek Link Text "Lihat Detail →" -->
+                        <!-- Sleek Link Text "Lihat Pipeline →" -->
                         <div class="flex justify-between items-center pt-2 border-t border-slate-100">
                             <button onclick="openBrandSettingsModal({{ $acc->id }})" class="text-slate-400 hover:text-slate-600 text-xs">
                                 ⚙️
                             </button>
                             <a href="/?filter={{ $filter }}&account_id={{ $acc->id }}" class="text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:underline flex items-center gap-1">
-                                Lihat Detail &rarr;
+                                Lihat Pipeline &rarr;
                             </a>
                         </div>
                     </div>
@@ -505,13 +509,13 @@
             </section>
             @endif
 
-            <!-- Active Pipeline Banner (General for CEO or Brand for Specific) -->
-            @if($user->isCeo() && $accountId === 'all')
+            <!-- Active Pipeline Banner (General for CEO/Supervisor or Brand for Specific) -->
+            @if(($user->isCeo() || $user->isSupervisor()) && $accountId === 'all')
             <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 rounded-2xl p-6 text-white shadow-lg flex flex-col md:flex-row justify-between items-center gap-4 border border-slate-700/50">
                 <div>
                     <div class="flex items-center gap-3">
                         <h2 class="text-2xl font-black flex items-center gap-2">
-                            <span>🌐</span> Executive General Pipeline (Semua Brand)
+                            <span>🌐</span> {{ $user->isCeo() ? 'Executive General Pipeline (Semua Brand)' : 'General Pipeline: Semua Brand Saya' }}
                         </h2>
                         <span class="px-3 py-1 rounded-full text-xs font-black bg-indigo-500/30 text-indigo-300 border border-indigo-400/40">
                             {{ $waAccounts->count() }} Brand Terhubung
@@ -530,11 +534,11 @@
                     </button>
                 </div>
             </div>
-            @elseif($user->isCeo() && $accountId !== 'all')
+            @elseif(($user->isCeo() || $user->isSupervisor()) && $accountId !== 'all')
             <div class="mb-1 flex items-center justify-between">
                 <a href="/?filter={{ $filter }}&account_id=all" 
                    class="inline-flex items-center gap-2 px-3.5 py-2 text-xs rounded-xl font-bold bg-slate-900 text-white hover:bg-slate-800 shadow transition">
-                    ⬅️ Kembali ke General (Semua Brand)
+                    ⬅️ {{ $user->isCeo() ? 'Kembali ke Portfolio (Semua Brand)' : 'Kembali ke Semua Brand Saya' }}
                 </a>
             </div>
             @endif
