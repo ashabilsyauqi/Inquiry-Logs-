@@ -33,11 +33,23 @@ class PipelineStage extends Model
 
     public function getTemperatureAttribute(): array
     {
-        $total = self::where('wa_account_id', $this->wa_account_id)->count();
-        if ($total === 0) {
-            $total = 4;
+        if (\App\Services\LeadTemperatureService::isDeadStage($this->name)) {
+            return \App\Services\LeadTemperatureService::getDeadLeadData($this->name);
         }
-        $index = max(0, $this->order - 1);
-        return \App\Services\LeadTemperatureService::getStageTemperature($index, $total);
+
+        $allStages = self::where('wa_account_id', $this->wa_account_id)->orderBy('order', 'asc')->get();
+        $activeStages = $allStages->filter(fn($st) => !\App\Services\LeadTemperatureService::isDeadStage($st->name))->values();
+
+        $totalActive = $activeStages->count();
+        if ($totalActive === 0) {
+            $totalActive = max(1, $allStages->count());
+        }
+
+        $index = $activeStages->search(fn($st) => $st->id === $this->id);
+        if ($index === false) {
+            $index = max(0, $this->order - 1);
+        }
+
+        return \App\Services\LeadTemperatureService::getStageTemperature($index, $totalActive, $this->name);
     }
 }

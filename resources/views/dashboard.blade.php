@@ -245,17 +245,17 @@
                 </div>
                 @endif
 
-                <!-- 2. Dynamic Lead Temperature Funnel Filter (Cold ❄️ -> Warm 🌤️ -> Hot 🔥) -->
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2 {{ ($user->isCeo() || ($user->isSupervisor() && $waAccounts->count() > 1)) ? 'border-t border-slate-100' : '' }}">
-                    <div class="flex items-center gap-2 overflow-x-auto" style="scrollbar-width: thin;">
-                        <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 pl-1 whitespace-nowrap flex items-center gap-1.5">
+                <!-- 2. Dynamic Lead Temperature Funnel Filter (Cold ❄️ -> Cool 💧 -> Warm 🌤️ -> Very Warm ⚡ -> Hot 🔥 & Dead 💀) -->
+                <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-3 pt-2 {{ ($user->isCeo() || ($user->isSupervisor() && $waAccounts->count() > 1)) ? 'border-t border-slate-100' : '' }}">
+                    <div class="flex items-center gap-1.5 overflow-x-auto pb-1" style="scrollbar-width: thin;">
+                        <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 pl-1 whitespace-nowrap flex items-center gap-1">
                             <span>🌡️</span> Suhu Prospek:
                         </span>
 
                         <!-- All Temperatures -->
                         <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature=all&cs_id={{ $csId }}" 
-                           class="px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 {{ $temperatureFilter === 'all' ? 'bg-slate-900 text-white shadow-sm' : 'bg-slate-100 hover:bg-slate-200 text-slate-700' }}">
-                            <span>📊</span> Semua Suhu
+                           class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 {{ $temperatureFilter === 'all' ? 'bg-slate-900 text-white shadow-sm' : 'bg-slate-100 hover:bg-slate-200 text-slate-700' }}">
+                            <span>📊</span> Semua
                             <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ $temperatureFilter === 'all' ? 'bg-slate-700 text-white' : 'bg-slate-200 text-slate-600' }} font-bold">
                                 {{ $totalLeads }}
                             </span>
@@ -263,34 +263,61 @@
 
                         <!-- Hot Leads (Rose/Red) -->
                         <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature=hot&cs_id={{ $csId }}" 
-                           class="px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 {{ $temperatureFilter === 'hot' ? 'bg-rose-600 text-white shadow-sm ring-2 ring-rose-400/40' : 'bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200' }}">
-                            <span>🔥</span> Hot Lead (Closing)
+                           class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 {{ $temperatureFilter === 'hot' ? 'bg-rose-600 text-white shadow-sm ring-2 ring-rose-400/40' : 'bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200' }}">
+                            <span>🔥</span> Hot Lead
                             <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ $temperatureFilter === 'hot' ? 'bg-rose-700 text-white' : 'bg-rose-200 text-rose-900' }} font-extrabold">
                                 {{ $hotCount }}
                             </span>
                         </a>
 
-                        <!-- Warm Leads (Amber/Orange) -->
+                        <!-- Very Warm Leads (Orange) -->
+                        <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature=very_warm&cs_id={{ $csId }}" 
+                           class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 {{ $temperatureFilter === 'very_warm' ? 'bg-orange-600 text-white shadow-sm ring-2 ring-orange-400/40' : 'bg-orange-50 hover:bg-orange-100 text-orange-800 border border-orange-200' }}">
+                            <span>⚡</span> Very Warm
+                            <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ $temperatureFilter === 'very_warm' ? 'bg-orange-700 text-white' : 'bg-orange-200 text-orange-900' }} font-extrabold">
+                                {{ $veryWarmCount }}
+                            </span>
+                        </a>
+
+                        <!-- Warm Leads (Amber/Yellow) -->
                         <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature=warm&cs_id={{ $csId }}" 
-                           class="px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 {{ $temperatureFilter === 'warm' ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-400/40' : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200' }}">
-                            <span>🌤️</span> Warm Lead (Diskusi)
+                           class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 {{ $temperatureFilter === 'warm' ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-400/40' : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200' }}">
+                            <span>🌤️</span> Warm Lead
                             <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ $temperatureFilter === 'warm' ? 'bg-amber-600 text-white' : 'bg-amber-200 text-amber-900' }} font-extrabold">
                                 {{ $warmCount }}
                             </span>
                         </a>
 
+                        <!-- Cool Leads (Teal/Cyan) -->
+                        <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature=cool&cs_id={{ $csId }}" 
+                           class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 {{ $temperatureFilter === 'cool' ? 'bg-teal-600 text-white shadow-sm ring-2 ring-teal-400/40' : 'bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200' }}">
+                            <span>💧</span> Cool Lead
+                            <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ $temperatureFilter === 'cool' ? 'bg-teal-700 text-white' : 'bg-teal-200 text-teal-900' }} font-extrabold">
+                                {{ $coolCount }}
+                            </span>
+                        </a>
+
                         <!-- Cold Leads (Sky/Blue) -->
                         <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature=cold&cs_id={{ $csId }}" 
-                           class="px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 {{ $temperatureFilter === 'cold' ? 'bg-sky-600 text-white shadow-sm ring-2 ring-sky-400/40' : 'bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200' }}">
-                            <span>❄️</span> Cold Lead (Awal)
+                           class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 {{ $temperatureFilter === 'cold' ? 'bg-sky-600 text-white shadow-sm ring-2 ring-sky-400/40' : 'bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200' }}">
+                            <span>❄️</span> Cold Lead
                             <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ $temperatureFilter === 'cold' ? 'bg-sky-700 text-white' : 'bg-sky-200 text-sky-900' }} font-extrabold">
                                 {{ $coldCount }}
+                            </span>
+                        </a>
+
+                        <!-- Dead Leads (Slate/Gray) -->
+                        <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature=dead&cs_id={{ $csId }}" 
+                           class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 {{ $temperatureFilter === 'dead' ? 'bg-slate-700 text-white shadow-sm ring-2 ring-slate-400/40' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300' }}">
+                            <span>💀</span> Dead / Spam
+                            <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ $temperatureFilter === 'dead' ? 'bg-slate-800 text-white' : 'bg-slate-200 text-slate-700' }} font-extrabold">
+                                {{ $deadCount }}
                             </span>
                         </a>
                     </div>
 
                     <div class="text-[11px] text-slate-400 flex items-center gap-1.5 pl-1">
-                        <span>🎯 Gradasi Biru ❄️ &rarr; Kuning 🌤️ &rarr; Merah 🔥 disesuaikan otomatis dengan jumlah stage brand.</span>
+                        <span>🎯 Skala suhu beradaptasi dinamis: Cold ❄️ &rarr; Cool 💧 &rarr; Warm 🌤️ &rarr; Very Warm ⚡ &rarr; Hot 🔥 (Spam = 💀 Dead Lead).</span>
                     </div>
                 </div>
             </div>
@@ -922,8 +949,12 @@
                                         <span>{{ $leadTemp['icon'] }}</span>
                                         <span>{{ $leadTemp['label'] }}</span>
                                     </span>
-                                    <span class="text-[10px] font-bold font-mono text-slate-400">
-                                        {{ $leadTemp['progress'] }}% Funnel
+                                    <span class="text-[10px] font-bold font-mono {{ !empty($leadTemp['is_dead']) ? 'text-slate-400' : 'text-slate-500' }}">
+                                        @if(!empty($leadTemp['is_dead']))
+                                            🚫 Spam / Drop
+                                        @else
+                                            {{ $leadTemp['progress'] }}% Funnel
+                                        @endif
                                     </span>
                                 </div>
 

@@ -274,20 +274,26 @@ Route::middleware(['auth'])->group(function () {
 
         $allLeads = $query->latest()->get();
 
-        // Calculate Temperature Metrics for the current brand / view
+        // Calculate Temperature Metrics for the current brand / view (Cold -> Cool -> Warm -> Very Warm -> Hot & Dead)
         $coldCount = 0;
+        $coolCount = 0;
         $warmCount = 0;
+        $veryWarmCount = 0;
         $hotCount = 0;
+        $deadCount = 0;
 
         foreach ($allLeads as $l) {
             $t = $l->temperature['key'] ?? 'cold';
             if ($t === 'cold') $coldCount++;
+            elseif ($t === 'cool') $coolCount++;
             elseif ($t === 'warm') $warmCount++;
+            elseif ($t === 'very_warm') $veryWarmCount++;
             elseif ($t === 'hot') $hotCount++;
+            elseif ($t === 'dead') $deadCount++;
         }
 
         // Apply Temperature Filter if selected
-        if (in_array($temperatureFilter, ['cold', 'warm', 'hot'])) {
+        if (in_array($temperatureFilter, ['cold', 'cool', 'warm', 'very_warm', 'hot', 'dead'])) {
             $leads = $allLeads->filter(fn($l) => ($l->temperature['key'] ?? '') === $temperatureFilter)->values();
         } else {
             $leads = $allLeads;
@@ -319,7 +325,7 @@ Route::middleware(['auth'])->group(function () {
 
         return view('dashboard', compact(
             'leads', 'filter', 'accountId', 'activeAccount', 'waAccounts', 'user', 'stages',
-            'totalLeads', 'csTeam', 'csId', 'coldCount', 'warmCount', 'hotCount', 'temperatureFilter'
+            'totalLeads', 'csTeam', 'csId', 'coldCount', 'coolCount', 'warmCount', 'veryWarmCount', 'hotCount', 'deadCount', 'temperatureFilter'
         ));
     });
 
