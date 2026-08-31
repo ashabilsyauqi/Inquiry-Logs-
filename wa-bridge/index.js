@@ -317,6 +317,33 @@ app.post('/api/logout', async (req, res) => {
     res.json({ status: 'success', message: `Session ${sessionId} logged out.` });
 });
 
+// Auto-resume all saved Baileys sessions on engine startup
+function autoResumeExistingSessions() {
+    try {
+        const files = fs.readdirSync(__dirname);
+        const authFolders = files.filter(f => f.startsWith('baileys_auth_') && fs.statSync(path.join(__dirname, f)).isDirectory());
+
+        if (authFolders.length === 0) {
+            console.log('[WA Bridge] No existing auth sessions found to auto-resume.');
+            return;
+        }
+
+        console.log(`[WA Bridge] Found ${authFolders.length} saved session(s). Auto-resuming all WhatsApp connections...`);
+        authFolders.forEach(folder => {
+            const sessionId = folder.replace('baileys_auth_', '');
+            if (sessionId) {
+                console.log(`[WA Bridge] 🔄 Auto-resuming session: [${sessionId}]`);
+                createSession(sessionId).catch(err => {
+                    console.error(`[WA Bridge] Error auto-resuming session [${sessionId}]:`, err.message);
+                });
+            }
+        });
+    } catch (err) {
+        console.error('[WA Bridge] Error checking auth folders for auto-resume:', err.message);
+    }
+}
+
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 WA Bridge Baileys Socket Engine running on http://0.0.0.0:${PORT}`);
+    autoResumeExistingSessions();
 });

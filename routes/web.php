@@ -115,30 +115,28 @@ Route::middleware(['auth'])->group(function () {
         }
 
         // Instant 2-Way Status Sync: Auto-sync Brand & User sessions with wa-bridge server
+        $bridgeUrl = rtrim(env('WA_BRIDGE_URL', 'http://127.0.0.1:3001'), '/');
         $allApprovedAccs = WaAccount::where('approval_status', 'APPROVED')->get();
         foreach ($allApprovedAccs as $acc) {
             if ($acc->session_id) {
                 try {
-                    $res = \Illuminate\Support\Facades\Http::timeout(1)->get('http://127.0.0.1:3001/api/qr?session=' . $acc->session_id);
+                    $res = \Illuminate\Support\Facades\Http::timeout(2)->get($bridgeUrl . '/api/qr?session=' . $acc->session_id);
                     if ($res->successful()) {
                         $data = $res->json();
                         $bridgeStatus = $data['sessionStatus'] ?? null;
-                        $realStatus = ($bridgeStatus === 'CONNECTED') ? 'CONNECTED' : 'DISCONNECTED';
 
-                        if ($acc->status !== $realStatus) {
-                            $oldStatus = $acc->status;
-                            $acc->status = $realStatus;
-                            if ($realStatus === 'CONNECTED') {
-                                if (!empty($data['phone'])) {
-                                    $acc->phone = preg_replace('/[^0-9]/', '', $data['phone']);
-                                }
-                                $acc->last_disconnect_email_sent_at = null;
-                            } else {
-                                $acc->phone = null;
+                        if ($bridgeStatus === 'CONNECTED') {
+                            $acc->status = 'CONNECTED';
+                            if (!empty($data['phone'])) {
+                                $acc->phone = preg_replace('/[^0-9]/', '', $data['phone']);
                             }
+                            $acc->last_disconnect_email_sent_at = null;
                             $acc->save();
+                        } elseif ($bridgeStatus === 'DISCONNECTED' || $bridgeStatus === 'QR_READY') {
+                            if ($acc->status === 'CONNECTED') {
+                                $acc->status = 'DISCONNECTED';
+                                $acc->save();
 
-                            if ($oldStatus === 'CONNECTED' && $realStatus === 'DISCONNECTED') {
                                 $alertReq = new Request([
                                     'sessionId' => $acc->session_id ?: $acc->id,
                                     'reason' => 'Perangkat WA Brand terputus dari HP (Deteksi Otomatis Langsung)',
@@ -147,19 +145,9 @@ Route::middleware(['auth'])->group(function () {
                                 (new WebhookController())->handleDisconnectAlert($alertReq);
                             }
                         }
-                    } else {
-                        if ($acc->status !== 'DISCONNECTED') {
-                            $acc->status = 'DISCONNECTED';
-                            $acc->phone = null;
-                            $acc->save();
-                        }
                     }
                 } catch (\Throwable $e) {
-                    if ($acc->status !== 'DISCONNECTED') {
-                        $acc->status = 'DISCONNECTED';
-                        $acc->phone = null;
-                        $acc->save();
-                    }
+                    // Ignore transient bridge timeouts without forcibly wiping connected state
                 }
             }
         }
@@ -168,33 +156,26 @@ Route::middleware(['auth'])->group(function () {
         $allUsersWithSession = User::whereNotNull('session_id')->get();
         foreach ($allUsersWithSession as $u) {
             try {
-                $res = \Illuminate\Support\Facades\Http::timeout(1)->get('http://127.0.0.1:3001/api/qr?session=' . $u->session_id);
+                $res = \Illuminate\Support\Facades\Http::timeout(2)->get($bridgeUrl . '/api/qr?session=' . $u->session_id);
                 if ($res->successful()) {
                     $data = $res->json();
                     $bridgeStatus = $data['sessionStatus'] ?? null;
-                    $realStatus = ($bridgeStatus === 'CONNECTED') ? 'CONNECTED' : 'DISCONNECTED';
-                    if ($u->wa_status !== $realStatus) {
-                        $u->wa_status = $realStatus;
-                        if ($realStatus === 'CONNECTED' && !empty($data['phone'])) {
+
+                    if ($bridgeStatus === 'CONNECTED') {
+                        $u->wa_status = 'CONNECTED';
+                        if (!empty($data['phone'])) {
                             $u->wa_phone = preg_replace('/[^0-9]/', '', $data['phone']);
-                        } elseif ($realStatus !== 'CONNECTED') {
-                            $u->wa_phone = null;
                         }
                         $u->save();
-                    }
-                } else {
-                    if ($u->wa_status !== 'DISCONNECTED') {
-                        $u->wa_status = 'DISCONNECTED';
-                        $u->wa_phone = null;
-                        $u->save();
+                    } elseif ($bridgeStatus === 'DISCONNECTED' || $bridgeStatus === 'QR_READY') {
+                        if ($u->wa_status === 'CONNECTED') {
+                            $u->wa_status = 'DISCONNECTED';
+                            $u->save();
+                        }
                     }
                 }
             } catch (\Throwable $e) {
-                if ($u->wa_status !== 'DISCONNECTED') {
-                    $u->wa_status = 'DISCONNECTED';
-                    $u->wa_phone = null;
-                    $u->save();
-                }
+                // Ignore transient bridge timeouts
             }
         }
 

@@ -39,7 +39,7 @@ class AuthController extends Controller
             return back()->withErrors(['email' => '❌ Pendaftaran Brand / Akun Supervisor Anda ditolak oleh CEO/Owner.'])->withInput();
         }
 
-        Auth::login($user, $request->has('remember'));
+        Auth::login($user, true);
         $request->session()->regenerate();
 
         return redirect()->intended('/');

@@ -45,8 +45,8 @@
 
             <div class="flex items-center justify-between text-xs">
                 <label class="flex items-center gap-2 cursor-pointer text-slate-400">
-                    <input type="checkbox" name="remember" class="rounded border-slate-700 bg-slate-800 text-emerald-600">
-                    <span>Ingat Saya</span>
+                    <input type="checkbox" name="remember" checked class="rounded border-slate-700 bg-slate-800 text-emerald-600 focus:ring-emerald-500">
+                    <span class="text-slate-300 font-medium">Ingat Saya (Tetap Login)</span>
                 </label>
             </div>
 
