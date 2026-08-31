@@ -109,8 +109,8 @@ Route::middleware(['auth'])->group(function () {
             }
         }
 
-        // Sales Admin Isolation: Force account_id to assigned Brand WA account
-        if (!$user->isCeo()) {
+        // Sales Admin Isolation: CS Admin is locked to their single assigned Brand WA account
+        if ($user->isSalesAdmin()) {
             $accountId = $user->wa_account_id;
         }
 

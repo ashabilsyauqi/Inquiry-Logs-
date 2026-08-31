@@ -135,8 +135,8 @@
             </div>
 
             <div class="flex items-center justify-between px-1 mb-2.5">
-                <span class="text-[10px] font-semibold text-[#58a6ff] bg-[#1f6feb]/15 border border-[#1f6feb]/30 px-2 py-0.5 rounded-full uppercase tracking-wider">
-                    {{ $user->isCeo() ? 'Executive CEO' : ($user->role == 'supervisor' ? 'Supervisor' : 'Sales Admin') }}
+                <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded {{ $user->isCeo() ? 'bg-indigo-950/80 text-indigo-400 border border-indigo-800/50' : ($user->isSupervisor() ? 'bg-amber-950/80 text-amber-400 border border-amber-800/50' : 'bg-emerald-950/80 text-emerald-400 border border-emerald-800/50') }} uppercase tracking-wider">
+                    {{ $user->isCeo() ? 'Executive CEO' : ($user->isSupervisor() ? 'Supervisor' : 'Sales Admin') }}
                 </span>
                 <span class="text-[10px] text-[#8b949e] font-mono">#{{ $user->id }}</span>
             </div>
