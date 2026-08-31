@@ -85,7 +85,6 @@
                 <div>
                     <p class="px-2 text-[10px] font-semibold uppercase tracking-wider text-[#8b949e] mb-2">Organization Admin</p>
                     <div class="space-y-1">
-                        @if($user->isCeo())
                         <button onclick="openBrandManagementModal()" class="w-full flex items-center justify-between px-2.5 py-2 rounded-md text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc] transition text-left">
                             <span class="flex items-center gap-2.5">
                                 <svg class="w-4 h-4 fill-current text-[#a5d6ff]" viewBox="0 0 16 16"><path d="M8 0a8 8 0 100 16A8 8 0 008 0zM1.5 8a6.5 6.5 0 1113 0 6.5 6.5 0 01-13 0zM8 4.75a.75.75 0 01.75.75v2.5h2.5a.75.75 0 010 1.5h-2.5v2.5a.75.75 0 01-1.5 0v-2.5h-2.5a.75.75 0 010-1.5h2.5v-2.5A.75.75 0 018 4.75z"></path></svg>
@@ -94,6 +93,7 @@
                             <span class="bg-[#1f6feb]/15 text-[#58a6ff] border border-[#1f6feb]/30 text-[9px] font-semibold px-1.5 py-0.5 rounded">CRUD</span>
                         </button>
 
+                        @if($user->isCeo())
                         <button onclick="openBrandApprovalModal()" class="w-full flex items-center justify-between px-2.5 py-2 rounded-md text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc] transition text-left">
                             <span class="flex items-center gap-2.5">
                                 <svg class="w-4 h-4 fill-current text-[#d2a8ff]" viewBox="0 0 16 16"><path d="M5.5 5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zm5 6c0-1.5-3-2.25-5-2.25S.5 9.5.5 11V12h10v-1zM11.5 5a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5zm2.25 6c0-.85-.92-1.63-2.25-2.02.58.45 1 1.05 1 1.77V12h3.25v-1z"></path></svg>
@@ -1007,24 +1007,39 @@
                     <span class="text-xs text-slate-500 bg-slate-100 px-2.5 py-1 rounded-md border font-medium" id="modalAccountTag">-</span>
                 </div>
 
-                <form id="leadForm" method="POST" action="">
+                <form id="leadForm" method="POST" action="" onsubmit="submitLeadUpdate(event)">
                     @csrf
-                    <div class="mb-3">
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Lead / Pelanggan</label>
-                        <input type="text" name="name" id="modalName" class="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold">
+                    <input type="hidden" id="modalLeadId" value="">
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Nama Lead / Pelanggan</label>
+                            <input type="text" name="name" id="modalName" required class="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-semibold">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Nomor WhatsApp</label>
+                            <input type="text" name="phone" id="modalPhone" required class="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none font-mono font-semibold">
+                        </div>
                     </div>
 
-                    <div class="mb-3">
-                        <label class="block text-xs font-semibold text-slate-600 mb-1 flex items-center justify-between">
-                            <span>Tahapan / Stage Pipeline</span>
-                            <span class="text-[10px] text-amber-600 font-bold bg-amber-50 px-2 py-0.5 rounded border border-amber-200">🔒 Otomatis via WhatsApp</span>
-                        </label>
-                        <select name="stage" id="modalStage" disabled class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl outline-none bg-slate-100 font-bold text-slate-600 cursor-not-allowed">
-                            @foreach($stages as $st)
-                                <option value="{{ $st->name }}">{{ $st->name }}</option>
-                            @endforeach
-                        </select>
-                        <p class="text-[11px] text-slate-400 mt-1 italic">💡 Stage hanya dapat diperbarui secara otomatis melalui perintah trigger WhatsApp (contoh: <code>#deal</code>, <code>#meeting</code> di chat WA).</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1 flex items-center justify-between">
+                                <span>Tahapan / Stage Pipeline</span>
+                                <span class="text-[9px] text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">✅ Editable</span>
+                            </label>
+                            <select name="stage" id="modalStage" class="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white font-bold text-slate-800">
+                                @foreach($stages as $st)
+                                    <option value="{{ $st->name }}">{{ $st->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Tugaskan ke Admin CS</label>
+                            <select name="assigned_user_id" id="modalAssignedUser" class="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none bg-white font-medium text-slate-800">
+                                <option value="">-- Belum Ditugaskan --</option>
+                            </select>
+                        </div>
                     </div>
 
                     <div class="mb-3">
@@ -1041,12 +1056,17 @@
 
                     <div class="mb-4">
                         <label class="block text-xs font-semibold text-slate-600 mb-1">Catatan Internal Sales / CS</label>
-                        <textarea name="notes" id="modalNotes" rows="4" class="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none placeholder-slate-400" placeholder="Tambahkan catatan khusus mengenai prospek ini..."></textarea>
+                        <textarea name="notes" id="modalNotes" rows="3" class="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none placeholder-slate-400" placeholder="Tambahkan catatan khusus mengenai prospek ini..."></textarea>
                     </div>
 
-                    <button type="submit" class="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow transition">
-                        💾 Simpan Perubahan Status
-                    </button>
+                    <div class="flex items-center justify-between gap-3 pt-2">
+                        <button type="button" onclick="deleteLeadDirect()" class="px-4 py-3 bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs rounded-xl border border-rose-200 transition flex items-center gap-1.5">
+                            🗑️ Hapus Lead
+                        </button>
+                        <button type="submit" class="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl shadow transition">
+                            💾 Simpan Perubahan Lead
+                        </button>
+                    </div>
                 </form>
             </div>
 
@@ -1236,16 +1256,16 @@
         </div>
     </div>
 
-    <!-- CEO Brand Management Modal (Full CRUD & Multi-Brand Supervisor Allocation) -->
-    @if($user->isCeo())
+    <!-- Brand Management Modal (Full CRUD & Multi-Brand Supervisor Allocation) -->
+    @if($user->isCeo() || $user->isSupervisor())
     <div id="brandManagementModal" class="fixed inset-0 bg-slate-950/70 hidden flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]">
             <div class="px-6 py-5 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex justify-between items-center">
                 <div>
                     <h3 class="text-xl font-bold flex items-center gap-2">
-                        🏢 Brand & Supervisor Management (CEO)
+                        {{ $user->isCeo() ? '🏢 Brand & Supervisor Management (CEO)' : '🏢 Kelola Brand Saya (Supervisor: ' . $user->name . ')' }}
                     </h3>
-                    <p class="text-xs text-indigo-200 mt-0.5">Kelola Akun Brand, Alokasi Multi-Brand untuk Supervisor, & Fitur CRUD</p>
+                    <p class="text-xs text-indigo-200 mt-0.5">Kelola Akun Brand, Tambah Brand Baru, & Sales Pipeline</p>
                 </div>
                 <button onclick="closeBrandManagementModal()" class="text-indigo-200 hover:text-white text-2xl font-bold">&times;</button>
             </div>
@@ -1255,9 +1275,11 @@
                 <button onclick="switchBrandModalTab('brands')" id="tab-btn-brands" class="px-4 py-2 text-xs font-bold border-b-2 border-indigo-600 text-indigo-600 transition">
                     🏢 Daftar Brand (CRUD)
                 </button>
+                @if($user->isCeo())
                 <button onclick="switchBrandModalTab('supervisors')" id="tab-btn-supervisors" class="px-4 py-2 text-xs font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition">
                     👥 Alokasi Supervisor (Multi-Brand)
                 </button>
+                @endif
             </div>
 
             <div class="p-6 overflow-y-auto flex-1 space-y-6">
@@ -2237,26 +2259,120 @@
         }
 
         // Lead Modal Logic
+        let currentEditingLeadId = null;
+
         function openLeadDetailModal(leadId) {
             isModalOpen = true;
+            currentEditingLeadId = leadId;
             document.getElementById('leadDetailModal').classList.remove('hidden');
+            document.getElementById('modalLeadId').value = leadId;
             document.getElementById('leadForm').action = '/leads/' + leadId + '/update';
 
             fetch('/leads/' + leadId + '/detail')
                 .then(res => res.json())
                 .then(lead => {
                     document.getElementById('detailLeadName').textContent = lead.name;
-                    document.getElementById('detailLeadPhone').textContent = lead.phone;
-                    document.getElementById('modalName').value = lead.name;
-                    document.getElementById('modalStage').value = lead.stage;
-                    document.getElementById('modalPriority').value = lead.priority;
+                    document.getElementById('detailLeadPhone').textContent = lead.phone ? '+' + lead.phone : '-';
+                    document.getElementById('modalName').value = lead.name || '';
+                    document.getElementById('modalPhone').value = lead.phone || '';
+                    document.getElementById('modalPriority').value = lead.priority ?? 0;
                     document.getElementById('modalNotes').value = lead.notes || '';
                     document.getElementById('modalAccountTag').textContent = lead.wa_account ? lead.wa_account.name : 'Default Account';
+
+                    // Populate Brand Stages Dropdown
+                    const stageSelect = document.getElementById('modalStage');
+                    if (stageSelect && lead.stages && lead.stages.length > 0) {
+                        stageSelect.innerHTML = lead.stages.map(st => `
+                            <option value="${escapeHtml(st.name)}" ${st.name === lead.stage ? 'selected' : ''}>
+                                ${escapeHtml(st.name)}
+                            </option>
+                        `).join('');
+                    } else if (stageSelect) {
+                        stageSelect.value = lead.stage;
+                    }
+
+                    // Populate CS List Dropdown
+                    const csSelect = document.getElementById('modalAssignedUser');
+                    if (csSelect) {
+                        let csOptionsHtml = `<option value="">-- Belum Ditugaskan --</option>`;
+                        if (lead.cs_list && lead.cs_list.length > 0) {
+                            csOptionsHtml += lead.cs_list.map(cs => `
+                                <option value="${cs.id}" ${cs.id == lead.assigned_user_id ? 'selected' : ''}>
+                                    👤 ${escapeHtml(cs.name)} (${escapeHtml(cs.email)})
+                                </option>
+                            `).join('');
+                        }
+                        csSelect.innerHTML = csOptionsHtml;
+                    }
+                })
+                .catch(err => {
+                    console.error('Error fetching lead details:', err);
                 });
+        }
+
+        function submitLeadUpdate(e) {
+            e.preventDefault();
+            const leadId = document.getElementById('modalLeadId').value || currentEditingLeadId;
+            if (!leadId) return;
+
+            const name = document.getElementById('modalName').value.trim();
+            const phone = document.getElementById('modalPhone').value.trim();
+            const stage = document.getElementById('modalStage').value;
+            const priority = document.getElementById('modalPriority').value;
+            const assigned_user_id = document.getElementById('modalAssignedUser').value;
+            const notes = document.getElementById('modalNotes').value;
+
+            fetch('/leads/' + leadId + '/update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ name, phone, stage, priority, assigned_user_id, notes })
+            })
+            .then(res => res.json())
+            .then(data => {
+                showToastNotification('✅ Data lead berhasil disimpan!');
+                closeLeadDetailModal();
+                setTimeout(() => window.location.reload(), 500);
+            })
+            .catch(err => {
+                showToastNotification('Gagal memperbarui lead.', 'error');
+            });
+        }
+
+        function deleteLeadDirect() {
+            const leadId = document.getElementById('modalLeadId').value || currentEditingLeadId;
+            const name = document.getElementById('modalName').value || 'lead ini';
+            if (!leadId) return;
+
+            if (!confirm(`Apakah Anda yakin ingin menghapus data lead "${name}"? Tindakan ini tidak dapat dibatalkan.`)) {
+                return;
+            }
+
+            fetch('/leads/' + leadId + '/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                showToastNotification('🗑️ Lead berhasil dihapus.');
+                closeLeadDetailModal();
+                setTimeout(() => window.location.reload(), 500);
+            })
+            .catch(err => {
+                showToastNotification('Gagal menghapus lead.', 'error');
+            });
         }
 
         function closeLeadDetailModal() {
             isModalOpen = false;
+            currentEditingLeadId = null;
             document.getElementById('leadDetailModal').classList.add('hidden');
         }
 

@@ -346,16 +346,35 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/leads/{id}/detail', function ($id) {
         $lead = Lead::with(['messages' => function($q) {
             $q->orderBy('created_at', 'asc');
-        }, 'waAccount'])->findOrFail($id);
+        }, 'waAccount', 'assignedUser'])->findOrFail($id);
 
-        return response()->json($lead);
+        $csList = User::where('wa_account_id', $lead->wa_account_id)->where('role', 'SALES_ADMIN')->get(['id', 'name', 'email']);
+        $brandStages = PipelineStage::where('wa_account_id', $lead->wa_account_id)->orderBy('order', 'asc')->get(['id', 'name']);
+
+        return response()->json([
+            'id' => $lead->id,
+            'name' => $lead->name,
+            'phone' => $lead->phone,
+            'stage' => $lead->stage,
+            'priority' => $lead->priority,
+            'notes' => $lead->notes,
+            'wa_account' => $lead->waAccount,
+            'assigned_user_id' => $lead->assigned_user_id,
+            'assigned_user' => $lead->assignedUser,
+            'cs_list' => $csList,
+            'stages' => $brandStages,
+            'messages' => $lead->messages,
+        ]);
     });
 
     Route::post('/leads/{id}/update', function (Request $request, $id) {
         $lead = Lead::findOrFail($id);
 
-        if ($request->has('name')) {
+        if ($request->has('name') && $request->filled('name')) {
             $lead->name = $request->input('name');
+        }
+        if ($request->has('phone') && $request->filled('phone')) {
+            $lead->phone = preg_replace('/[^0-9]/', '', $request->input('phone'));
         }
         if ($request->has('notes')) {
             $lead->notes = $request->input('notes');
@@ -363,21 +382,30 @@ Route::middleware(['auth'])->group(function () {
         if ($request->has('priority')) {
             $lead->priority = (int) $request->input('priority');
         }
-        if ($request->has('stage')) {
+        if ($request->has('stage') && $request->filled('stage')) {
             $lead->stage = $request->input('stage');
+        }
+        if ($request->has('assigned_user_id')) {
+            $lead->assigned_user_id = $request->input('assigned_user_id') ?: null;
         }
 
         $lead->save();
         if ($request->wantsJson() || $request->isJson()) {
             return response()->json(['status' => 'success', 'message' => 'Lead berhasil diperbarui.', 'lead' => $lead]);
         }
-        return redirect()->back();
+        return redirect()->back()->with('success', 'Data lead berhasil diperbarui!');
+    });
+
+    Route::post('/leads/{id}/delete', function ($id) {
+        $lead = Lead::findOrFail($id);
+        $lead->delete();
+        return response()->json(['status' => 'success', 'message' => 'Lead berhasil dihapus.']);
     });
 
     // Analytics Chart API
     Route::get('/api/analytics/chart-data', [AnalyticsController::class, 'getChartData']);
 
-    // WA Accounts Routes
+    // WA Accounts Routes (Accessible by CEO & Supervisor)
     Route::get('/wa-accounts', function () {
         $user = Auth::user();
 
@@ -388,10 +416,9 @@ Route::middleware(['auth'])->group(function () {
 
         if ($user->isCeo()) {
             $accounts = WaAccount::with(['pipelineStages.triggers', 'csTeam'])->where('approval_status', 'APPROVED')->get();
-        } elseif ($user->role === 'SUPERVISOR') {
-            $accounts = WaAccount::with(['pipelineStages.triggers', 'csTeam'])->where('id', $user->wa_account_id)->get();
         } else {
-            $accounts = WaAccount::with(['pipelineStages.triggers', 'csTeam'])->where('id', $user->wa_account_id)->get();
+            $accounts = $user->getAccessibleBrands();
+            $accounts->load(['pipelineStages.triggers', 'csTeam']);
         }
 
         return response()->json([
@@ -408,11 +435,12 @@ Route::middleware(['auth'])->group(function () {
                 'brand_name' => $user->waAccount->name ?? 'Default Brand',
             ],
             'isCeo' => $user->isCeo(),
-            'isSupervisor' => ($user->role === 'SUPERVISOR'),
+            'isSupervisor' => $user->isSupervisor(),
         ]);
     });
 
     Route::post('/wa-accounts', function (Request $request) {
+        $user = Auth::user();
         $name = $request->input('name', 'New Brand Account');
         $category = $request->input('category', 'General Business');
         $phoneInput = $request->input('phone');
@@ -429,10 +457,24 @@ Route::middleware(['auth'])->group(function () {
         ]);
         $account->ensureDefaultStages();
 
+        // If Supervisor creates brand, automatically bind supervisor to this brand!
+        if ($user->isSupervisor()) {
+            $user->supervisedBrands()->syncWithoutDetaching([$account->id]);
+            if (!$user->wa_account_id) {
+                $user->wa_account_id = $account->id;
+                $user->save();
+            }
+        }
+
         return response()->json(['status' => 'success', 'account' => $account]);
     });
 
     Route::post('/wa-accounts/{id}/update', function (Request $request, $id) {
+        $user = Auth::user();
+        if (!$user->isCeo() && !$user->canAccessBrand($id)) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized'], 403);
+        }
+
         $account = WaAccount::findOrFail($id);
         if ($request->has('name')) {
             $account->name = $request->input('name');
@@ -453,6 +495,11 @@ Route::middleware(['auth'])->group(function () {
     });
 
     Route::post('/wa-accounts/{id}/delete', function ($id) {
+        $user = Auth::user();
+        if (!$user->isCeo() && !$user->canAccessBrand($id)) {
+            return response()->json(['status' => 'error', 'message' => 'Unauthorized'], 403);
+        }
+
         $account = WaAccount::findOrFail($id);
         $account->delete();
         return response()->json(['status' => 'success']);
