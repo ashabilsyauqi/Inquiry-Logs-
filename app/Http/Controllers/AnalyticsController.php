@@ -11,21 +11,27 @@ class AnalyticsController extends Controller
 {
     public function getChartData(Request $request)
     {
+        $user = Auth::user();
         $period = $request->query('period', 'daily');
         $accountId = $request->query('account_id', 'all');
+        $csId = $request->query('cs_id', 'all');
 
-        $user = Auth::user();
-        if ($user && !$user->isCeo() && $user->wa_account_id) {
+        // Sales Admin isolation: lock to assigned brand
+        if ($user && $user->isSalesAdmin()) {
             $accountId = $user->wa_account_id;
         }
 
-        $csId = $request->query('cs_id', 'all');
-
         $query = Lead::query();
+
         if ($accountId !== 'all') {
             $query->where('wa_account_id', $accountId);
+        } elseif ($user && !$user->isCeo()) {
+            // Supervisor viewing 'all' brands -> query only supervised brands
+            $accessibleBrandIds = $user->getAccessibleBrands()->pluck('id')->toArray();
+            $query->whereIn('wa_account_id', $accessibleBrandIds);
         }
-        if ($user && $user->role === 'SALES_ADMIN') {
+
+        if ($user && $user->isSalesAdmin()) {
             $query->where('assigned_user_id', $user->id);
         } elseif ($csId !== 'all' && is_numeric($csId)) {
             $query->where('assigned_user_id', $csId);
