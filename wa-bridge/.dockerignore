@@ -1,0 +1,5 @@
+node_modules
+baileys_auth_*
+.wwebjs_*
+.git
+.DS_Store
