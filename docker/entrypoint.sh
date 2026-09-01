@@ -5,10 +5,29 @@ echo "🚀 [CRM Entrypoint] Initializing Difitech CRM Container..."
 
 cd /var/www/html
 
-# 1. Check & generate APP_KEY if not set
+# 0. Ensure .env exists
+if [ ! -f .env ]; then
+    if [ -f .env.example ]; then
+        cp .env.example .env
+    else
+        touch .env
+    fi
+fi
+
+# 1. Ensure required storage directories exist
+mkdir -p /var/www/html/storage/framework/cache/data
+mkdir -p /var/www/html/storage/framework/sessions
+mkdir -p /var/www/html/storage/framework/views
+mkdir -p /var/www/html/storage/logs
+mkdir -p /var/www/html/storage/app/public
+mkdir -p /var/www/html/bootstrap/cache
+
+# 2. Check & generate APP_KEY if not set
 if [ -z "$APP_KEY" ]; then
-    echo "🔑 Generating Application Key..."
-    php artisan key:generate --force
+    if ! grep -q "^APP_KEY=base64:" .env 2>/dev/null; then
+        echo "🔑 Generating Application Key..."
+        php artisan key:generate --force || true
+    fi
 fi
 
 # 2. Wait for MySQL Database to be reachable
