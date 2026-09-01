@@ -10,7 +10,6 @@ services:
     environment:
       APP_NAME: "${APP_NAME:-Difitech CRM}"
       APP_ENV: "${APP_ENV:-production}"
-      APP_KEY: "${APP_KEY}"
       APP_DEBUG: "${APP_DEBUG:-false}"
       APP_URL: "${APP_URL:-http://localhost:8080}"
       LOG_CHANNEL: stack
@@ -21,12 +20,12 @@ services:
       DB_DATABASE: "${DB_DATABASE:-crm_difitech}"
       DB_USERNAME: "${DB_USERNAME:-crm_user}"
       DB_PASSWORD: "${DB_PASSWORD:-DifitechCrm2026!}"
-      SESSION_DRIVER: database
+      SESSION_DRIVER: "${SESSION_DRIVER:-file}"
       SESSION_LIFETIME: 120
-      CACHE_STORE: database
-      QUEUE_CONNECTION: database
+      CACHE_STORE: "${CACHE_STORE:-file}"
+      QUEUE_CONNECTION: sync
       WA_BRIDGE_URL: "http://crm-wa-bridge:3001"
-      RUN_SEEDER: "${RUN_SEEDER:-false}"
+      RUN_SEEDER: "${RUN_SEEDER:-true}"
     volumes:
       - crm_storage:/var/www/html/storage
       - crm_bootstrap:/var/www/html/bootstrap/cache

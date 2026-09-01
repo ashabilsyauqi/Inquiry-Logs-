@@ -22,12 +22,10 @@ mkdir -p /var/www/html/storage/logs
 mkdir -p /var/www/html/storage/app/public
 mkdir -p /var/www/html/bootstrap/cache
 
-# 2. Check & generate APP_KEY if not set
-if [ -z "$APP_KEY" ]; then
-    if ! grep -q "^APP_KEY=base64:" .env 2>/dev/null; then
-        echo "🔑 Generating Application Key..."
-        php artisan key:generate --force || true
-    fi
+# 2. Check & generate APP_KEY if not set in .env
+if ! grep -q "^APP_KEY=base64:" .env 2>/dev/null; then
+    echo "🔑 Generating Application Key in .env..."
+    php artisan key:generate --force
 fi
 
 # 2. Wait for MySQL Database to be reachable
