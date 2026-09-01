@@ -662,7 +662,11 @@ Route::middleware(['auth'])->group(function () {
     // Supervisor CS Team Management Routes
     Route::get('/brand/cs-team', [UserController::class, 'getCsTeam']);
     Route::post('/brand/cs-team', [UserController::class, 'storeCsMember']);
+    Route::post('/brand/cs-team/{id}/update', [UserController::class, 'updateCsMember']);
     Route::delete('/brand/cs-team/{id}', [UserController::class, 'destroyCsMember']);
+
+    // User Profile & Password Update Route (Owner, Supervisor, CS)
+    Route::post('/user/profile/update', [UserController::class, 'updateProfile']);
 
     // CEO Dynamic SMTP Settings Routes
     Route::get('/admin/smtp-settings', function () {

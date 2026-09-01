@@ -127,21 +127,25 @@
         <!-- GITHUB-STYLE USER PROFILE & LOGOUT FOOTER -->
         <div class="p-3 border-t border-[#30363d] bg-[#090d13]">
             <div class="p-2.5 bg-[#161b22] border border-[#30363d] rounded-lg mb-2 flex items-center justify-between">
-                <div class="flex items-center gap-2.5 min-w-0">
-                    <div class="relative flex-shrink-0">
-                        <div class="w-8 h-8 rounded-full bg-[#21262d] border border-[#30363d] text-[#f0f6fc] flex items-center justify-center font-bold text-xs shadow-sm">
-                            {{ strtoupper(substr($user->name, 0, 1)) }}
+            <div onclick="openUserProfileModal()" class="cursor-pointer hover:bg-[#21262d] p-1.5 -mx-1.5 rounded-lg transition group" title="Klik untuk Edit Profil & Ganti Password">
+                <div class="flex items-center justify-between gap-2.5 min-w-0">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        <div class="relative flex-shrink-0">
+                            <div class="w-8 h-8 rounded-full bg-[#21262d] group-hover:bg-[#30363d] border border-[#30363d] text-[#f0f6fc] flex items-center justify-center font-bold text-xs shadow-sm">
+                                {{ strtoupper(substr($user->name, 0, 1)) }}
+                            </div>
+                            <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#238636] border-2 border-[#161b22] rounded-full" title="Online"></span>
                         </div>
-                        <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#238636] border-2 border-[#161b22] rounded-full" title="Online"></span>
+                        <div class="truncate">
+                            <p class="text-xs font-semibold text-[#f0f6fc] group-hover:text-[#58a6ff] truncate leading-tight transition">{{ $user->name }}</p>
+                            <p class="text-[10px] text-[#8b949e] truncate font-mono mt-0.5">{{ $user->email }}</p>
+                        </div>
                     </div>
-                    <div class="truncate">
-                        <p class="text-xs font-semibold text-[#f0f6fc] truncate leading-tight">{{ $user->name }}</p>
-                        <p class="text-[10px] text-[#8b949e] truncate font-mono mt-0.5">{{ $user->email }}</p>
-                    </div>
+                    <span class="text-[10px] text-[#8b949e] group-hover:text-[#58a6ff] transition">⚙️</span>
                 </div>
             </div>
 
-            <div class="flex items-center justify-between px-1 mb-2.5">
+            <div class="flex items-center justify-between px-1 mb-2.5 mt-2">
                 <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded {{ $user->isCeo() ? 'bg-indigo-950/80 text-indigo-400 border border-indigo-800/50' : ($user->isSupervisor() ? 'bg-amber-950/80 text-amber-400 border border-amber-800/50' : 'bg-emerald-950/80 text-emerald-400 border border-emerald-800/50') }} uppercase tracking-wider">
                     {{ $user->isCeo() ? 'Executive CEO' : ($user->isSupervisor() ? 'Supervisor' : 'Sales Admin') }}
                 </span>
@@ -149,6 +153,9 @@
             </div>
 
             <div class="flex items-center gap-2">
+                <button onclick="openUserProfileModal()" class="p-2 bg-[#21262d] hover:bg-[#30363d] text-[#8b949e] hover:text-[#58a6ff] rounded-md transition border border-[#30363d] flex items-center justify-center shadow-sm" title="Edit Profil & Ganti Password">
+                    <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 16 16"><path d="M10.5 5a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0zM0 8a8 8 0 1116 0A8 8 0 010 8zm8-7a7 7 0 00-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 008 1z"></path></svg>
+                </button>
                 @if($user->isCeo())
                 <button onclick="openSmtpSettingsModal()" class="p-2 bg-[#21262d] hover:bg-[#30363d] text-[#8b949e] hover:text-[#58a6ff] rounded-md transition border border-[#30363d] flex items-center justify-center shadow-sm" title="Pengaturan Server SMTP Email & Sistem">
                     <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 16 16"><path d="M8 0a8.2 8.2 0 00-1.7.2c-.3.1-.5.3-.5.6l-.3 1.2c-.4.2-.9.4-1.3.7l-1.1-.6c-.3-.1-.6 0-.8.2l-1.2 2c-.2.3-.1.6.1.8l1 .8c0 .2-.1.5-.1.8s0 .5.1.8l-1 .8c-.2.2-.3.5-.1.8l1.2 2c.2.2.5.3.8.2l1.1-.6c.4.3.8.5 1.3.7l.3 1.2c0 .3.2.5.5.6A8.2 8.2 0 008 16a8.2 8.2 0 001.7-.2c.3-.1.5-.3.5-.6l.3-1.2c.4-.2.9-.4 1.3-.7l1.1.6c.3.1.6 0 .8-.2l1.2-2c.2-.3.1-.6-.1-.8l-1-.8c0-.2.1-.5.1-.8s0-.5-.1-.8l1-.8c.2-.2.3-.5.1-.8l-1.2-2c-.2-.2-.5-.3-.8-.2l-1.1.6c-.4-.3-.8-.5-1.3-.7l-.3-1.2c0-.3-.2-.5-.5-.6A8.2 8.2 0 008 0zm0 5a3 3 0 110 6 3 3 0 010-6z"></path></svg>
@@ -1593,6 +1600,119 @@
         </div>
     </div>
 
+    <!-- Edit CS Admin Modal -->
+    <div id="editCsModal" class="fixed inset-0 bg-slate-950/70 hidden flex items-center justify-center z-[70] p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <div>
+                    <h4 class="font-bold text-slate-900 text-base flex items-center gap-2">
+                        ✏️ Edit Data Admin CS
+                    </h4>
+                    <p class="text-[11px] text-slate-400">Perbarui nama, nomor WA, password, atau alokasi brand</p>
+                </div>
+                <button onclick="closeEditCsModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+            </div>
+            
+            <form id="editCsForm" onsubmit="submitUpdateCsMember(event)" class="space-y-3">
+                <input type="hidden" id="edit_cs_id">
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Brand Alokasi</label>
+                    <select id="edit_cs_wa_account_id" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500">
+                        @foreach($waAccounts as $acc)
+                        <option value="{{ $acc->id }}">
+                            🏢 {{ $acc->name }} ({{ $acc->phone ? '+' . $acc->phone : 'No WA' }})
+                        </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Nama Admin CS *</label>
+                    <input type="text" id="edit_cs_name" required class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 outline-none font-semibold">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Email Login CS *</label>
+                    <input type="email" id="edit_cs_email" required class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">No. WhatsApp</label>
+                    <input type="text" id="edit_cs_phone" placeholder="628123456789" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 outline-none font-mono">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1 flex items-center justify-between">
+                        <span>Ganti Password CS</span>
+                        <span class="text-[10px] text-slate-400 font-normal">Kosongkan jika tidak diubah</span>
+                    </label>
+                    <input type="password" id="edit_cs_password" placeholder="Ketik password baru (minimal 6 karakter)" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                    <button type="button" onclick="closeEditCsModal()" class="px-4 py-2 bg-slate-200 text-slate-700 font-medium text-xs rounded-xl hover:bg-slate-300 transition">
+                        Batal
+                    </button>
+                    <button type="submit" id="btnSubmitEditCs" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-sm transition">
+                        💾 Simpan Perubahan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- User Profile & Password Modal -->
+    <div id="userProfileModal" class="fixed inset-0 bg-slate-950/70 hidden flex items-center justify-center z-[70] p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <div>
+                    <h4 class="font-bold text-slate-900 text-base flex items-center gap-2">
+                        👤 Edit Profil & Password Saya
+                    </h4>
+                    <p class="text-[11px] text-slate-400">Perbarui identitas akun, nomor WhatsApp, dan password login Anda</p>
+                </div>
+                <button onclick="closeUserProfileModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+            </div>
+            
+            <form id="userProfileForm" onsubmit="submitUpdateUserProfile(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Nama Lengkap *</label>
+                    <input type="text" id="profile_name" required value="{{ $user->name }}" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 outline-none font-semibold">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Email Login *</label>
+                    <input type="email" id="profile_email" required value="{{ $user->email }}" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 mb-1">Nomor WhatsApp</label>
+                    <input type="text" id="profile_phone" value="{{ $user->phone ?? $user->wa_phone }}" placeholder="628123456789" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 outline-none font-mono">
+                </div>
+
+                <div class="border-t border-slate-100 pt-3">
+                    <h5 class="text-xs font-bold text-slate-800 mb-2 flex items-center gap-1.5">
+                        🔒 Ganti Password Login (Opsional)
+                    </h5>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 mb-1">Password Baru</label>
+                        <input type="password" id="profile_password" placeholder="Ketik password baru (minimal 6 karakter)" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                    <button type="button" onclick="closeUserProfileModal()" class="px-4 py-2 bg-slate-200 text-slate-700 font-medium text-xs rounded-xl hover:bg-slate-300 transition">
+                        Batal
+                    </button>
+                    <button type="submit" id="btnSubmitProfile" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-sm transition">
+                        💾 Simpan Profil Saya
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Sleek Professional Toast Container -->
     <div id="toastContainer" class="fixed top-5 right-5 z-[99999] flex flex-col gap-2.5 pointer-events-none max-w-md w-full px-4 sm:px-0"></div>
 
@@ -1873,6 +1993,7 @@
                 .then(res => res.json())
                 .then(data => {
                     const list = data.csTeam || [];
+                    allCsTeamCache = list;
                     if (badge) badge.innerText = list.length + ' CS';
                     if (countLabel) countLabel.innerText = list.length + ' Data Admin CS';
 
@@ -1943,9 +2064,14 @@
                                 </span>
                             </td>
                             <td class="p-3 text-right">
-                                <button onclick="deleteCsMember(${cs.id}, '${escapeHtml(cs.name)}')" class="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-600 font-semibold text-xs rounded-lg transition border border-red-200">
-                                    🗑️ Hapus
-                                </button>
+                                <div class="flex items-center justify-end gap-1.5">
+                                    <button onclick="openEditCsModal(${cs.id})" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 font-semibold text-xs rounded-lg transition border border-amber-200 shadow-sm flex items-center gap-1">
+                                        ✏️ Edit
+                                    </button>
+                                    <button onclick="deleteCsMember(${cs.id}, '${escapeHtml(cs.name)}')" class="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-600 font-semibold text-xs rounded-lg transition border border-red-200 shadow-sm flex items-center gap-1">
+                                        🗑️ Hapus
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     `}).join('');
@@ -1953,6 +2079,130 @@
                 .catch(err => {
                     tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-rose-500 font-semibold">Gagal memuat daftar tim CS.</td></tr>`;
                 });
+        }
+
+        let allCsTeamCache = [];
+
+        function openEditCsModal(csId) {
+            const cs = (allCsTeamCache || []).find(c => c.id == csId);
+            if (!cs) return;
+
+            document.getElementById('edit_cs_id').value = cs.id;
+            document.getElementById('edit_cs_name').value = cs.name || '';
+            document.getElementById('edit_cs_email').value = cs.email || '';
+            document.getElementById('edit_cs_phone').value = cs.wa_phone || cs.phone || '';
+            document.getElementById('edit_cs_password').value = '';
+            if (document.getElementById('edit_cs_wa_account_id')) {
+                document.getElementById('edit_cs_wa_account_id').value = cs.wa_account_id || '';
+            }
+            document.getElementById('editCsModal').classList.remove('hidden');
+        }
+
+        function closeEditCsModal() {
+            document.getElementById('editCsModal').classList.add('hidden');
+        }
+
+        function submitUpdateCsMember(e) {
+            e.preventDefault();
+            const csId = document.getElementById('edit_cs_id').value;
+            if (!csId) return;
+
+            const name = document.getElementById('edit_cs_name').value.trim();
+            const email = document.getElementById('edit_cs_email').value.trim();
+            const phone = document.getElementById('edit_cs_phone').value.trim();
+            const password = document.getElementById('edit_cs_password').value;
+            const wa_account_id = document.getElementById('edit_cs_wa_account_id') ? document.getElementById('edit_cs_wa_account_id').value : '';
+
+            const btn = document.getElementById('btnSubmitEditCs');
+            btn.disabled = true;
+            btn.innerText = 'Menyimpan...';
+
+            fetch('/brand/cs-team/' + csId + '/update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ name, email, phone, password, wa_account_id })
+            })
+            .then(async res => {
+                const data = await res.json();
+                if (!res.ok) {
+                    let msg = data.message || data.error || 'Gagal mengubah data Admin CS';
+                    if (data.errors) msg = Object.values(data.errors).flat().join('\n• ');
+                    throw new Error(msg);
+                }
+                return data;
+            })
+            .then(data => {
+                btn.disabled = false;
+                btn.innerText = '💾 Simpan Perubahan';
+                showToastNotification('✅ ' + data.message);
+                closeEditCsModal();
+                loadCsTeamList();
+            })
+            .catch(err => {
+                btn.disabled = false;
+                btn.innerText = '💾 Simpan Perubahan';
+                alert('⚠️ GAGAL UPDATE CS:\n• ' + err.message);
+            });
+        }
+
+        // Profile & Password Update Modal Logic (Owner / Supervisor / CS)
+        function openUserProfileModal() {
+            isModalOpen = true;
+            document.getElementById('userProfileModal').classList.remove('hidden');
+        }
+
+        function closeUserProfileModal() {
+            isModalOpen = false;
+            document.getElementById('userProfileModal').classList.add('hidden');
+        }
+
+        function submitUpdateUserProfile(e) {
+            e.preventDefault();
+            const name = document.getElementById('profile_name').value.trim();
+            const email = document.getElementById('profile_email').value.trim();
+            const phone = document.getElementById('profile_phone').value.trim();
+            const password = document.getElementById('profile_password').value;
+
+            const btn = document.getElementById('btnSubmitProfile');
+            btn.disabled = true;
+            btn.innerText = 'Menyimpan...';
+
+            fetch('/user/profile/update', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({ name, email, phone, password })
+            })
+            .then(async res => {
+                const data = await res.json();
+                if (!res.ok) {
+                    let msg = data.message || data.error || 'Gagal memperbarui profil';
+                    if (data.errors) msg = Object.values(data.errors).flat().join('\n• ');
+                    throw new Error(msg);
+                }
+                return data;
+            })
+            .then(data => {
+                btn.disabled = false;
+                btn.innerText = '💾 Simpan Profil Saya';
+                showToastNotification('🎉 ' + data.message);
+                closeUserProfileModal();
+                setTimeout(() => window.location.reload(), 700);
+            })
+            .catch(err => {
+                btn.disabled = false;
+                btn.innerText = '💾 Simpan Profil Saya';
+                alert('⚠️ GAGAL UPDATE PROFIL:\n• ' + err.message);
+            });
         }
 
         function submitCreateCsMember(e) {

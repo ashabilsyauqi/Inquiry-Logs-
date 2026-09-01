@@ -206,4 +206,95 @@ class UserController extends Controller
         ]);
     }
 
+    /**
+     * Supervisor/CEO updates an Admin CS Team Member (Name, Email, Phone, Password, Brand)
+     */
+    public function updateCsMember(Request $request, $id)
+    {
+        $supervisor = Auth::user();
+        if (!$supervisor) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $csUser = User::findOrFail($id);
+
+        // Security check
+        if (!$supervisor->isCeo() && !$supervisor->canAccessBrand($csUser->wa_account_id)) {
+            return response()->json(['error' => 'Akses ditolak: Anda tidak memiliki akses ke Admin CS brand ini.'], 403);
+        }
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,' . $csUser->id,
+            'password' => 'nullable|string|min:6',
+        ], [
+            'name.required' => 'Nama Admin CS wajib diisi.',
+            'email.required' => 'Email login CS wajib diisi.',
+            'email.unique' => 'Email sudah digunakan oleh akun lain.',
+            'password.min' => 'Password minimal 6 karakter.',
+        ]);
+
+        $csUser->name = $request->name;
+        $csUser->email = $request->email;
+        if ($request->filled('phone')) {
+            $cleanPhone = preg_replace('/[^0-9]/', '', $request->phone);
+            $csUser->phone = $cleanPhone;
+            $csUser->wa_phone = $cleanPhone;
+        }
+        if ($request->filled('password')) {
+            $csUser->password = \Illuminate\Support\Facades\Hash::make($request->password);
+        }
+        if ($request->filled('wa_account_id') && ($supervisor->isCeo() || $supervisor->canAccessBrand($request->wa_account_id))) {
+            $csUser->wa_account_id = $request->wa_account_id;
+        }
+
+        $csUser->save();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => '✅ Data Admin CS "' . $csUser->name . '" berhasil diperbarui!',
+            'csUser' => $csUser
+        ]);
+    }
+
+    /**
+     * User (Owner, Supervisor, CS) updates their own profile (Name, Phone, Password)
+     */
+    public function updateProfile(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+            'password' => 'nullable|string|min:6',
+        ], [
+            'name.required' => 'Nama wajib diisi.',
+            'email.required' => 'Email wajib diisi.',
+            'email.unique' => 'Email sudah digunakan oleh akun lain.',
+            'password.min' => 'Password baru minimal 6 karakter.',
+        ]);
+
+        $user->name = $request->name;
+        $user->email = $request->email;
+        if ($request->filled('phone')) {
+            $cleanPhone = preg_replace('/[^0-9]/', '', $request->phone);
+            $user->phone = $cleanPhone;
+            $user->wa_phone = $cleanPhone;
+        }
+        if ($request->filled('password')) {
+            $user->password = \Illuminate\Support\Facades\Hash::make($request->password);
+        }
+        $user->save();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => '🎉 Profil dan Password Anda berhasil diperbarui!',
+            'user' => $user
+        ]);
+    }
+
 }
