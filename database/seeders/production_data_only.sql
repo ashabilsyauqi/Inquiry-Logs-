@@ -144,7 +144,7 @@ INSERT INTO `lead_messages` (`id`, `lead_id`, `sender`, `message`, `is_from_me`,
 (30, 31, '38594827821120', 'Assalamu\'alaikum Wr. Wb., Saya mendapatkan info dari website WKM. Saya ingin konsultasi mengenai produk WKM', 0, '2026-09-01 09:24:40', '2026-09-01 09:24:40');
 
 -- 8. SMTP Settings
-INSERT INTO `smtp_settings` (`id`, `mail_mailer`, `mail_host`, `mail_port`, `mail_username`, `mail_password`, `mail_encryption`, `mail_from_address`, `mail_from_name`, `disconnect_alert_emails`, `created_at`, `updated_at`) VALUES
+REPLACE INTO `smtp_settings` (`id`, `mail_mailer`, `mail_host`, `mail_port`, `mail_username`, `mail_password`, `mail_encryption`, `mail_from_address`, `mail_from_name`, `disconnect_alert_emails`, `created_at`, `updated_at`) VALUES
 (1, 'smtp', 'smtp.gmail.com', 587, NULL, NULL, 'tls', 'no-reply@difitech.id', 'Difitech CRM Alert', 'wijaya@difitech.co.id, ashabil@difitech.co.id, siswandi@difitech.co.id, marketing2wkm@gmail.com,\nmarketingwkm@gmail.com', '2026-08-13 21:22:53', '2026-09-01 01:53:46');
 
 SET FOREIGN_KEY_CHECKS = 1;
