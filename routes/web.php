@@ -489,6 +489,9 @@ Route::middleware(['auth'])->group(function () {
         if ($request->has('status')) {
             $account->status = $request->input('status');
         }
+        if ($request->has('disconnect_alert_emails')) {
+            $account->disconnect_alert_emails = $request->input('disconnect_alert_emails');
+        }
         $account->save();
 
         return response()->json(['status' => 'success', 'message' => 'Data Brand Berhasil Diperbarui!', 'account' => $account]);
@@ -668,9 +671,10 @@ Route::middleware(['auth'])->group(function () {
     // User Profile & Password Update Route (Owner, Supervisor, CS)
     Route::post('/user/profile/update', [UserController::class, 'updateProfile']);
 
-    // CEO Dynamic SMTP Settings Routes
+    // CEO & Supervisor SMTP & Alert Settings Routes
     Route::get('/admin/smtp-settings', function () {
-        if (!Auth::user() || !Auth::user()->isCeo()) {
+        $user = Auth::user();
+        if (!$user || (!$user->isCeo() && !$user->isSupervisor())) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
         $settings = \App\Models\SmtpSetting::firstOrCreate([], [
@@ -680,12 +684,14 @@ Route::middleware(['auth'])->group(function () {
             'mail_encryption' => 'tls',
             'mail_from_address' => 'no-reply@difitech.id',
             'mail_from_name' => 'Difitech CRM Alert',
+            'disconnect_alert_emails' => 'ashabil@difitech.id, siswandi@difitech.co.id',
         ]);
         return response()->json($settings);
     });
 
     Route::post('/admin/smtp-settings', function (Request $request) {
-        if (!Auth::user() || !Auth::user()->isCeo()) {
+        $user = Auth::user();
+        if (!$user || (!$user->isCeo() && !$user->isSupervisor())) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
@@ -699,17 +705,19 @@ Route::middleware(['auth'])->group(function () {
             'mail_encryption' => $request->input('mail_encryption'),
             'mail_from_address' => $request->input('mail_from_address', 'no-reply@difitech.id'),
             'mail_from_name' => $request->input('mail_from_name', 'Difitech CRM Alert'),
+            'disconnect_alert_emails' => $request->input('disconnect_alert_emails'),
         ]);
 
         return response()->json([
             'status' => 'success',
-            'message' => '✅ Pengaturan Server SMTP Email Berhasil Disimpan!',
+            'message' => '✅ Pengaturan Notifikasi & Server SMTP Email Berhasil Disimpan!',
             'settings' => $settings
         ]);
     });
 
     Route::post('/admin/smtp-settings/test', function (Request $request) {
-        if (!Auth::user() || !Auth::user()->isCeo()) {
+        $user = Auth::user();
+        if (!$user || (!$user->isCeo() && !$user->isSupervisor())) {
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 

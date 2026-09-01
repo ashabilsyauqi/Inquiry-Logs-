@@ -19,6 +19,7 @@ class WaAccount extends Model
         'supervisor_id',
         'disconnect_email_enabled',
         'disconnect_email_interval',
+        'disconnect_alert_emails',
         'last_disconnect_email_sent_at',
     ];
 

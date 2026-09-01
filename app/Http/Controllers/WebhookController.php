@@ -367,8 +367,30 @@ class WebhookController extends Controller
                 $ceoEmails = ['ashabil@difitech.id'];
             }
 
-            // Combine primary recipients: Admin CS Team + Supervisor
-            $toRecipients = array_values(array_unique(array_filter(array_merge($csEmails, [$supervisorEmail]))));
+            // Get configured Disconnect Alert Emails from SmtpSetting (Global) & WaAccount (Brand specific)
+            $customAlertEmails = [];
+            $smtpSetting = \App\Models\SmtpSetting::first();
+            if ($smtpSetting && !empty($smtpSetting->disconnect_alert_emails)) {
+                $rawList = preg_split('/[\r\n,;]+/', $smtpSetting->disconnect_alert_emails);
+                foreach ($rawList as $rawEmail) {
+                    $clean = trim($rawEmail);
+                    if (filter_var($clean, FILTER_VALIDATE_EMAIL)) {
+                        $customAlertEmails[] = $clean;
+                    }
+                }
+            }
+            if (!empty($waAccount->disconnect_alert_emails)) {
+                $rawList = preg_split('/[\r\n,;]+/', $waAccount->disconnect_alert_emails);
+                foreach ($rawList as $rawEmail) {
+                    $clean = trim($rawEmail);
+                    if (filter_var($clean, FILTER_VALIDATE_EMAIL)) {
+                        $customAlertEmails[] = $clean;
+                    }
+                }
+            }
+
+            // Combine primary recipients: Admin CS Team + Supervisor + Custom Notification Emails
+            $toRecipients = array_values(array_unique(array_filter(array_merge($csEmails, [$supervisorEmail], $customAlertEmails))));
             if (empty($toRecipients)) {
                 $toRecipients = $ceoEmails;
             }

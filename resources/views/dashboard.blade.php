@@ -159,8 +159,8 @@
                 <button onclick="openUserProfileModal()" class="p-1.5 bg-[#21262d] hover:bg-[#30363d] text-[#8b949e] hover:text-[#58a6ff] rounded-md transition border border-[#30363d] flex items-center justify-center shadow-sm flex-shrink-0" title="Edit Profil & Ganti Password">
                     <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 16 16"><path d="M10.5 5a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0zM0 8a8 8 0 1116 0A8 8 0 010 8zm8-7a7 7 0 00-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 008 1z"></path></svg>
                 </button>
-                @if($user->isCeo())
-                <button onclick="openSmtpSettingsModal()" class="p-1.5 bg-[#21262d] hover:bg-[#30363d] text-[#8b949e] hover:text-[#58a6ff] rounded-md transition border border-[#30363d] flex items-center justify-center shadow-sm flex-shrink-0" title="Pengaturan Server SMTP Email & Sistem">
+                @if($user->isCeo() || $user->isSupervisor())
+                <button onclick="openSmtpSettingsModal()" class="p-1.5 bg-[#21262d] hover:bg-[#30363d] text-[#8b949e] hover:text-[#58a6ff] rounded-md transition border border-[#30363d] flex items-center justify-center shadow-sm flex-shrink-0" title="Pengaturan Notifikasi & Server SMTP Email">
                     <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 16 16"><path d="M8 0a8.2 8.2 0 00-1.7.2c-.3.1-.5.3-.5.6l-.3 1.2c-.4.2-.9.4-1.3.7l-1.1-.6c-.3-.1-.6 0-.8.2l-1.2 2c-.2.3-.1.6.1.8l1 .8c0 .2-.1.5-.1.8s0 .5.1.8l-1 .8c-.2.2-.3.5-.1.8l1.2 2c.2.2.5.3.8.2l1.1-.6c.4.3.8.5 1.3.7l.3 1.2c0 .3.2.5.5.6A8.2 8.2 0 008 16a8.2 8.2 0 001.7-.2c.3-.1.5-.3.5-.6l.3-1.2c.4-.2.9-.4 1.3-.7l1.1.6c.3.1.6 0 .8-.2l1.2-2c.2-.3.1-.6-.1-.8l-1-.8c0-.2.1-.5.1-.8s0-.5-.1-.8l1-.8c.2-.2.3-.5.1-.8l-1.2-2c-.2-.2-.5-.3-.8-.2l-1.1.6c-.4-.3-.8-.5-1.3-.7l-.3-1.2c0-.3-.2-.5-.5-.6A8.2 8.2 0 008 0zm0 5a3 3 0 110 6 3 3 0 010-6z"></path></svg>
                 </button>
                 @endif
@@ -1380,6 +1380,14 @@
                 <label class="block text-xs font-semibold text-slate-700 mb-1">Nomor WA Terhubung</label>
                 <input type="text" id="editBrandPhone" placeholder="628123456789" class="w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none">
             </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
+                    <span>Email Penerima Alert WA Terputus (Brand ini)</span>
+                    <span class="text-[10px] text-slate-400 font-normal">Bisa > 1 email</span>
+                </label>
+                <textarea id="editBrandAlertEmails" rows="2" placeholder="ops@difitech.id, manager@brand.com" class="w-full px-3 py-2 text-xs border rounded-lg focus:ring-2 focus:ring-emerald-500 outline-none font-mono placeholder-slate-400"></textarea>
+                <p class="text-[10px] text-slate-500 mt-0.5">Pisahkan dengan koma (,) atau baris baru jika lebih dari 1 email.</p>
+            </div>
             <div class="flex justify-end gap-2 pt-3">
                 <button onclick="closeEditBrandModal()" class="px-4 py-2 bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg hover:bg-slate-300">
                     Batal
@@ -1422,14 +1430,14 @@
     </div>
     @endif
 
-    <!-- CEO Dynamic SMTP Server Settings Modal -->
-    @if($user->isCeo())
+    <!-- CEO & Supervisor Dynamic SMTP Server & Disconnect Alert Settings Modal -->
+    @if($user->isCeo() || $user->isSupervisor())
     <div id="smtpSettingsModal" class="fixed inset-0 bg-slate-950/70 hidden flex items-center justify-center z-50 p-4">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh]">
             <div class="px-6 py-5 bg-gradient-to-r from-slate-900 to-slate-800 text-white flex justify-between items-center">
                 <div>
                     <h3 class="text-lg font-bold flex items-center gap-2">
-                        ⚙️ Pengaturan Server SMTP Email (CEO Settings)
+                        ⚙️ Pengaturan Notifikasi & Server SMTP Email
                     </h3>
                     <p class="text-xs text-slate-300 mt-0.5">Konfigurasi Pengiriman Email Notifikasi Automatic System & Disconnect Alert</p>
                 </div>
@@ -1437,44 +1445,64 @@
             </div>
 
             <div class="p-6 overflow-y-auto flex-1 space-y-4">
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div class="sm:col-span-2">
-                        <label class="block text-xs font-bold text-slate-700 mb-1">SMTP Host Server</label>
-                        <input type="text" id="smtp_host" placeholder="e.g. smtp.gmail.com atau mail.difitech.id" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-slate-900 outline-none">
+                <!-- 🚨 Disconnect Alert Notification Recipients Section -->
+                <div class="bg-rose-50 border border-rose-200 p-4 rounded-xl space-y-2">
+                    <div class="flex items-center justify-between">
+                        <label class="block text-xs font-bold text-rose-900 flex items-center gap-1.5">
+                            <span>🚨</span> Email Penerima Notifikasi WA Terputus (Multi-Email)
+                        </label>
+                        <span class="text-[10px] font-semibold text-rose-700 bg-rose-100 px-2 py-0.5 rounded-full border border-rose-200">Bisa Lebih dari 1 Email</span>
                     </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Port</label>
-                        <input type="number" id="smtp_port" placeholder="587" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-slate-900 outline-none">
-                    </div>
+                    <textarea id="disconnect_alert_emails" rows="2" placeholder="ashabil@difitech.id, siswandi@difitech.co.id, ops@difitech.id" class="w-full px-3 py-2 bg-white border border-rose-300 rounded-lg text-xs font-mono focus:ring-2 focus:ring-rose-500 outline-none text-slate-800 placeholder-slate-400"></textarea>
+                    <p class="text-[11px] text-rose-700 leading-snug">
+                        💡 <em>Pisahkan email dengan tanda koma (<code>,</code>) atau baris baru (Enter). Saat ada perangkat WhatsApp brand yang terputus, email peringatan darurat otomatis dikirim ke seluruh email di atas.</em>
+                    </p>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">SMTP Username / Email</label>
-                        <input type="text" id="smtp_username" placeholder="user@difitech.id" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-slate-900 outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">SMTP Password / App Password</label>
-                        <input type="password" id="smtp_password" placeholder="••••••••••••" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-slate-900 outline-none">
-                    </div>
-                </div>
+                <div class="border-t border-slate-200 pt-3">
+                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-1.5">
+                        <span>📧</span> Konfigurasi Server SMTP
+                    </h4>
 
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Enkripsi Mail</label>
-                        <select id="smtp_encryption" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-slate-900 outline-none">
-                            <option value="tls">TLS (Default / Port 587)</option>
-                            <option value="ssl">SSL (Port 465)</option>
-                            <option value="null">Tanpa Enkripsi (Port 25)</option>
-                        </select>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+                        <div class="sm:col-span-2">
+                            <label class="block text-xs font-bold text-slate-700 mb-1">SMTP Host Server</label>
+                            <input type="text" id="smtp_host" placeholder="e.g. smtp.gmail.com atau mail.difitech.id" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-slate-900 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Port</label>
+                            <input type="number" id="smtp_port" placeholder="587" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-slate-900 outline-none">
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Email Pengirim (From)</label>
-                        <input type="email" id="smtp_from_address" placeholder="no-reply@difitech.id" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-slate-900 outline-none">
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">SMTP Username / Email</label>
+                            <input type="text" id="smtp_username" placeholder="user@difitech.id" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-slate-900 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">SMTP Password / App Password</label>
+                            <input type="password" id="smtp_password" placeholder="••••••••••••" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-slate-900 outline-none">
+                        </div>
                     </div>
-                    <div>
-                        <label class="block text-xs font-bold text-slate-700 mb-1">Nama Pengirim (From Name)</label>
-                        <input type="text" id="smtp_from_name" placeholder="Difitech CRM Alert" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-slate-900 outline-none">
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Enkripsi Mail</label>
+                            <select id="smtp_encryption" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-slate-900 outline-none">
+                                <option value="tls">TLS (Default / Port 587)</option>
+                                <option value="ssl">SSL (Port 465)</option>
+                                <option value="null">Tanpa Enkripsi (Port 25)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Email Pengirim (From)</label>
+                            <input type="email" id="smtp_from_address" placeholder="no-reply@difitech.id" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-slate-900 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">Nama Pengirim (From Name)</label>
+                            <input type="text" id="smtp_from_name" placeholder="Difitech CRM Alert" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-slate-900 outline-none">
+                        </div>
                     </div>
                 </div>
 
@@ -1493,7 +1521,7 @@
                         Batal
                     </button>
                     <button onclick="saveSmtpSettings()" id="btnSaveSmtp" class="flex-1 sm:flex-none px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-lg transition shadow-sm">
-                        💾 Simpan Pengaturan SMTP
+                        💾 Simpan Pengaturan
                     </button>
                 </div>
             </div>
@@ -3184,6 +3212,9 @@
             document.getElementById('editBrandId').value = brand.id;
             document.getElementById('editBrandName').value = brand.name || '';
             document.getElementById('editBrandPhone').value = brand.phone || '';
+            if (document.getElementById('editBrandAlertEmails')) {
+                document.getElementById('editBrandAlertEmails').value = brand.disconnect_alert_emails || '';
+            }
             document.getElementById('editBrandModal').classList.remove('hidden');
         }
 
@@ -3195,13 +3226,14 @@
             const id = document.getElementById('editBrandId').value;
             const name = document.getElementById('editBrandName').value.trim();
             const phone = document.getElementById('editBrandPhone').value.trim();
+            const disconnect_alert_emails = document.getElementById('editBrandAlertEmails') ? document.getElementById('editBrandAlertEmails').value.trim() : '';
 
             if (!name) return alert('Nama Brand tidak boleh kosong.');
 
             fetch('/wa-accounts/' + id + '/update', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                body: JSON.stringify({ name, phone })
+                body: JSON.stringify({ name, phone, disconnect_alert_emails })
             })
             .then(res => res.json())
             .then(data => {
@@ -3371,6 +3403,7 @@
             fetch('/admin/smtp-settings')
                 .then(res => res.json())
                 .then(data => {
+                    if (document.getElementById('disconnect_alert_emails')) document.getElementById('disconnect_alert_emails').value = data.disconnect_alert_emails || '';
                     if (document.getElementById('smtp_host')) document.getElementById('smtp_host').value = data.mail_host || '';
                     if (document.getElementById('smtp_port')) document.getElementById('smtp_port').value = data.mail_port || 587;
                     if (document.getElementById('smtp_username')) document.getElementById('smtp_username').value = data.mail_username || '';
@@ -3387,6 +3420,7 @@
             if (btn) btn.innerText = 'Menyimpan...';
 
             const payload = {
+                disconnect_alert_emails: document.getElementById('disconnect_alert_emails') ? document.getElementById('disconnect_alert_emails').value : '',
                 mail_host: document.getElementById('smtp_host').value,
                 mail_port: document.getElementById('smtp_port').value,
                 mail_username: document.getElementById('smtp_username').value,
@@ -3403,12 +3437,12 @@
             })
             .then(res => res.json())
             .then(data => {
-                if (btn) btn.innerText = '💾 Simpan Pengaturan SMTP';
+                if (btn) btn.innerText = '💾 Simpan Pengaturan';
                 showToastNotification('✅ ' + data.message);
             })
             .catch(() => {
-                if (btn) btn.innerText = '💾 Simpan Pengaturan SMTP';
-                alert('Gagal menyimpan pengaturan SMTP.');
+                if (btn) btn.innerText = '💾 Simpan Pengaturan';
+                alert('Gagal menyimpan pengaturan.');
             });
         }
 
