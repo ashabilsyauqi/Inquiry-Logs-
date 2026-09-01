@@ -15,157 +15,160 @@
 <body class="text-slate-800 flex h-screen overflow-hidden">
 
     <!-- LEFT SIDEBAR NAVIGATION (GITHUB ENTERPRISE DARK THEME) -->
-    <aside class="w-64 bg-[#0d1117] text-[#c9d1d9] flex flex-col justify-between hidden md:flex flex-shrink-0 border-r border-[#30363d]">
-        <div>
-            <!-- Workspace / Organization Header -->
-            <div class="px-4 py-4 border-b border-[#30363d] flex items-center justify-between bg-[#161b22]/50">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-lg bg-[#21262d] border border-[#30363d] flex items-center justify-center text-[#2f81f7] font-bold shadow-sm">
-                        <svg class="w-4 h-4 fill-current" viewBox="0 0 16 16"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v12.5A1.75 1.75 0 0114.25 16H1.75A1.75 1.75 0 010 14.25V1.75zm1.75-.25a.25.25 0 00-.25.25v12.5c0 .138.112.25.25.25h12.5a.25.25 0 00.25-.25V1.75a.25.25 0 00-.25-.25H1.75zM4 4.75a.75.75 0 01.75-.75h6.5a.75.75 0 010 1.5h-6.5A.75.75 0 014 4.75zm0 3a.75.75 0 01.75-.75h6.5a.75.75 0 010 1.5h-6.5A.75.75 0 014 7.75zm0 3a.75.75 0 01.75-.75h4a.75.75 0 010 1.5h-4a.75.75 0 01-.75-.75z"></path></svg>
-                    </div>
-                    <div>
-                        <h2 class="font-bold text-[#f0f6fc] text-xs tracking-tight leading-tight flex items-center gap-1.5">
-                            Difitech CRM
-                        </h2>
-                        <p class="text-[10px] text-[#8b949e] font-mono">Enterprise Suite</p>
-                    </div>
+    <!-- LEFT SIDEBAR NAVIGATION (GITHUB ENTERPRISE DARK THEME) -->
+    <aside class="w-64 bg-[#0d1117] text-[#c9d1d9] flex flex-col h-screen overflow-hidden hidden md:flex flex-shrink-0 border-r border-[#30363d] select-none">
+        
+        <!-- Workspace / Organization Header (Fixed Top) -->
+        <div class="px-4 py-3.5 border-b border-[#30363d] flex items-center justify-between bg-[#161b22]/70 flex-shrink-0">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-7 h-7 rounded-lg bg-[#21262d] border border-[#30363d] flex items-center justify-center text-[#2f81f7] font-bold shadow-sm flex-shrink-0">
+                    <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 16 16"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v12.5A1.75 1.75 0 0114.25 16H1.75A1.75 1.75 0 010 14.25V1.75zm1.75-.25a.25.25 0 00-.25.25v12.5c0 .138.112.25.25.25h12.5a.25.25 0 00.25-.25V1.75a.25.25 0 00-.25-.25H1.75zM4 4.75a.75.75 0 01.75-.75h6.5a.75.75 0 010 1.5h-6.5A.75.75 0 014 4.75zm0 3a.75.75 0 01.75-.75h6.5a.75.75 0 010 1.5h-6.5A.75.75 0 014 7.75zm0 3a.75.75 0 01.75-.75h4a.75.75 0 010 1.5h-4a.75.75 0 01-.75-.75z"></path></svg>
                 </div>
-                <span class="text-[10px] font-mono text-[#58a6ff] bg-[#1f6feb]/20 px-2 py-0.5 rounded border border-[#1f6feb]/40 font-bold">
-                    v2.0
-                </span>
+                <div class="truncate">
+                    <h2 class="font-bold text-[#f0f6fc] text-xs tracking-tight leading-tight truncate">
+                        Difitech CRM
+                    </h2>
+                    <p class="text-[10px] text-[#8b949e] font-mono leading-none mt-0.5">Enterprise Suite</p>
+                </div>
             </div>
-
-            <!-- Nav Links -->
-            <nav class="p-3 space-y-4 text-xs font-medium">
-                <!-- Section 1: Navigation -->
-                <div>
-                    <p class="px-2 text-[10px] font-semibold uppercase tracking-wider text-[#8b949e] mb-2">Repositories & Pipelines</p>
-                    <div class="space-y-1">
-                        @if($user->isCeo() || ($user->isSupervisor() && $waAccounts->count() > 1))
-                        <a href="/?account_id=all" class="w-full flex items-center justify-between px-2.5 py-2 rounded-md {{ $accountId == 'all' ? 'bg-[#161b22] text-[#f0f6fc] font-semibold border-l-2 border-[#2f81f7]' : 'text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc]' }} transition text-left">
-                            <span class="flex items-center gap-2.5">
-                                <svg class="w-4 h-4 fill-current text-[#2f81f7]" viewBox="0 0 16 16"><path d="M1.75 2.5h12.5a.25.25 0 01.25.25v10.5a.25.25 0 01-.25.25H1.75a.25.25 0 01-.25-.25V2.75c0-.138.112-.25.25-.25zM1.75 1A1.75 1.75 0 000 2.75v10.5C0 14.216.784 15 1.75 15h12.5A1.75 1.75 0 0016 13.25V2.75A1.75 1.75 0 0014.25 1H1.75zM4 4.75a.75.75 0 01.75-.75h6.5a.75.75 0 010 1.5h-6.5A.75.75 0 014 4.75zm0 3a.75.75 0 01.75-.75h6.5a.75.75 0 010 1.5h-6.5A.75.75 0 014 7.75zm0 3a.75.75 0 01.75-.75h4a.75.75 0 010 1.5h-4a.75.75 0 01-.75-.75z"></path></svg>
-                                <span>{{ $user->isCeo() ? '🌐 General (Semua Brand)' : '🌐 Semua Brand Saya' }}</span>
-                            </span>
-                            <span class="text-[11px] bg-[#21262d] text-[#8b949e] px-2 py-0.5 rounded-full font-mono border border-[#30363d]">{{ $waAccounts->count() }} Brands</span>
-                        </a>
-                        @endif
-
-                        <button onclick="switchTab('all')" id="nav-all" class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md bg-[#161b22] text-[#f0f6fc] font-semibold border-l-2 border-[#2f81f7] transition text-left">
-                            <svg class="w-4 h-4 fill-current text-[#58a6ff]" viewBox="0 0 16 16"><path d="M8 0a8 8 0 100 16A8 8 0 008 0zM1.5 8a6.5 6.5 0 1113 0 6.5 6.5 0 01-13 0z"></path></svg>
-                            <span>Overview All</span>
-                        </button>
-                        <button onclick="switchTab('analytics')" id="nav-analytics" class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc] transition text-left">
-                            <svg class="w-4 h-4 fill-current text-[#bc8cff]" viewBox="0 0 16 16"><path d="M1.75 1.5a.75.75 0 00-.75.75v11.5c0 .414.336.75.75.75h11.5a.75.75 0 000-1.5H2.5V2.25a.75.75 0 00-.75-.75zm3 4a.75.75 0 00-.75.75v5c0 .414.336.75.75.75h1.5a.75.75 0 00.75-.75v-5a.75.75 0 00-.75-.75h-1.5zm4-2a.75.75 0 00-.75.75v7c0 .414.336.75.75.75h1.5a.75.75 0 00.75-.75v-7a.75.75 0 00-.75-.75h-1.5zm4 4a.75.75 0 00-.75.75v3c0 .414.336.75.75.75h1.5a.75.75 0 00.75-.75v-3a.75.75 0 00-.75-.75h-1.5z"></path></svg>
-                            <span>Analytics & Insights</span>
-                        </button>
-                        @if($activeAccount)
-                        <button onclick="switchTab('kanban')" id="nav-kanban" class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc] transition text-left">
-                            <svg class="w-4 h-4 fill-current text-[#3fb950]" viewBox="0 0 16 16"><path d="M0 2.75C0 1.784.784 1 1.75 1h12.5C15.216 1 16 1.784 16 2.75v10.5A1.75 1.75 0 0114.25 15H1.75A1.75 1.75 0 010 13.25V2.75zm1.75-.25a.25.25 0 00-.25.25v10.5c0 .138.112.25.25.25h3.5v-11h-3.5zm5 0v11h3.5v-11h-3.5zm5 0v11h2.75a.25.25 0 00.25-.25V2.75a.25.25 0 00-.25-.25h-2.75z"></path></svg>
-                            <span>Kanban Pipeline</span>
-                        </button>
-                        @endif
-                        <button onclick="switchTab('table')" id="nav-table" class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc] transition text-left">
-                            <svg class="w-4 h-4 fill-current text-[#d29922]" viewBox="0 0 16 16"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v12.5A1.75 1.75 0 0114.25 16H1.75A1.75 1.75 0 010 14.25V1.75zm1.75-.25a.25.25 0 00-.25.25V5h13V1.75a.25.25 0 00-.25-.25H1.75zm13 4.75h-13v8c0 .138.112.25.25.25h12.5a.25.25 0 00.25-.25v-8z"></path></svg>
-                            <span>Lead Master List</span>
-                        </button>
-
-                        <a href="/ai-comparison" class="w-full flex items-center justify-between px-2.5 py-2 rounded-md text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc] transition text-left group">
-                            <span class="flex items-center gap-2.5">
-                                <svg class="w-4 h-4 fill-current text-amber-400 group-hover:scale-110 transition-transform" viewBox="0 0 16 16"><path d="M8 0a8 8 0 100 16A8 8 0 008 0zm.75 4.75a.75.75 0 00-1.5 0v3.5a.75.75 0 00.75.75h3a.75.75 0 000-1.5H8.75V4.75zM8 12a1 1 0 100-2 1 1 0 000 2z"></path></svg>
-                                <span class="font-medium text-amber-200/90 group-hover:text-white">Perbandingan AI</span>
-                            </span>
-                            <span class="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[9px] font-bold px-1.5 py-0.5 rounded-full">AI vs Real</span>
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Section 2: Management Suite (Only for CEO & Supervisor) -->
-                @if($user->isCeo() || $user->role === 'SUPERVISOR')
-                <div>
-                    <p class="px-2 text-[10px] font-semibold uppercase tracking-wider text-[#8b949e] mb-2">Organization Admin</p>
-                    <div class="space-y-1">
-                        <button onclick="openBrandManagementModal()" class="w-full flex items-center justify-between px-2.5 py-2 rounded-md text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc] transition text-left">
-                            <span class="flex items-center gap-2.5">
-                                <svg class="w-4 h-4 fill-current text-[#a5d6ff]" viewBox="0 0 16 16"><path d="M8 0a8 8 0 100 16A8 8 0 008 0zM1.5 8a6.5 6.5 0 1113 0 6.5 6.5 0 01-13 0zM8 4.75a.75.75 0 01.75.75v2.5h2.5a.75.75 0 010 1.5h-2.5v2.5a.75.75 0 01-1.5 0v-2.5h-2.5a.75.75 0 010-1.5h2.5v-2.5A.75.75 0 018 4.75z"></path></svg>
-                                <span>Brand Management</span>
-                            </span>
-                            <span class="bg-[#1f6feb]/15 text-[#58a6ff] border border-[#1f6feb]/30 text-[9px] font-semibold px-1.5 py-0.5 rounded">CRUD</span>
-                        </button>
-
-                        @if($user->isCeo())
-                        <button onclick="openBrandApprovalModal()" class="w-full flex items-center justify-between px-2.5 py-2 rounded-md text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc] transition text-left">
-                            <span class="flex items-center gap-2.5">
-                                <svg class="w-4 h-4 fill-current text-[#d2a8ff]" viewBox="0 0 16 16"><path d="M5.5 5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zm5 6c0-1.5-3-2.25-5-2.25S.5 9.5.5 11V12h10v-1zM11.5 5a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5zm2.25 6c0-.85-.92-1.63-2.25-2.02.58.45 1 1.05 1 1.77V12h3.25v-1z"></path></svg>
-                                <span>Brand Approvals</span>
-                            </span>
-                            <span id="pendingBrandBadge" class="bg-[#da3633] text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-full hidden">0</span>
-                        </button>
-                        @endif
-
-                        <button onclick="openCsTeamModal()" class="w-full flex items-center justify-between px-2.5 py-2 rounded-md text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc] transition text-left">
-                            <span class="flex items-center gap-2.5">
-                                <svg class="w-4 h-4 fill-current text-[#79c0ff]" viewBox="0 0 16 16"><path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7zm4-6a3 3 0 100-6 3 3 0 000 6zm-5.784 6A2.238 2.238 0 015 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 005 9c-4 0-5 3-5 4 0 1 1 1 1 1h5.216zM4.5 8a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"></path></svg>
-                                <span>Kelola Tim & Admin CS</span>
-                            </span>
-                            <span id="csTeamBadge" class="bg-[#1f6feb]/20 text-[#58a6ff] text-[10px] font-bold px-1.5 py-0.5 rounded-full font-mono">0 CS</span>
-                        </button>
-
-                        <button onclick="openDeviceModal()" class="w-full flex items-center justify-between px-2.5 py-2 rounded-md text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc] transition text-left">
-                            <span class="flex items-center gap-2.5">
-                                <svg class="w-4 h-4 fill-current text-[#3fb950]" viewBox="0 0 16 16"><path d="M4 1.75C4 .784 4.784 0 5.75 0h4.5C11.216 0 12 .784 12 1.75v12.5A1.75 1.75 0 0110.25 16h-4.5A1.75 1.75 0 014 14.25V1.75zm1.75-.25a.25.25 0 00-.25.25v12.5c0 .138.112.25.25.25h4.5a.25.25 0 00.25-.25V1.75a.25.25 0 00-.25-.25h-4.5zM8 13a1 1 0 100-2 1 1 0 000 2z"></path></svg>
-                                <span>WA Devices & QR</span>
-                            </span>
-                            <span class="w-2 h-2 rounded-full bg-[#238636]"></span>
-                        </button>
-                    </div>
-                </div>
-                @endif
-            </nav>
+            <span class="text-[10px] font-mono text-[#58a6ff] bg-[#1f6feb]/20 px-1.5 py-0.5 rounded border border-[#1f6feb]/40 font-bold flex-shrink-0">
+                v2.0
+            </span>
         </div>
 
-        <!-- GITHUB-STYLE USER PROFILE & LOGOUT FOOTER -->
-        <div class="p-3 border-t border-[#30363d] bg-[#090d13]">
-            <div class="p-2.5 bg-[#161b22] border border-[#30363d] rounded-lg mb-2 flex items-center justify-between">
-            <div onclick="openUserProfileModal()" class="cursor-pointer hover:bg-[#21262d] p-1.5 -mx-1.5 rounded-lg transition group" title="Klik untuk Edit Profil & Ganti Password">
-                <div class="flex items-center justify-between gap-2.5 min-w-0">
-                    <div class="flex items-center gap-2.5 min-w-0">
+        <!-- Scrollable Navigation Area (Middle) -->
+        <div class="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-3.5 text-xs font-medium custom-scrollbar" style="scrollbar-width: thin; scrollbar-color: #30363d #0d1117;">
+            
+            <!-- Section 1: Navigation -->
+            <div>
+                <p class="px-2 text-[10px] font-bold uppercase tracking-wider text-[#8b949e] mb-1.5">Repositories & Pipelines</p>
+                <div class="space-y-1">
+                    @if($user->isCeo() || ($user->isSupervisor() && $waAccounts->count() > 1))
+                    <a href="/?account_id=all" class="w-full flex items-center justify-between px-2.5 py-2 rounded-lg {{ $accountId == 'all' ? 'bg-[#161b22] text-[#f0f6fc] font-semibold border-l-2 border-[#2f81f7]' : 'text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc]' }} transition text-left group" title="{{ $user->isCeo() ? 'Semua Brand' : 'Semua Brand Saya' }}">
+                        <span class="flex items-center gap-2 min-w-0 truncate">
+                            <svg class="w-4 h-4 fill-current text-[#2f81f7] flex-shrink-0" viewBox="0 0 16 16"><path d="M1.75 2.5h12.5a.25.25 0 01.25.25v10.5a.25.25 0 01-.25.25H1.75a.25.25 0 01-.25-.25V2.75c0-.138.112-.25.25-.25zM1.75 1A1.75 1.75 0 000 2.75v10.5C0 14.216.784 15 1.75 15h12.5A1.75 1.75 0 0016 13.25V2.75A1.75 1.75 0 0014.25 1H1.75zM4 4.75a.75.75 0 01.75-.75h6.5a.75.75 0 010 1.5h-6.5A.75.75 0 014 4.75zm0 3a.75.75 0 01.75-.75h6.5a.75.75 0 010 1.5h-6.5A.75.75 0 014 7.75zm0 3a.75.75 0 01.75-.75h4a.75.75 0 010 1.5h-4a.75.75 0 01-.75-.75z"></path></svg>
+                            <span class="truncate">{{ $user->isCeo() ? 'Semua Brand' : 'Semua Brand Saya' }}</span>
+                        </span>
+                        <span class="text-[10px] bg-[#21262d] text-[#8b949e] px-1.5 py-0.5 rounded font-mono border border-[#30363d] flex-shrink-0 ml-1.5 font-bold">{{ $waAccounts->count() }}</span>
+                    </a>
+                    @endif
+
+                    <button onclick="switchTab('all')" id="nav-all" class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg bg-[#161b22] text-[#f0f6fc] font-semibold border-l-2 border-[#2f81f7] transition text-left">
+                        <svg class="w-4 h-4 fill-current text-[#58a6ff] flex-shrink-0" viewBox="0 0 16 16"><path d="M8 0a8 8 0 100 16A8 8 0 008 0zM1.5 8a6.5 6.5 0 1113 0 6.5 6.5 0 01-13 0z"></path></svg>
+                        <span class="truncate">Overview All</span>
+                    </button>
+                    <button onclick="switchTab('analytics')" id="nav-analytics" class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc] transition text-left">
+                        <svg class="w-4 h-4 fill-current text-[#bc8cff] flex-shrink-0" viewBox="0 0 16 16"><path d="M1.75 1.5a.75.75 0 00-.75.75v11.5c0 .414.336.75.75.75h11.5a.75.75 0 000-1.5H2.5V2.25a.75.75 0 00-.75-.75zm3 4a.75.75 0 00-.75.75v5c0 .414.336.75.75.75h1.5a.75.75 0 00.75-.75v-5a.75.75 0 00-.75-.75h-1.5zm4-2a.75.75 0 00-.75.75v7c0 .414.336.75.75.75h1.5a.75.75 0 00.75-.75v-7a.75.75 0 00-.75-.75h-1.5zm4 4a.75.75 0 00-.75.75v3c0 .414.336.75.75.75h1.5a.75.75 0 00.75-.75v-3a.75.75 0 00-.75-.75h-1.5z"></path></svg>
+                        <span class="truncate">Analytics & Insights</span>
+                    </button>
+                    @if($activeAccount)
+                    <button onclick="switchTab('kanban')" id="nav-kanban" class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc] transition text-left">
+                        <svg class="w-4 h-4 fill-current text-[#3fb950] flex-shrink-0" viewBox="0 0 16 16"><path d="M0 2.75C0 1.784.784 1 1.75 1h12.5C15.216 1 16 1.784 16 2.75v10.5A1.75 1.75 0 0114.25 15H1.75A1.75 1.75 0 010 13.25V2.75zm1.75-.25a.25.25 0 00-.25.25v10.5c0 .138.112.25.25.25h3.5v-11h-3.5zm5 0v11h3.5v-11h-3.5zm5 0v11h2.75a.25.25 0 00.25-.25V2.75a.25.25 0 00-.25-.25h-2.75z"></path></svg>
+                        <span class="truncate">Kanban Pipeline</span>
+                    </button>
+                    @endif
+                    <button onclick="switchTab('table')" id="nav-table" class="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc] transition text-left">
+                        <svg class="w-4 h-4 fill-current text-[#d29922] flex-shrink-0" viewBox="0 0 16 16"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v12.5A1.75 1.75 0 0114.25 16H1.75A1.75 1.75 0 010 14.25V1.75zm1.75-.25a.25.25 0 00-.25.25V5h13V1.75a.25.25 0 00-.25-.25H1.75zm13 4.75h-13v8c0 .138.112.25.25.25h12.5a.25.25 0 00.25-.25v-8z"></path></svg>
+                        <span class="truncate">Lead Master List</span>
+                    </button>
+
+                    <a href="/ai-comparison" class="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc] transition text-left group">
+                        <span class="flex items-center gap-2 min-w-0 truncate">
+                            <svg class="w-4 h-4 fill-current text-amber-400 group-hover:scale-110 transition-transform flex-shrink-0" viewBox="0 0 16 16"><path d="M8 0a8 8 0 100 16A8 8 0 008 0zm.75 4.75a.75.75 0 00-1.5 0v3.5a.75.75 0 00.75.75h3a.75.75 0 000-1.5H8.75V4.75zM8 12a1 1 0 100-2 1 1 0 000 2z"></path></svg>
+                            <span class="font-medium text-amber-200/90 group-hover:text-white truncate">Perbandingan AI</span>
+                        </span>
+                        <span class="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[9px] font-bold px-1.5 py-0.5 rounded flex-shrink-0 ml-1.5">AI vs Real</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Section 2: Management Suite (Only for CEO & Supervisor) -->
+            @if($user->isCeo() || $user->role === 'SUPERVISOR')
+            <div>
+                <p class="px-2 text-[10px] font-bold uppercase tracking-wider text-[#8b949e] mb-1.5">Organization Admin</p>
+                <div class="space-y-1">
+                    <button onclick="openBrandManagementModal()" class="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc] transition text-left">
+                        <span class="flex items-center gap-2 min-w-0 truncate">
+                            <svg class="w-4 h-4 fill-current text-[#a5d6ff] flex-shrink-0" viewBox="0 0 16 16"><path d="M8 0a8 8 0 100 16A8 8 0 008 0zM1.5 8a6.5 6.5 0 1113 0 6.5 6.5 0 01-13 0zM8 4.75a.75.75 0 01.75.75v2.5h2.5a.75.75 0 010 1.5h-2.5v2.5a.75.75 0 01-1.5 0v-2.5h-2.5a.75.75 0 010-1.5h2.5v-2.5A.75.75 0 018 4.75z"></path></svg>
+                            <span class="truncate">Brand Management</span>
+                        </span>
+                        <span class="bg-[#1f6feb]/15 text-[#58a6ff] border border-[#1f6feb]/30 text-[9px] font-semibold px-1.5 py-0.5 rounded flex-shrink-0 ml-1.5">CRUD</span>
+                    </button>
+
+                    @if($user->isCeo())
+                    <button onclick="openBrandApprovalModal()" class="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc] transition text-left">
+                        <span class="flex items-center gap-2 min-w-0 truncate">
+                            <svg class="w-4 h-4 fill-current text-[#d2a8ff] flex-shrink-0" viewBox="0 0 16 16"><path d="M5.5 5a2.5 2.5 0 100-5 2.5 2.5 0 000 5zm5 6c0-1.5-3-2.25-5-2.25S.5 9.5.5 11V12h10v-1zM11.5 5a2.25 2.25 0 100-4.5 2.25 2.25 0 000 4.5zm2.25 6c0-.85-.92-1.63-2.25-2.02.58.45 1 1.05 1 1.77V12h3.25v-1z"></path></svg>
+                            <span class="truncate">Brand Approvals</span>
+                        </span>
+                        <span id="pendingBrandBadge" class="bg-[#da3633] text-white text-[9px] font-semibold px-1.5 py-0.5 rounded-full hidden flex-shrink-0 ml-1.5">0</span>
+                    </button>
+                    @endif
+
+                    <button onclick="openCsTeamModal()" class="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc] transition text-left">
+                        <span class="flex items-center gap-2 min-w-0 truncate">
+                            <svg class="w-4 h-4 fill-current text-[#79c0ff] flex-shrink-0" viewBox="0 0 16 16"><path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1H7zm4-6a3 3 0 100-6 3 3 0 000 6zm-5.784 6A2.238 2.238 0 015 13c0-1.355.68-2.75 1.936-3.72A6.325 6.325 0 005 9c-4 0-5 3-5 4 0 1 1 1 1 1h5.216zM4.5 8a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"></path></svg>
+                            <span class="truncate">Kelola Tim CS</span>
+                        </span>
+                        <span id="csTeamBadge" class="bg-[#1f6feb]/20 text-[#58a6ff] text-[10px] font-bold px-1.5 py-0.5 rounded-full font-mono flex-shrink-0 ml-1.5">0 CS</span>
+                    </button>
+
+                    <button onclick="openDeviceModal()" class="w-full flex items-center justify-between px-2.5 py-2 rounded-lg text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc] transition text-left">
+                        <span class="flex items-center gap-2 min-w-0 truncate">
+                            <svg class="w-4 h-4 fill-current text-[#3fb950] flex-shrink-0" viewBox="0 0 16 16"><path d="M4 1.75C4 .784 4.784 0 5.75 0h4.5C11.216 0 12 .784 12 1.75v12.5A1.75 1.75 0 0110.25 16h-4.5A1.75 1.75 0 014 14.25V1.75zm1.75-.25a.25.25 0 00-.25.25v12.5c0 .138.112.25.25.25h4.5a.25.25 0 00.25-.25V1.75a.25.25 0 00-.25-.25h-4.5zM8 13a1 1 0 100-2 1 1 0 000 2z"></path></svg>
+                            <span class="truncate">WA Devices & QR</span>
+                        </span>
+                        <span class="w-2 h-2 rounded-full bg-[#238636] flex-shrink-0 ml-1.5"></span>
+                    </button>
+                </div>
+            </div>
+            @endif
+        </div>
+
+        <!-- GITHUB-STYLE USER PROFILE & LOGOUT FOOTER (Fixed Bottom) -->
+        <div class="p-3 border-t border-[#30363d] bg-[#090d13] flex-shrink-0 space-y-2">
+            <!-- User Info Pill -->
+            <div onclick="openUserProfileModal()" class="cursor-pointer hover:bg-[#161b22] p-2 rounded-lg transition group border border-[#30363d] bg-[#161b22]/50" title="Klik untuk Edit Profil & Ganti Password">
+                <div class="flex items-center justify-between gap-2 min-w-0">
+                    <div class="flex items-center gap-2 min-w-0">
                         <div class="relative flex-shrink-0">
-                            <div class="w-8 h-8 rounded-full bg-[#21262d] group-hover:bg-[#30363d] border border-[#30363d] text-[#f0f6fc] flex items-center justify-center font-bold text-xs shadow-sm">
+                            <div class="w-7 h-7 rounded-full bg-[#21262d] group-hover:bg-[#30363d] border border-[#30363d] text-[#f0f6fc] flex items-center justify-center font-bold text-xs shadow-sm">
                                 {{ strtoupper(substr($user->name, 0, 1)) }}
                             </div>
-                            <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-[#238636] border-2 border-[#161b22] rounded-full" title="Online"></span>
+                            <span class="absolute bottom-0 right-0 w-2 h-2 bg-[#238636] border-2 border-[#161b22] rounded-full" title="Online"></span>
                         </div>
                         <div class="truncate">
                             <p class="text-xs font-semibold text-[#f0f6fc] group-hover:text-[#58a6ff] truncate leading-tight transition">{{ $user->name }}</p>
                             <p class="text-[10px] text-[#8b949e] truncate font-mono mt-0.5">{{ $user->email }}</p>
                         </div>
                     </div>
-                    <span class="text-[10px] text-[#8b949e] group-hover:text-[#58a6ff] transition">⚙️</span>
+                    <span class="text-[11px] text-[#8b949e] group-hover:text-[#58a6ff] transition flex-shrink-0">⚙️</span>
                 </div>
             </div>
 
-            <div class="flex items-center justify-between px-1 mb-2.5 mt-2">
+            <!-- Role Badge & ID -->
+            <div class="flex items-center justify-between px-1">
                 <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded {{ $user->isCeo() ? 'bg-indigo-950/80 text-indigo-400 border border-indigo-800/50' : ($user->isSupervisor() ? 'bg-amber-950/80 text-amber-400 border border-amber-800/50' : 'bg-emerald-950/80 text-emerald-400 border border-emerald-800/50') }} uppercase tracking-wider">
                     {{ $user->isCeo() ? 'Executive CEO' : ($user->isSupervisor() ? 'Supervisor' : 'Sales Admin') }}
                 </span>
                 <span class="text-[10px] text-[#8b949e] font-mono">#{{ $user->id }}</span>
             </div>
 
-            <div class="flex items-center gap-2">
-                <button onclick="openUserProfileModal()" class="p-2 bg-[#21262d] hover:bg-[#30363d] text-[#8b949e] hover:text-[#58a6ff] rounded-md transition border border-[#30363d] flex items-center justify-center shadow-sm" title="Edit Profil & Ganti Password">
+            <!-- Action Buttons: Edit Profile, SMTP Settings, Sign Out -->
+            <div class="flex items-center gap-1.5 pt-0.5">
+                <button onclick="openUserProfileModal()" class="p-1.5 bg-[#21262d] hover:bg-[#30363d] text-[#8b949e] hover:text-[#58a6ff] rounded-md transition border border-[#30363d] flex items-center justify-center shadow-sm flex-shrink-0" title="Edit Profil & Ganti Password">
                     <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 16 16"><path d="M10.5 5a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0zM0 8a8 8 0 1116 0A8 8 0 010 8zm8-7a7 7 0 00-5.468 11.37C3.242 11.226 4.805 10 8 10s4.757 1.225 5.468 2.37A7 7 0 008 1z"></path></svg>
                 </button>
                 @if($user->isCeo())
-                <button onclick="openSmtpSettingsModal()" class="p-2 bg-[#21262d] hover:bg-[#30363d] text-[#8b949e] hover:text-[#58a6ff] rounded-md transition border border-[#30363d] flex items-center justify-center shadow-sm" title="Pengaturan Server SMTP Email & Sistem">
+                <button onclick="openSmtpSettingsModal()" class="p-1.5 bg-[#21262d] hover:bg-[#30363d] text-[#8b949e] hover:text-[#58a6ff] rounded-md transition border border-[#30363d] flex items-center justify-center shadow-sm flex-shrink-0" title="Pengaturan Server SMTP Email & Sistem">
                     <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 16 16"><path d="M8 0a8.2 8.2 0 00-1.7.2c-.3.1-.5.3-.5.6l-.3 1.2c-.4.2-.9.4-1.3.7l-1.1-.6c-.3-.1-.6 0-.8.2l-1.2 2c-.2.3-.1.6.1.8l1 .8c0 .2-.1.5-.1.8s0 .5.1.8l-1 .8c-.2.2-.3.5-.1.8l1.2 2c.2.2.5.3.8.2l1.1-.6c.4.3.8.5 1.3.7l.3 1.2c0 .3.2.5.5.6A8.2 8.2 0 008 16a8.2 8.2 0 001.7-.2c.3-.1.5-.3.5-.6l.3-1.2c.4-.2.9-.4 1.3-.7l1.1.6c.3.1.6 0 .8-.2l1.2-2c.2-.3.1-.6-.1-.8l-1-.8c0-.2.1-.5.1-.8s0-.5-.1-.8l1-.8c.2-.2.3-.5.1-.8l-1.2-2c-.2-.2-.5-.3-.8-.2l-1.1.6c-.4-.3-.8-.5-1.3-.7l-.3-1.2c0-.3-.2-.5-.5-.6A8.2 8.2 0 008 0zm0 5a3 3 0 110 6 3 3 0 010-6z"></path></svg>
                 </button>
                 @endif
-                <form method="POST" action="/logout" class="flex-1">
+                <form method="POST" action="/logout" class="flex-1 min-w-0">
                     @csrf
-                    <button type="submit" class="w-full py-1.5 bg-[#21262d] hover:bg-[#30363d] hover:text-[#f85149] text-[#c9d1d9] font-medium text-xs rounded-md transition border border-[#30363d] flex items-center justify-center gap-2">
+                    <button type="submit" class="w-full py-1.5 px-2 bg-[#21262d] hover:bg-[#30363d] hover:text-[#f85149] text-[#c9d1d9] font-semibold text-xs rounded-md transition border border-[#30363d] flex items-center justify-center gap-1.5 shadow-sm">
                         <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 16 16"><path d="M2 2.75C2 1.784 2.784 1 3.75 1h2.5a.75.75 0 010 1.5h-2.5a.25.25 0 00-.25.25v10.5c0 .138.112.25.25.25h2.5a.75.75 0 010 1.5h-2.5A1.75 1.75 0 012 13.25V2.75zm10.44 4.5H6.75a.75.75 0 000 1.5h5.69l-1.97 1.97a.75.75 0 101.06 1.06l3.25-3.25a.75.75 0 000-1.06l-3.25-3.25a.75.75 0 10-1.06 1.06l1.97 1.97z"></path></svg>
-                        Sign out
+                        <span class="truncate">Sign out</span>
                     </button>
                 </form>
             </div>
@@ -225,14 +228,14 @@
             <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-sm space-y-3.5">
                 @if($user->isCeo() || ($user->isSupervisor() && $waAccounts->count() > 1))
                 <!-- 1. Multi-Brand Selector Tabs -->
-                <div class="flex items-center gap-2 overflow-x-auto pb-1" style="scrollbar-width: thin;">
-                    <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 pl-1 whitespace-nowrap flex items-center gap-1.5">
+                <div class="flex items-center gap-2 overflow-x-auto pb-1.5 flex-nowrap" style="scrollbar-width: thin;">
+                    <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 pl-1 whitespace-nowrap flex items-center gap-1.5 flex-shrink-0">
                         <span>🏢</span> Brand:
                     </span>
                     <a href="/?filter={{ $filter }}&account_id=all&temperature={{ $temperatureFilter }}" 
-                       class="px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 {{ $accountId === 'all' ? 'bg-slate-900 text-white shadow-sm ring-2 ring-slate-900/20' : 'bg-slate-100 hover:bg-slate-200 text-slate-700' }}">
+                       class="px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 flex-shrink-0 {{ $accountId === 'all' ? 'bg-slate-900 text-white shadow-sm ring-2 ring-slate-900/20' : 'bg-slate-100 hover:bg-slate-200 text-slate-700' }}">
                         <span>🌐</span> {{ $user->isCeo() ? 'Semua Brand (Portfolio)' : 'Semua Brand Saya' }}
-                        <span class="px-2 py-0.5 rounded-full text-[10px] {{ $accountId === 'all' ? 'bg-slate-700 text-white' : 'bg-slate-200 text-slate-700' }} font-bold">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] {{ $accountId === 'all' ? 'bg-slate-700 text-white' : 'bg-slate-200 text-slate-700' }} font-bold ml-1">
                             {{ $user->isCeo() ? \App\Models\Lead::count() : \App\Models\Lead::whereIn('wa_account_id', $waAccounts->pluck('id'))->count() }}
                         </span>
                     </a>
@@ -241,10 +244,10 @@
                         $isAccActive = ($accountId == $acc->id);
                     @endphp
                     <a href="/?filter={{ $filter }}&account_id={{ $acc->id }}&temperature={{ $temperatureFilter }}" 
-                       class="px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 {{ $isAccActive ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-600/30' : 'bg-slate-100 hover:bg-slate-200 text-slate-700' }}">
+                       class="px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 flex-shrink-0 {{ $isAccActive ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-600/30' : 'bg-slate-100 hover:bg-slate-200 text-slate-700' }}">
                         <span>{{ $acc->status === 'CONNECTED' ? '🟢' : '🟡' }}</span>
-                        {{ $acc->name }}
-                        <span class="px-2 py-0.5 rounded-full text-[10px] {{ $isAccActive ? 'bg-emerald-700 text-white' : 'bg-slate-200 text-slate-700' }} font-bold">
+                        <span>{{ $acc->name }}</span>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] {{ $isAccActive ? 'bg-emerald-700 text-white' : 'bg-slate-200 text-slate-700' }} font-bold ml-0.5">
                             {{ $acc->leads->count() }}
                         </span>
                     </a>
@@ -253,15 +256,15 @@
                 @endif
 
                 <!-- 2. Dynamic Lead Temperature Funnel Filter (Cold ❄️ -> Cool 💧 -> Warm 🌤️ -> Very Warm ⚡ -> Hot 🔥 & Dead 💀) -->
-                <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-3 pt-2 {{ ($user->isCeo() || ($user->isSupervisor() && $waAccounts->count() > 1)) ? 'border-t border-slate-100' : '' }}">
-                    <div class="flex items-center gap-1.5 overflow-x-auto pb-1" style="scrollbar-width: thin;">
-                        <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 pl-1 whitespace-nowrap flex items-center gap-1">
+                <div class="flex items-center justify-between gap-3 pt-2 {{ ($user->isCeo() || ($user->isSupervisor() && $waAccounts->count() > 1)) ? 'border-t border-slate-100' : '' }}">
+                    <div class="flex items-center gap-1.5 overflow-x-auto pb-1 flex-nowrap" style="scrollbar-width: thin;">
+                        <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 pl-1 whitespace-nowrap flex items-center gap-1 flex-shrink-0">
                             <span>🌡️</span> Suhu Prospek:
                         </span>
 
                         <!-- All Temperatures -->
                         <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature=all&cs_id={{ $csId }}" 
-                           class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 {{ $temperatureFilter === 'all' ? 'bg-slate-900 text-white shadow-sm' : 'bg-slate-100 hover:bg-slate-200 text-slate-700' }}">
+                           class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 flex-shrink-0 {{ $temperatureFilter === 'all' ? 'bg-slate-900 text-white shadow-sm' : 'bg-slate-100 hover:bg-slate-200 text-slate-700' }}">
                             <span>📊</span> Semua
                             <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ $temperatureFilter === 'all' ? 'bg-slate-700 text-white' : 'bg-slate-200 text-slate-600' }} font-bold">
                                 {{ $totalLeads }}
@@ -270,7 +273,7 @@
 
                         <!-- Hot Leads (Rose/Red) -->
                         <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature=hot&cs_id={{ $csId }}" 
-                           class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 {{ $temperatureFilter === 'hot' ? 'bg-rose-600 text-white shadow-sm ring-2 ring-rose-400/40' : 'bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200' }}">
+                           class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 flex-shrink-0 {{ $temperatureFilter === 'hot' ? 'bg-rose-600 text-white shadow-sm ring-2 ring-rose-400/40' : 'bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200' }}">
                             <span>🔥</span> Hot Lead
                             <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ $temperatureFilter === 'hot' ? 'bg-rose-700 text-white' : 'bg-rose-200 text-rose-900' }} font-extrabold">
                                 {{ $hotCount }}
@@ -279,7 +282,7 @@
 
                         <!-- Very Warm Leads (Orange) -->
                         <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature=very_warm&cs_id={{ $csId }}" 
-                           class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 {{ $temperatureFilter === 'very_warm' ? 'bg-orange-600 text-white shadow-sm ring-2 ring-orange-400/40' : 'bg-orange-50 hover:bg-orange-100 text-orange-800 border border-orange-200' }}">
+                           class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 flex-shrink-0 {{ $temperatureFilter === 'very_warm' ? 'bg-orange-600 text-white shadow-sm ring-2 ring-orange-400/40' : 'bg-orange-50 hover:bg-orange-100 text-orange-800 border border-orange-200' }}">
                             <span>⚡</span> Very Warm
                             <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ $temperatureFilter === 'very_warm' ? 'bg-orange-700 text-white' : 'bg-orange-200 text-orange-900' }} font-extrabold">
                                 {{ $veryWarmCount }}
@@ -288,7 +291,7 @@
 
                         <!-- Warm Leads (Amber/Yellow) -->
                         <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature=warm&cs_id={{ $csId }}" 
-                           class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 {{ $temperatureFilter === 'warm' ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-400/40' : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200' }}">
+                           class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 flex-shrink-0 {{ $temperatureFilter === 'warm' ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-400/40' : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200' }}">
                             <span>🌤️</span> Warm Lead
                             <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ $temperatureFilter === 'warm' ? 'bg-amber-600 text-white' : 'bg-amber-200 text-amber-900' }} font-extrabold">
                                 {{ $warmCount }}
@@ -297,7 +300,7 @@
 
                         <!-- Cool Leads (Teal/Cyan) -->
                         <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature=cool&cs_id={{ $csId }}" 
-                           class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 {{ $temperatureFilter === 'cool' ? 'bg-teal-600 text-white shadow-sm ring-2 ring-teal-400/40' : 'bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200' }}">
+                           class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 flex-shrink-0 {{ $temperatureFilter === 'cool' ? 'bg-teal-600 text-white shadow-sm ring-2 ring-teal-400/40' : 'bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200' }}">
                             <span>💧</span> Cool Lead
                             <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ $temperatureFilter === 'cool' ? 'bg-teal-700 text-white' : 'bg-teal-200 text-teal-900' }} font-extrabold">
                                 {{ $coolCount }}
@@ -306,7 +309,7 @@
 
                         <!-- Cold Leads (Sky/Blue) -->
                         <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature=cold&cs_id={{ $csId }}" 
-                           class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 {{ $temperatureFilter === 'cold' ? 'bg-sky-600 text-white shadow-sm ring-2 ring-sky-400/40' : 'bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200' }}">
+                           class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 flex-shrink-0 {{ $temperatureFilter === 'cold' ? 'bg-sky-600 text-white shadow-sm ring-2 ring-sky-400/40' : 'bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200' }}">
                             <span>❄️</span> Cold Lead
                             <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ $temperatureFilter === 'cold' ? 'bg-sky-700 text-white' : 'bg-sky-200 text-sky-900' }} font-extrabold">
                                 {{ $coldCount }}
@@ -315,7 +318,7 @@
 
                         <!-- Dead Leads (Slate/Gray) -->
                         <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature=dead&cs_id={{ $csId }}" 
-                           class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 {{ $temperatureFilter === 'dead' ? 'bg-slate-700 text-white shadow-sm ring-2 ring-slate-400/40' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300' }}">
+                           class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 flex-shrink-0 {{ $temperatureFilter === 'dead' ? 'bg-slate-700 text-white shadow-sm ring-2 ring-slate-400/40' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300' }}">
                             <span>💀</span> Dead / Spam
                             <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ $temperatureFilter === 'dead' ? 'bg-slate-800 text-white' : 'bg-slate-200 text-slate-700' }} font-extrabold">
                                 {{ $deadCount }}
@@ -323,8 +326,8 @@
                         </a>
                     </div>
 
-                    <div class="text-[11px] text-slate-400 flex items-center gap-1.5 pl-1">
-                        <span>🎯 Skala suhu beradaptasi dinamis: Cold ❄️ &rarr; Cool 💧 &rarr; Warm 🌤️ &rarr; Very Warm ⚡ &rarr; Hot 🔥 (Spam = 💀 Dead Lead).</span>
+                    <div class="hidden 2xl:flex items-center gap-1 text-[11px] text-slate-400 whitespace-nowrap pl-1">
+                        <span>🎯 Skala: Cold ❄️ &rarr; Warm 🌤️ &rarr; Hot 🔥 (Spam = 💀 Dead)</span>
                     </div>
                 </div>
             </div>
@@ -335,20 +338,20 @@
             @endphp
 
             @if($disconnectedAccounts->isNotEmpty())
-            <div class="bg-amber-50 border border-amber-300 p-4 rounded-2xl shadow-sm flex flex-col sm:flex-row items-center justify-between gap-3">
-                <div class="flex items-center gap-3">
-                    <div class="p-2 bg-amber-100 rounded-xl text-amber-800 font-bold text-sm">
+            <div class="bg-amber-50 border border-amber-300 p-3.5 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="p-2 bg-amber-100 rounded-xl text-amber-800 font-bold text-sm flex-shrink-0">
                         ⚠️
                     </div>
-                    <div>
-                        <h4 class="font-bold text-amber-900 text-sm">Perhatian: {{ $disconnectedAccounts->count() }} Perangkat WA Terputus!</h4>
-                        <p class="text-xs text-amber-700 mt-0.5">
+                    <div class="min-w-0">
+                        <h4 class="font-bold text-amber-900 text-xs sm:text-sm truncate">Perhatian: {{ $disconnectedAccounts->count() }} Perangkat WA Terputus!</h4>
+                        <p class="text-[11px] sm:text-xs text-amber-700 mt-0.5 line-clamp-2 md:line-clamp-1">
                             Akun terputus: <strong>{{ $disconnectedAccounts->pluck('name')->join(', ') }}</strong>. Email peringatan darurat otomatis dikirim ke Admin CS, Supervisor Brand & CC ke CEO (ashabil@difitech.id).
                         </p>
                     </div>
                 </div>
-                <button onclick="openDeviceModal();" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl transition whitespace-nowrap shadow-sm">
-                    📲 Scan Ulang Barcode
+                <button onclick="openDeviceModal();" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl transition whitespace-nowrap shadow-sm flex-shrink-0">
+                    📱 Scan Ulang Barcode
                 </button>
             </div>
             @endif
