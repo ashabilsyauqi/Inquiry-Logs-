@@ -8,6 +8,7 @@
 -- PHP Version: 8.4.24
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+SET FOREIGN_KEY_CHECKS = 0;
 START TRANSACTION;
 SET time_zone = "+00:00";
 
@@ -27,7 +28,7 @@ SET time_zone = "+00:00";
 -- Table structure for table `ai_lead_comparisons`
 --
 
-CREATE TABLE `ai_lead_comparisons` (
+DROP TABLE IF EXISTS `ai_lead_comparisons`; CREATE TABLE `ai_lead_comparisons` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `report_date` date NOT NULL,
   `real_stage_counts` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL ,
@@ -43,7 +44,7 @@ CREATE TABLE `ai_lead_comparisons` (
 -- Table structure for table `brand_supervisors`
 --
 
-CREATE TABLE `brand_supervisors` (
+DROP TABLE IF EXISTS `brand_supervisors`; CREATE TABLE `brand_supervisors` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `user_id` bigint(20) UNSIGNED NOT NULL,
   `wa_account_id` bigint(20) UNSIGNED NOT NULL,
@@ -68,7 +69,7 @@ INSERT INTO `brand_supervisors` (`id`, `user_id`, `wa_account_id`, `created_at`,
 -- Table structure for table `cache`
 --
 
-CREATE TABLE `cache` (
+DROP TABLE IF EXISTS `cache`; CREATE TABLE `cache` (
   `key` varchar(255) NOT NULL,
   `value` mediumtext NOT NULL,
   `expiration` bigint(20) NOT NULL
@@ -80,7 +81,7 @@ CREATE TABLE `cache` (
 -- Table structure for table `cache_locks`
 --
 
-CREATE TABLE `cache_locks` (
+DROP TABLE IF EXISTS `cache_locks`; CREATE TABLE `cache_locks` (
   `key` varchar(255) NOT NULL,
   `owner` varchar(255) NOT NULL,
   `expiration` bigint(20) NOT NULL
@@ -92,7 +93,7 @@ CREATE TABLE `cache_locks` (
 -- Table structure for table `failed_jobs`
 --
 
-CREATE TABLE `failed_jobs` (
+DROP TABLE IF EXISTS `failed_jobs`; CREATE TABLE `failed_jobs` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `uuid` varchar(255) NOT NULL,
   `connection` varchar(255) NOT NULL,
@@ -108,7 +109,7 @@ CREATE TABLE `failed_jobs` (
 -- Table structure for table `jobs`
 --
 
-CREATE TABLE `jobs` (
+DROP TABLE IF EXISTS `jobs`; CREATE TABLE `jobs` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `queue` varchar(255) NOT NULL,
   `payload` longtext NOT NULL,
@@ -124,7 +125,7 @@ CREATE TABLE `jobs` (
 -- Table structure for table `job_batches`
 --
 
-CREATE TABLE `job_batches` (
+DROP TABLE IF EXISTS `job_batches`; CREATE TABLE `job_batches` (
   `id` varchar(255) NOT NULL,
   `name` varchar(255) NOT NULL,
   `total_jobs` int(11) NOT NULL,
@@ -143,7 +144,7 @@ CREATE TABLE `job_batches` (
 -- Table structure for table `leads`
 --
 
-CREATE TABLE `leads` (
+DROP TABLE IF EXISTS `leads`; CREATE TABLE `leads` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `wa_account_id` bigint(20) UNSIGNED DEFAULT NULL,
   `name` varchar(255) NOT NULL,
@@ -204,7 +205,7 @@ INSERT INTO `leads` (`id`, `wa_account_id`, `name`, `phone`, `stage`, `ai_sugges
 -- Table structure for table `lead_messages`
 --
 
-CREATE TABLE `lead_messages` (
+DROP TABLE IF EXISTS `lead_messages`; CREATE TABLE `lead_messages` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `lead_id` bigint(20) UNSIGNED NOT NULL,
   `sender` varchar(255) DEFAULT NULL,
@@ -395,7 +396,7 @@ INSERT INTO `lead_messages` (`id`, `lead_id`, `sender`, `message`, `is_from_me`,
 -- Table structure for table `migrations`
 --
 
-CREATE TABLE `migrations` (
+DROP TABLE IF EXISTS `migrations`; CREATE TABLE `migrations` (
   `id` int(10) UNSIGNED NOT NULL,
   `migration` varchar(255) NOT NULL,
   `batch` int(11) NOT NULL
@@ -436,7 +437,7 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 -- Table structure for table `password_reset_tokens`
 --
 
-CREATE TABLE `password_reset_tokens` (
+DROP TABLE IF EXISTS `password_reset_tokens`; CREATE TABLE `password_reset_tokens` (
   `email` varchar(255) NOT NULL,
   `token` varchar(255) NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL
@@ -448,7 +449,7 @@ CREATE TABLE `password_reset_tokens` (
 -- Table structure for table `personal_access_tokens`
 --
 
-CREATE TABLE `personal_access_tokens` (
+DROP TABLE IF EXISTS `personal_access_tokens`; CREATE TABLE `personal_access_tokens` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `tokenable_type` varchar(255) NOT NULL,
   `tokenable_id` bigint(20) UNSIGNED NOT NULL,
@@ -467,7 +468,7 @@ CREATE TABLE `personal_access_tokens` (
 -- Table structure for table `pipeline_stages`
 --
 
-CREATE TABLE `pipeline_stages` (
+DROP TABLE IF EXISTS `pipeline_stages`; CREATE TABLE `pipeline_stages` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `wa_account_id` bigint(20) UNSIGNED DEFAULT NULL,
   `name` varchar(255) NOT NULL,
@@ -513,7 +514,7 @@ INSERT INTO `pipeline_stages` (`id`, `wa_account_id`, `name`, `order`, `is_defau
 -- Table structure for table `sessions`
 --
 
-CREATE TABLE `sessions` (
+DROP TABLE IF EXISTS `sessions`; CREATE TABLE `sessions` (
   `id` varchar(255) NOT NULL,
   `user_id` bigint(20) UNSIGNED DEFAULT NULL,
   `ip_address` varchar(45) DEFAULT NULL,
@@ -528,7 +529,7 @@ CREATE TABLE `sessions` (
 -- Table structure for table `smtp_settings`
 --
 
-CREATE TABLE `smtp_settings` (
+DROP TABLE IF EXISTS `smtp_settings`; CREATE TABLE `smtp_settings` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `mail_mailer` varchar(255) NOT NULL DEFAULT 'smtp',
   `mail_host` varchar(255) DEFAULT NULL,
@@ -556,7 +557,7 @@ INSERT INTO `smtp_settings` (`id`, `mail_mailer`, `mail_host`, `mail_port`, `mai
 -- Table structure for table `stage_triggers`
 --
 
-CREATE TABLE `stage_triggers` (
+DROP TABLE IF EXISTS `stage_triggers`; CREATE TABLE `stage_triggers` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `wa_account_id` bigint(20) UNSIGNED DEFAULT NULL,
   `pipeline_stage_id` bigint(20) UNSIGNED NOT NULL,
@@ -610,7 +611,7 @@ INSERT INTO `stage_triggers` (`id`, `wa_account_id`, `pipeline_stage_id`, `keywo
 -- Table structure for table `users`
 --
 
-CREATE TABLE `users` (
+DROP TABLE IF EXISTS `users`; CREATE TABLE `users` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `name` varchar(255) NOT NULL,
   `email` varchar(255) NOT NULL,
@@ -644,7 +645,7 @@ INSERT INTO `users` (`id`, `name`, `email`, `phone`, `role`, `status`, `wa_accou
 -- Table structure for table `wa_accounts`
 --
 
-CREATE TABLE `wa_accounts` (
+DROP TABLE IF EXISTS `wa_accounts`; CREATE TABLE `wa_accounts` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `name` varchar(255) NOT NULL,
   `category` varchar(255) DEFAULT NULL,
