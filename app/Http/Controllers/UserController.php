@@ -79,11 +79,24 @@ class UserController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        $brandId = $user->isCeo() ? request('account_id') : $user->wa_account_id;
-
+        $reqBrandId = request('account_id');
         $query = User::where('role', 'SALES_ADMIN');
-        if ($brandId && $brandId !== 'all') {
-            $query->where('wa_account_id', $brandId);
+
+        if ($user->isCeo()) {
+            if ($reqBrandId && $reqBrandId !== 'all') {
+                $query->where('wa_account_id', $reqBrandId);
+            }
+        } elseif ($user->isSupervisor()) {
+            if ($reqBrandId && $reqBrandId !== 'all' && $user->canAccessBrand($reqBrandId)) {
+                $query->where('wa_account_id', $reqBrandId);
+            } else {
+                // Return all CS members under brands supervised by this supervisor
+                $accessibleBrandIds = $user->getAccessibleBrands()->pluck('id')->toArray();
+                $query->whereIn('wa_account_id', $accessibleBrandIds);
+            }
+        } else {
+            // Sales Admin: only self and colleagues under same brand
+            $query->where('wa_account_id', $user->wa_account_id);
         }
 
         $csTeam = $query->with('waAccount')->latest()->get();
@@ -104,10 +117,23 @@ class UserController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        $brandId = $supervisor->isCeo() ? ($request->input('wa_account_id') ?: $supervisor->wa_account_id) : $supervisor->wa_account_id;
-        if ((!$brandId || $brandId === 'all') && $supervisor->isCeo()) {
-            $firstBrand = WaAccount::where('approval_status', 'APPROVED')->first() ?: WaAccount::first();
-            $brandId = $firstBrand ? $firstBrand->id : null;
+        $reqBrandId = $request->input('wa_account_id');
+        $brandId = null;
+
+        if ($supervisor->isCeo()) {
+            $brandId = ($reqBrandId && $reqBrandId !== 'all') ? $reqBrandId : $supervisor->wa_account_id;
+            if (!$brandId) {
+                $firstBrand = WaAccount::where('approval_status', 'APPROVED')->first() ?: WaAccount::first();
+                $brandId = $firstBrand ? $firstBrand->id : null;
+            }
+        } elseif ($supervisor->isSupervisor()) {
+            if ($reqBrandId && $reqBrandId !== 'all' && $supervisor->canAccessBrand($reqBrandId)) {
+                $brandId = $reqBrandId;
+            } else {
+                $brandId = $supervisor->wa_account_id;
+            }
+        } else {
+            $brandId = $supervisor->wa_account_id;
         }
 
         if (!$brandId) {
@@ -125,10 +151,13 @@ class UserController extends Controller
             'password.min' => 'Password minimal 6 karakter.',
         ]);
 
+        $cleanPhone = $request->phone ? preg_replace('/[^0-9]/', '', $request->phone) : null;
+
         $csUser = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'phone' => $request->phone,
+            'phone' => $cleanPhone,
+            'wa_phone' => $cleanPhone,
             'password' => \Illuminate\Support\Facades\Hash::make($request->password),
             'role' => 'SALES_ADMIN',
             'status' => 'APPROVED', // CS registered by Supervisor are AUTO-APPROVED
@@ -140,7 +169,7 @@ class UserController extends Controller
 
         return response()->json([
             'status' => 'success',
-            'message' => '🎉 Admin CS baru "' . $csUser->name . '" berhasil direkrut & aktif!',
+            'message' => '🎉 Admin CS baru "' . $csUser->name . '" berhasil direkrut untuk brand terkait & aktif!',
             'csUser' => $csUser
         ]);
     }
@@ -163,8 +192,8 @@ class UserController extends Controller
             ]);
         }
 
-        // Security check: Non-CEO can only delete CS under their own brand
-        if (!$supervisor->isCeo() && $csUser->wa_account_id != $supervisor->wa_account_id) {
+        // Security check: Non-CEO can only delete CS under brands they supervise
+        if (!$supervisor->isCeo() && !$supervisor->canAccessBrand($csUser->wa_account_id)) {
             return response()->json(['error' => 'Akses ditolak: Hanya Supervisor Brand ini yang dapat menghapus CS.'], 403);
         }
 

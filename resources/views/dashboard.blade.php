@@ -1500,7 +1500,7 @@
                     <h3 class="font-bold text-lg flex items-center gap-2">
                         👥 Kelola Tim & Admin CS WhatsApp
                     </h3>
-                    <p class="text-xs text-blue-100">Rekrut dan kelola akun staff CS yang mengelola lead masuk brand ini</p>
+                    <p class="text-xs text-blue-100" id="csTeamModalSubtitle">Kelola akun staff CS dan alokasi pipeline brand Anda</p>
                 </div>
                 <button onclick="closeCsTeamModal()" class="text-blue-100 hover:text-white text-2xl font-bold">&times;</button>
             </div>
@@ -1509,22 +1509,43 @@
             <div class="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
                 <!-- Add New CS Form -->
                 <div class="bg-slate-50 border border-slate-200 p-5 rounded-2xl">
-                    <h4 class="font-bold text-slate-800 text-sm mb-3 flex items-center gap-2">
-                        <span>➕ Rekrut Admin CS Baru</span>
-                        <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">Langsung Aktif</span>
+                    <h4 class="font-bold text-slate-800 text-sm mb-3 flex items-center justify-between">
+                        <span class="flex items-center gap-2">
+                            <span>➕ Rekrut Admin CS Baru</span>
+                            <span class="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">Langsung Aktif</span>
+                        </span>
                     </h4>
                     <form id="createCsForm" onsubmit="submitCreateCsMember(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <div class="sm:col-span-2 lg:col-span-4 bg-white p-3 rounded-xl border border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-1">
+                            <div class="flex items-center gap-2">
+                                <span class="text-base">🏢</span>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-800">Pilih Brand Alokasi CS *</label>
+                                    <p class="text-[10px] text-slate-400">Admin CS yang direkrut akan otomatis ditugaskan ke brand ini.</p>
+                                </div>
+                            </div>
+                            <select id="cs_wa_account_id" onchange="loadCsTeamList(this.value)" class="w-full sm:w-auto px-3.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500 min-w-[220px]">
+                                @if($user->isCeo() || ($user->isSupervisor() && $waAccounts->count() > 1))
+                                <option value="all">🌐 Semua Brand Saya (Tampilkan Semua CS)</option>
+                                @endif
+                                @foreach($waAccounts as $acc)
+                                <option value="{{ $acc->id }}" {{ ($activeAccount && $activeAccount->id == $acc->id) ? 'selected' : '' }}>
+                                    🏢 {{ $acc->name }} ({{ $acc->phone ? '+' . $acc->phone : 'Belum Set WA' }})
+                                </option>
+                                @endforeach
+                            </select>
+                        </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">Nama Admin CS *</label>
-                            <input type="text" id="cs_name" required placeholder="Contoh: Wijaya CS 1" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 outline-none font-semibold">
+                            <input type="text" id="cs_name" required placeholder="Contoh: Bu Amel" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 outline-none font-semibold">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">Email Login CS *</label>
-                            <input type="email" id="cs_email" required placeholder="cs1@difitech.co.id" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 outline-none">
+                            <input type="email" id="cs_email" required placeholder="amel@difitech.co.id" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 outline-none">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">No. WhatsApp (Opsional)</label>
-                            <input type="text" id="cs_phone" placeholder="628123456789" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 outline-none font-mono">
+                            <input type="text" id="cs_phone" placeholder="62895638871717" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs focus:ring-2 focus:ring-blue-500 outline-none font-mono">
                         </div>
                         <div>
                             <label class="block text-xs font-bold text-slate-700 mb-1">Password CS *</label>
@@ -1799,7 +1820,8 @@
         function loadCsTeamCount() {
             const badge = document.getElementById('csTeamBadge');
             if (!badge) return;
-            const accId = '{{ $accountId }}';
+            const urlParams = new URLSearchParams(window.location.search);
+            const accId = urlParams.get('account_id') || '{{ $accountId }}';
             fetch('/brand/cs-team?account_id=' + accId)
                 .then(res => res.json())
                 .then(data => {
@@ -1812,6 +1834,11 @@
         function openCsTeamModal() {
             isModalOpen = true;
             document.getElementById('csTeamManagementModal').classList.remove('hidden');
+            const urlParams = new URLSearchParams(window.location.search);
+            let accId = urlParams.get('account_id') || '{{ $accountId }}';
+            if (accId && document.getElementById('cs_wa_account_id')) {
+                document.getElementById('cs_wa_account_id').value = accId;
+            }
             loadCsTeamList();
         }
 
@@ -1820,18 +1847,24 @@
             document.getElementById('csTeamManagementModal').classList.add('hidden');
         }
 
-        function loadCsTeamList() {
+        function loadCsTeamList(overrideBrandId = null) {
             const tbody = document.getElementById('csTeamTableBody');
             const badge = document.getElementById('csTeamBadge');
             const countLabel = document.getElementById('csTeamTableCount');
             if (!tbody) return;
 
-            let accId = '{{ $accountId }}';
-            if (accId === 'all' || !accId) {
-                const urlParams = new URLSearchParams(window.location.search);
-                accId = activeSettingsBrandId || urlParams.get('account_id') || '{{ $activeAccount ? $activeAccount->id : ($waAccounts->first() ? $waAccounts->first()->id : "all") }}';
+            let accId = overrideBrandId;
+            if (!accId) {
+                const selectElem = document.getElementById('cs_wa_account_id');
+                if (selectElem && selectElem.value) {
+                    accId = selectElem.value;
+                } else {
+                    const urlParams = new URLSearchParams(window.location.search);
+                    accId = urlParams.get('account_id') || '{{ $accountId }}';
+                }
             }
-            fetch('/brand/cs-team?account_id=' + accId, {
+
+            fetch('/brand/cs-team?account_id=' + (accId || 'all'), {
                 headers: {
                     'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
@@ -1844,14 +1877,14 @@
                     if (countLabel) countLabel.innerText = list.length + ' Data Admin CS';
 
                     if (list.length === 0) {
-                        tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400 font-medium">Belum ada Admin CS terdaftar. Gunakan form di atas untuk merekrut Admin CS baru.</td></tr>`;
+                        tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400 font-medium">Belum ada Admin CS terdaftar untuk brand ini. Gunakan form di atas untuk merekrut Admin CS baru.</td></tr>`;
                         return;
                     }
 
                     tbody.innerHTML = list.map(cs => {
                         const waAcc = cs.wa_account || {};
-                        const isConnected = waAcc.status === 'CONNECTED';
-                        const rawPhone = waAcc.phone || cs.phone;
+                        const isConnected = cs.wa_status === 'CONNECTED';
+                        const rawPhone = cs.wa_phone || cs.phone;
                         const cleanPhone = rawPhone ? rawPhone.toString().replace(/^\+/, '') : '';
 
                         let phoneBadgeHtml = '';
@@ -1871,6 +1904,12 @@
                                     🟢 Online
                                 </span>
                             `;
+                        } else if (cleanPhone) {
+                            phoneBadgeHtml = `
+                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200 font-mono">
+                                    📱 +${cleanPhone}
+                                </span>
+                            `;
                         } else {
                             phoneBadgeHtml = `
                                 <span title="Perangkat WhatsApp Belum Terhubung / Terputus" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-red-100 text-red-700 border border-red-200">
@@ -1879,13 +1918,21 @@
                             `;
                         }
 
+                        const brandBadge = waAcc.name ? `<span class="text-[10px] text-slate-400 block font-normal font-sans">Brand: <strong>${escapeHtml(waAcc.name)}</strong></span>` : '';
+
                         return `
                         <tr class="hover:bg-slate-50 transition border-b border-slate-100">
-                            <td class="p-3 font-bold text-slate-800 flex items-center gap-2">
-                                👤 ${cs.name}
+                            <td class="p-3 font-bold text-slate-800">
+                                <div class="flex items-center gap-2">
+                                    <span>👤</span>
+                                    <div>
+                                        <div>${escapeHtml(cs.name)}</div>
+                                        ${brandBadge}
+                                    </div>
+                                </div>
                             </td>
                             <td class="p-3 text-slate-600 font-mono">
-                                ${cs.email}
+                                ${escapeHtml(cs.email)}
                             </td>
                             <td class="p-3">
                                 ${phoneBadgeHtml}
@@ -1896,7 +1943,7 @@
                                 </span>
                             </td>
                             <td class="p-3 text-right">
-                                <button onclick="deleteCsMember(${cs.id}, '${cs.name}')" class="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-600 font-semibold text-xs rounded-lg transition border border-red-200">
+                                <button onclick="deleteCsMember(${cs.id}, '${escapeHtml(cs.name)}')" class="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-600 font-semibold text-xs rounded-lg transition border border-red-200">
                                     🗑️ Hapus
                                 </button>
                             </td>
@@ -1911,14 +1958,16 @@
         function submitCreateCsMember(e) {
             e.preventDefault();
             const btn = document.getElementById('btnSubmitCs');
-            const name = document.getElementById('cs_name').value;
-            const email = document.getElementById('cs_email').value;
-            const phone = document.getElementById('cs_phone').value;
+            const name = document.getElementById('cs_name').value.trim();
+            const email = document.getElementById('cs_email').value.trim();
+            const phone = document.getElementById('cs_phone').value.trim();
             const password = document.getElementById('cs_password').value;
-            let wa_account_id = '{{ $accountId }}';
-            if (wa_account_id === 'all' || !wa_account_id) {
-                const urlParams = new URLSearchParams(window.location.search);
-                wa_account_id = activeSettingsBrandId || urlParams.get('account_id') || '{{ $activeAccount ? $activeAccount->id : ($waAccounts->first() ? $waAccounts->first()->id : "") }}';
+            const brandSelect = document.getElementById('cs_wa_account_id');
+            let wa_account_id = brandSelect ? brandSelect.value : '{{ $accountId }}';
+
+            if (!wa_account_id || wa_account_id === 'all') {
+                alert('Silakan pilih salah satu Brand spesifik untuk alokasi Admin CS ini.');
+                return;
             }
 
             btn.disabled = true;
@@ -1957,8 +2006,11 @@
                 btn.disabled = false;
                 btn.innerText = '🚀 Simpan & Rekrut Admin CS';
                 showToastNotification('✅ ' + data.message);
-                document.getElementById('createCsForm').reset();
-                loadCsTeamList();
+                document.getElementById('cs_name').value = '';
+                document.getElementById('cs_email').value = '';
+                document.getElementById('cs_phone').value = '';
+                document.getElementById('cs_password').value = '';
+                loadCsTeamList(wa_account_id);
             })
             .catch(err => {
                 btn.disabled = false;
