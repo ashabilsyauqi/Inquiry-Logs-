@@ -16,6 +16,7 @@ class WaAccount extends Model
         'session_id',
         'status',
         'approval_status',
+        'rejection_reason',
         'supervisor_id',
         'disconnect_email_enabled',
         'disconnect_email_interval',
@@ -43,7 +44,8 @@ class WaAccount extends Model
         if ($this->status === 'CONNECTED') {
             return true;
         }
-        return $this->csTeam->where('wa_status', 'CONNECTED')->isNotEmpty();
+        $cs = $this->relationLoaded('csTeam') ? $this->csTeam : $this->csTeam()->get();
+        return $cs && $cs->where('wa_status', 'CONNECTED')->isNotEmpty();
     }
 
     public function getActivePhone(): ?string
@@ -51,7 +53,8 @@ class WaAccount extends Model
         if ($this->phone) {
             return $this->phone;
         }
-        $connectedCs = $this->csTeam->where('wa_status', 'CONNECTED')->first();
+        $cs = $this->relationLoaded('csTeam') ? $this->csTeam : $this->csTeam()->get();
+        $connectedCs = $cs ? $cs->where('wa_status', 'CONNECTED')->first() : null;
         return $connectedCs ? $connectedCs->wa_phone : null;
     }
 
@@ -83,15 +86,7 @@ class WaAccount extends Model
             StageTrigger::create(['wa_account_id' => $this->id, 'pipeline_stage_id' => $s3->id, 'keyword' => 'penawaran']);
             StageTrigger::create(['wa_account_id' => $this->id, 'pipeline_stage_id' => $s3->id, 'keyword' => 'proposal']);
             StageTrigger::create(['wa_account_id' => $this->id, 'pipeline_stage_id' => $s4->id, 'keyword' => 'deal']);
-            StageTrigger::create(['wa_account_id' => $this->id, 'pipeline_stage_id' => $s4->id, 'keyword' => 'lunas']);
-        } else {
-            if (!$this->pipelineStages()->where('is_default', true)->exists()) {
-                $firstStage = $this->pipelineStages()->first();
-                if ($firstStage) {
-                    $firstStage->is_default = true;
-                    $firstStage->save();
-                }
-            }
+            StageTrigger::create(['wa_account_id' => $this->id, 'pipeline_stage_id' => $s4->id, 'keyword' => 'transfer']);
         }
     }
 }
