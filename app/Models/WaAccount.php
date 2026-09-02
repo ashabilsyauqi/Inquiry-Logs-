@@ -35,7 +35,7 @@ class WaAccount extends Model
 
     public function csTeam()
     {
-        return $this->hasMany(User::class, 'wa_account_id');
+        return $this->hasMany(User::class, 'wa_account_id')->where('role', 'SALES_ADMIN');
     }
 
     public function leads()
