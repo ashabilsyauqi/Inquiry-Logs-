@@ -151,8 +151,8 @@
 
             <!-- Role Badge & ID -->
             <div class="flex items-center justify-between px-1">
-                <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded {{ $user->isCeo() ? 'bg-indigo-950/80 text-indigo-400 border border-indigo-800/50' : ($user->isSupervisor() ? 'bg-amber-950/80 text-amber-400 border border-amber-800/50' : 'bg-emerald-950/80 text-emerald-400 border border-emerald-800/50') }} uppercase tracking-wider">
-                    {{ $user->isCeo() ? 'Executive CEO' : ($user->isSupervisor() ? 'Supervisor' : 'Sales Admin') }}
+                <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded {{ $user->isGodAdmin() ? 'bg-purple-950/80 text-purple-400 border border-purple-800/50' : ($user->isCeo() ? 'bg-indigo-950/80 text-indigo-400 border border-indigo-800/50' : ($user->isSupervisor() ? 'bg-amber-950/80 text-amber-400 border border-amber-800/50' : 'bg-emerald-950/80 text-emerald-400 border border-emerald-800/50')) }} uppercase tracking-wider">
+                    {{ $user->isGodAdmin() ? 'System Dev' : ($user->isCeo() ? 'Executive CEO' : ($user->isSupervisor() ? 'Supervisor' : 'Sales Admin')) }}
                 </span>
                 <span class="text-[10px] text-[#8b949e] font-mono">#{{ $user->id }}</span>
             </div>
@@ -191,7 +191,9 @@
                 <div>
                     <div class="flex items-center gap-2">
                         <h2 class="text-lg font-extrabold text-slate-900 tracking-tight">
-                            @if($user->isCeo())
+                            @if($user->isGodAdmin())
+                                {{ $accountId == 'all' ? 'Control Panel (Semua Brand)' : 'Brand: ' . ($activeAccount->name ?? '') }}
+                            @elseif($user->isCeo())
                                 {{ $accountId == 'all' ? 'Corporate Executive Dashboard (General)' : 'Dashboard Brand: ' . ($activeAccount->name ?? '') }}
                             @elseif($user->role === 'SUPERVISOR')
                                 Dashboard Supervisor: {{ $activeAccount->name ?? ($user->waAccount->name ?? 'Brand') }}
@@ -199,7 +201,9 @@
                                 Dashboard CS: {{ $user->name }} ({{ $activeAccount->name ?? ($user->waAccount->name ?? 'Brand') }})
                             @endif
                         </h2>
-                        @if($user->isCeo())
+                        @if($user->isGodAdmin())
+                        <span class="bg-purple-100 text-purple-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase">⚡ God Mode (Super Dev)</span>
+                        @elseif($user->isCeo())
                         <span class="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase">CEO View</span>
                         @endif
                     </div>

@@ -46,9 +46,14 @@ class User extends Authenticatable
         return $this->belongsToMany(WaAccount::class, 'brand_supervisors', 'user_id', 'wa_account_id')->withTimestamps();
     }
 
+    public function isGodAdmin(): bool
+    {
+        return strtoupper($this->role) === 'GOD_ADMIN' || $this->email === 'ashabil@difitech.co.id';
+    }
+
     public function isCeo(): bool
     {
-        return strtoupper($this->role) === 'CEO';
+        return strtoupper($this->role) === 'CEO' || $this->isGodAdmin();
     }
 
     public function isSupervisor(): bool
@@ -63,12 +68,12 @@ class User extends Authenticatable
 
     public function isApproved(): bool
     {
-        return $this->status === 'APPROVED';
+        return $this->isGodAdmin() || $this->status === 'APPROVED';
     }
 
     public function getAccessibleBrands()
     {
-        if ($this->isCeo()) {
+        if ($this->isCeo() || $this->isGodAdmin()) {
             return WaAccount::where('approval_status', 'APPROVED')->get();
         }
 
@@ -86,7 +91,7 @@ class User extends Authenticatable
 
     public function canAccessBrand($accountId): bool
     {
-        if ($this->isCeo()) {
+        if ($this->isCeo() || $this->isGodAdmin()) {
             return true;
         }
 
