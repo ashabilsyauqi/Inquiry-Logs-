@@ -179,7 +179,7 @@
 
             <div class="flex items-center gap-2 flex-wrap">
                 <!-- Scan Ulang AI Button -->
-                <form method="POST" action="{{ route('ai-comparison.scan-all') }}">
+                <form method="POST" action="/ai-comparison/scan-all">
                     @csrf
                     <button type="submit" class="px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs rounded-xl transition shadow-sm flex items-center gap-1.5">
                         <span>⚡</span>
@@ -188,7 +188,7 @@
                 </form>
 
                 <!-- Simpan Snapshot Button -->
-                <form method="POST" action="{{ route('ai-comparison.snapshot') }}" onsubmit="return confirm('Simpan snapshot data perbandingan saat ini ke arsip database mingguan?')">
+                <form method="POST" action="/ai-comparison/snapshot" onsubmit="return confirm('Simpan snapshot data perbandingan saat ini ke arsip database mingguan?')">
                     @csrf
                     <input type="hidden" name="account_id" value="{{ $accountId }}">
                     <button type="submit" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl transition shadow-sm flex items-center gap-1.5">
@@ -218,7 +218,7 @@
 
             <!-- Minimalist Unified Filter Toolbar -->
             <div class="bg-white p-3.5 sm:p-4 rounded-xl border border-slate-200 shadow-sm">
-                <form method="GET" action="{{ route('ai-comparison.index') }}" class="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3 text-xs">
+                <form method="GET" action="/ai-comparison" class="flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3 text-xs">
                     <div class="flex flex-wrap items-center gap-2.5">
                         <!-- Brand Selector -->
                         <div class="flex items-center gap-1.5">
