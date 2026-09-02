@@ -51,7 +51,9 @@ if [ "$RUN_SEEDER" = "true" ]; then
     php artisan db:seed --class=WkmBrandSeeder --force || true
 fi
 
-# 5. Clear / Cache config
+# 5. Clear / Cache config & discover in-container packages
+rm -f /var/www/html/bootstrap/cache/*.php
+php artisan package:discover --quiet || true
 php artisan config:clear
 php artisan view:clear
 php artisan route:clear
