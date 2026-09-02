@@ -3,12 +3,11 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Sep 01, 2026 at 11:36 PM
+-- Generation Time: Sep 02, 2026 at 10:46 AM
 -- Server version: 11.4.13-MariaDB
 -- PHP Version: 8.4.24
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
-SET FOREIGN_KEY_CHECKS = 0;
 START TRANSACTION;
 SET time_zone = "+00:00";
 
@@ -28,7 +27,7 @@ SET time_zone = "+00:00";
 -- Table structure for table `ai_lead_comparisons`
 --
 
-DROP TABLE IF EXISTS `ai_lead_comparisons`; CREATE TABLE `ai_lead_comparisons` (
+CREATE TABLE `ai_lead_comparisons` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `report_date` date NOT NULL,
   `real_stage_counts` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL ,
@@ -44,7 +43,7 @@ DROP TABLE IF EXISTS `ai_lead_comparisons`; CREATE TABLE `ai_lead_comparisons` (
 -- Table structure for table `brand_supervisors`
 --
 
-DROP TABLE IF EXISTS `brand_supervisors`; CREATE TABLE `brand_supervisors` (
+CREATE TABLE `brand_supervisors` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `user_id` bigint(20) UNSIGNED NOT NULL,
   `wa_account_id` bigint(20) UNSIGNED NOT NULL,
@@ -69,7 +68,7 @@ INSERT INTO `brand_supervisors` (`id`, `user_id`, `wa_account_id`, `created_at`,
 -- Table structure for table `cache`
 --
 
-DROP TABLE IF EXISTS `cache`; CREATE TABLE `cache` (
+CREATE TABLE `cache` (
   `key` varchar(255) NOT NULL,
   `value` mediumtext NOT NULL,
   `expiration` bigint(20) NOT NULL
@@ -81,7 +80,7 @@ DROP TABLE IF EXISTS `cache`; CREATE TABLE `cache` (
 -- Table structure for table `cache_locks`
 --
 
-DROP TABLE IF EXISTS `cache_locks`; CREATE TABLE `cache_locks` (
+CREATE TABLE `cache_locks` (
   `key` varchar(255) NOT NULL,
   `owner` varchar(255) NOT NULL,
   `expiration` bigint(20) NOT NULL
@@ -93,7 +92,7 @@ DROP TABLE IF EXISTS `cache_locks`; CREATE TABLE `cache_locks` (
 -- Table structure for table `failed_jobs`
 --
 
-DROP TABLE IF EXISTS `failed_jobs`; CREATE TABLE `failed_jobs` (
+CREATE TABLE `failed_jobs` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `uuid` varchar(255) NOT NULL,
   `connection` varchar(255) NOT NULL,
@@ -109,7 +108,7 @@ DROP TABLE IF EXISTS `failed_jobs`; CREATE TABLE `failed_jobs` (
 -- Table structure for table `jobs`
 --
 
-DROP TABLE IF EXISTS `jobs`; CREATE TABLE `jobs` (
+CREATE TABLE `jobs` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `queue` varchar(255) NOT NULL,
   `payload` longtext NOT NULL,
@@ -125,7 +124,7 @@ DROP TABLE IF EXISTS `jobs`; CREATE TABLE `jobs` (
 -- Table structure for table `job_batches`
 --
 
-DROP TABLE IF EXISTS `job_batches`; CREATE TABLE `job_batches` (
+CREATE TABLE `job_batches` (
   `id` varchar(255) NOT NULL,
   `name` varchar(255) NOT NULL,
   `total_jobs` int(11) NOT NULL,
@@ -144,7 +143,7 @@ DROP TABLE IF EXISTS `job_batches`; CREATE TABLE `job_batches` (
 -- Table structure for table `leads`
 --
 
-DROP TABLE IF EXISTS `leads`; CREATE TABLE `leads` (
+CREATE TABLE `leads` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `wa_account_id` bigint(20) UNSIGNED DEFAULT NULL,
   `name` varchar(255) NOT NULL,
@@ -191,13 +190,14 @@ INSERT INTO `leads` (`id`, `wa_account_id`, `name`, `phone`, `stage`, `ai_sugges
 (22, 4, '+48438674739434', '48438674739434', 'Lead Masuk', 'Tanya Spek Produk', 'Tanya Spek Produk', '#tanya jawab', 'Percakapan terbaru berada pada tahap diskusi konsultasi dan tanya jawab produk.', '2026-08-28 17:45:53', '2026-08-28 04:00:06', '2026-08-28 17:45:53', NULL, 0, 4),
 (23, 4, 'Aceng Ari', '253566329585826', 'Lead Masuk', NULL, 'Lead Masuk', NULL, NULL, NULL, '2026-08-28 04:52:05', '2026-08-28 04:52:05', NULL, 0, 4),
 (24, 4, 'A. D', '97788385845368', 'Lead Masuk', NULL, 'Lead Masuk', NULL, NULL, NULL, '2026-08-28 05:20:43', '2026-08-28 05:20:43', NULL, 0, 4),
-(25, 4, 'syekhmuhammadrlzky123', '66194220572703', 'Lead Masuk', 'Tanya Spek Produk', 'Tanya Spek Produk', '#tanya jawab', 'Percakapan terbaru berada pada tahap diskusi konsultasi dan tanya jawab produk.', '2026-08-30 17:30:25', '2026-08-29 08:25:53', '2026-08-30 17:30:25', NULL, 0, 4),
+(25, 4, 'syekhmuhammadrlzky123', '66194220572703', 'Lead Masuk', 'Tanya Spek Produk', 'Tanya Spek Produk', '#tanya jawab', 'Percakapan terbaru berada pada tahap diskusi konsultasi dan tanya jawab produk.', '2026-09-01 15:28:55', '2026-08-29 08:25:53', '2026-09-01 15:28:55', NULL, 0, 4),
 (26, 4, 'ai rodiah1976', '12416800800896', 'Tanya Harga', 'Tanya Spek Produk', 'Tanya Spek Produk', '#tanya jawab', 'Percakapan terbaru berada pada tahap diskusi konsultasi dan tanya jawab produk.', '2026-08-29 22:17:40', '2026-08-29 16:33:52', '2026-08-29 22:17:40', NULL, 0, 4),
 (27, 4, 'muhamad mahesa', '17627284004962', 'Lead Masuk', NULL, 'Lead Masuk', NULL, NULL, NULL, '2026-08-30 23:07:41', '2026-08-30 23:07:41', NULL, 0, 4),
-(28, 8, 'Annaz', '16479923740792', 'Lead Masuk', 'Kirim Penawaran', 'Kirim Penawaran', '#kirim penawaran', 'Percakapan terbaru membahas pengiriman penawaran/proposal (penawaran).', '2026-09-01 04:47:25', '2026-09-01 02:28:41', '2026-09-01 04:47:25', NULL, 0, 5),
+(28, 8, 'Annaz', '16479923740792', 'Lead Masuk', 'Kirim Penawaran', 'Kirim Penawaran', '#kirim penawaran', 'Percakapan terbaru membahas pengiriman penawaran/proposal (penawaran).', '2026-09-01 19:58:07', '2026-09-01 02:28:41', '2026-09-01 19:58:07', NULL, 0, 5),
 (29, 8, 'Imane Ah Africa', '90298164224038', 'Lead Masuk', 'Kirim Penawaran', 'Kirim Penawaran', '#kirim penawaran', 'Percakapan terbaru membahas pengiriman penawaran/proposal (quotation).', '2026-09-01 08:19:11', '2026-09-01 04:19:23', '2026-09-01 08:19:11', NULL, 0, 5),
 (30, 8, 'Azzuhra F H', '34789386113092', 'Lead Masuk', NULL, 'Lead Masuk', NULL, NULL, NULL, '2026-09-01 05:22:50', '2026-09-01 05:22:50', NULL, 0, 5),
-(31, 8, '+38594827821120', '38594827821120', 'Lead Masuk', NULL, 'Lead Masuk', NULL, NULL, NULL, '2026-09-01 09:24:40', '2026-09-01 09:24:40', NULL, 0, 5);
+(31, 8, '+38594827821120', '38594827821120', 'Lead Masuk', NULL, 'Lead Masuk', NULL, NULL, NULL, '2026-09-01 09:24:40', '2026-09-01 09:24:40', NULL, 0, 5),
+(32, 8, '+49302483280053', '49302483280053', 'Lead Masuk', NULL, 'Lead Masuk', NULL, NULL, NULL, '2026-09-01 11:02:42', '2026-09-01 11:02:42', NULL, 0, 5);
 
 -- --------------------------------------------------------
 
@@ -205,7 +205,7 @@ INSERT INTO `leads` (`id`, `wa_account_id`, `name`, `phone`, `stage`, `ai_sugges
 -- Table structure for table `lead_messages`
 --
 
-DROP TABLE IF EXISTS `lead_messages`; CREATE TABLE `lead_messages` (
+CREATE TABLE `lead_messages` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `lead_id` bigint(20) UNSIGNED NOT NULL,
   `sender` varchar(255) DEFAULT NULL,
@@ -388,7 +388,28 @@ INSERT INTO `lead_messages` (`id`, `lead_id`, `sender`, `message`, `is_from_me`,
 (166, 31, '38594827821120', 'ba apaan si', 0, '2026-09-01 09:24:48', '2026-09-01 09:24:48'),
 (167, 31, '6285746338899', 'eeeee apa gt', 1, '2026-09-01 09:24:59', '2026-09-01 09:24:59'),
 (168, 31, '6285746338899', 'sabun', 1, '2026-09-01 09:25:06', '2026-09-01 09:25:06'),
-(169, 31, '38594827821120', 'jangan co, ntar lu di rekrut jd dakinya', 0, '2026-09-01 09:25:35', '2026-09-01 09:25:35');
+(169, 31, '38594827821120', 'jangan co, ntar lu di rekrut jd dakinya', 0, '2026-09-01 09:25:35', '2026-09-01 09:25:35'),
+(170, 32, '6285746338899', 'Terimakasih telah menghubungi kami.Saat ini kami sedang offline.Jam operasional kami adalah Senin-Jumat pukul 08.00-16.30.Pesan Anda akan kami balas segera setelah kami aktif kembali', 1, '2026-09-01 11:02:42', '2026-09-01 11:02:42'),
+(171, 32, '49302483280053', 'Pertanyaannya sudah saya terima! Mohon tunggu sebentar untuk jawaban terbaik. 🙏', 0, '2026-09-01 11:02:46', '2026-09-01 11:02:46'),
+(172, 32, '49302483280053', 'Terima kasih sudah memberikan informasi! Berdasarkan jam operasional yang disebutkan, Anda dapat mengatur mode jam online toko Anda di Tokopedia agar sesuai dengan waktu tersebut. Dengan fitur ini, layanan seperti pengiriman cepat (Instant, Sameday, dan 8H Sameday) dapat disesuaikan dengan jam operasional Anda. Untuk mengaturnya, Anda dapat mengikuti langkah-langkah berikut:\n1. Masuk ke [Halaman Pengaturan Pemenuhan Pesanan](https://seller-id.tokopedia.com/order/fulfill-policy?shop_region=ID) atau [Halaman Pengaturan Pengiriman](https://seller-id.tokopedia.com/order/fulfill-policy).\n2. Sesuaikan jam operasional Senin–Jumat menjadi 08:00–16:30 sesuai kebutuhan. Jika gudang tutup di akhir pekan, nonaktifkan pengaturan untuk hari Sabtu dan Minggu.\n3. Jangan lupa untuk menerapkan perubahan pada semua gudang jika Anda menggunakan lebih dari satu gudang.\nUntuk informasi lebih lengkap, Anda bisa merujuk tautan berikut:\n- [Fitur Jam Operasional Gudang untuk Pengiriman Instant, Sameday, Sameday 8H](https://seller-id.tokopedia.com/university/essay?knowledge_id=7466609552344833)', 0, '2026-09-01 11:03:02', '2026-09-01 11:03:02'),
+(173, 27, '6285772053530', 'Halo pak, Boleh diinformasikan pemasangan karpetnya berada di daerah mana ya?\n\nApabila lokasi berada di area Jabodetabek, Nabata Karpet menyediakan layanan survei lokasi GRATIS. Tim kami akan datang langsung untuk:\n✅ Melakukan pengecekan dan pengukuran area.\n✅ Membawa contoh sampel karpet sehingga Bapak/Ibu dapat melihat langsung warna, motif, dan kualitasnya.\n✅ Memberikan rekomendasi yang paling sesuai dengan kebutuhan ruangan.\n\nLayanan survei ini 100% gratis, tidak mengikat, dan tanpa kewajiban melakukan pembelian, sehingga Bapak/Ibu dapat berkonsultasi terlebih dahulu dengan lebih nyaman. 😊', 1, '2026-09-01 15:27:58', '2026-09-01 15:27:58'),
+(174, 25, '6285772053530', 'Assalamualaikum Bapak / Ibu, semoga sehat selalu\nBerikut kami lampirkan beberapa testimoni dari pelanggan yang telah menggunakan karpet Nabata sebagai referensi.\n\nSemoga dapat membantu memberikan gambaran mengenai kualitas produk dan pelayanan kami. Apabila Bapak/Ibu memiliki pertanyaan atau ingin berkonsultasi mengenai jenis karpet yang sesuai dengan kebutuhan, jangan ragu untuk menghubungi kami.\n\nTerima kasih 😊', 1, '2026-09-01 15:28:55', '2026-09-01 15:28:55'),
+(175, 28, '16479923740792', 'iya pak untuk yang engineering door', 0, '2026-09-01 19:51:42', '2026-09-01 19:51:42'),
+(176, 28, '16479923740792', 'boleh pak sekalian, ada item upvc juga untuk area toilet', 0, '2026-09-01 19:52:06', '2026-09-01 19:52:06'),
+(177, 30, '6285746338899', 'Selamat pagi Ibu', 1, '2026-09-01 19:53:06', '2026-09-01 19:53:06'),
+(178, 28, '16479923740792', 'pak sebelumnya saya sudah kirim permintaan penawaran harga dan data lengkapnya by email ke alamat megawkm1@gmail.com', 0, '2026-09-01 19:53:14', '2026-09-01 19:53:14'),
+(179, 30, '6285746338899', 'Ada yg bisa dibantu', 1, '2026-09-01 19:53:18', '2026-09-01 19:53:18'),
+(180, 28, '16479923740792', 'untuk alamat emailnya benar tidak yaa pak? atau perlu saya kirimkan ulang?', 0, '2026-09-01 19:53:31', '2026-09-01 19:53:31'),
+(181, 28, '6285746338899', 'Sudah pak kami sudah dapat emailnya', 1, '2026-09-01 19:53:38', '2026-09-01 19:53:38'),
+(182, 28, '16479923740792', 'baik yaa pak', 0, '2026-09-01 19:55:12', '2026-09-01 19:55:12'),
+(183, 28, '16479923740792', 'mohon dibantu untuk penawaran harga pintu kayu dan UPVC nya', 0, '2026-09-01 19:55:23', '2026-09-01 19:55:23'),
+(184, 28, '6285746338899', 'Sedang diproses ya pak \nDiusahakan hari ini kami release', 1, '2026-09-01 19:55:41', '2026-09-01 19:55:41'),
+(185, 28, '16479923740792', 'siapp pak, terimakasih banyak', 0, '2026-09-01 19:57:11', '2026-09-01 19:57:11'),
+(186, 28, '16479923740792', 'oiyaa maaf sebelumnya dengan ibu/bapak siapa yaa namanya?', 0, '2026-09-01 19:57:22', '2026-09-01 19:57:22'),
+(187, 28, '6285746338899', 'Amel pak staff Ibu Mega', 1, '2026-09-01 19:57:36', '2026-09-01 19:57:36'),
+(188, 28, '16479923740792', 'yaampun maaf, saya panggil pak pak aja dari dari', 0, '2026-09-01 19:58:03', '2026-09-01 19:58:03'),
+(189, 28, '16479923740792', 'salam kenal bu amel', 0, '2026-09-01 19:58:07', '2026-09-01 19:58:07'),
+(190, 30, '34789386113092', 'mau custom pintu alumunium, ini tuh bs kombinasj dgn ACP?', 0, '2026-09-01 20:18:56', '2026-09-01 20:18:56');
 
 -- --------------------------------------------------------
 
@@ -396,7 +417,7 @@ INSERT INTO `lead_messages` (`id`, `lead_id`, `sender`, `message`, `is_from_me`,
 -- Table structure for table `migrations`
 --
 
-DROP TABLE IF EXISTS `migrations`; CREATE TABLE `migrations` (
+CREATE TABLE `migrations` (
   `id` int(10) UNSIGNED NOT NULL,
   `migration` varchar(255) NOT NULL,
   `batch` int(11) NOT NULL
@@ -437,7 +458,7 @@ INSERT INTO `migrations` (`id`, `migration`, `batch`) VALUES
 -- Table structure for table `password_reset_tokens`
 --
 
-DROP TABLE IF EXISTS `password_reset_tokens`; CREATE TABLE `password_reset_tokens` (
+CREATE TABLE `password_reset_tokens` (
   `email` varchar(255) NOT NULL,
   `token` varchar(255) NOT NULL,
   `created_at` timestamp NULL DEFAULT NULL
@@ -449,7 +470,7 @@ DROP TABLE IF EXISTS `password_reset_tokens`; CREATE TABLE `password_reset_token
 -- Table structure for table `personal_access_tokens`
 --
 
-DROP TABLE IF EXISTS `personal_access_tokens`; CREATE TABLE `personal_access_tokens` (
+CREATE TABLE `personal_access_tokens` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `tokenable_type` varchar(255) NOT NULL,
   `tokenable_id` bigint(20) UNSIGNED NOT NULL,
@@ -468,7 +489,7 @@ DROP TABLE IF EXISTS `personal_access_tokens`; CREATE TABLE `personal_access_tok
 -- Table structure for table `pipeline_stages`
 --
 
-DROP TABLE IF EXISTS `pipeline_stages`; CREATE TABLE `pipeline_stages` (
+CREATE TABLE `pipeline_stages` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `wa_account_id` bigint(20) UNSIGNED DEFAULT NULL,
   `name` varchar(255) NOT NULL,
@@ -499,14 +520,16 @@ INSERT INTO `pipeline_stages` (`id`, `wa_account_id`, `name`, `order`, `is_defau
 (45, 8, 'Meeting Call', 2, 0, 'blue', '2026-08-31 00:33:41', '2026-08-31 00:33:41'),
 (46, 8, 'Kirim Penawaran', 3, 0, 'yellow', '2026-08-31 00:33:41', '2026-08-31 00:33:41'),
 (47, 8, 'Deal', 4, 0, 'green', '2026-08-31 00:33:41', '2026-08-31 00:33:41'),
-(48, 9, 'Lead Masuk', 1, 1, 'purple', '2026-08-31 00:51:20', '2026-08-31 00:51:20'),
-(49, 9, 'Meeting Call', 2, 0, 'blue', '2026-08-31 00:51:20', '2026-08-31 00:51:20'),
-(50, 9, 'Kirim Penawaran', 3, 0, 'yellow', '2026-08-31 00:51:20', '2026-08-31 00:51:20'),
-(51, 9, 'Deal', 4, 0, 'green', '2026-08-31 00:51:20', '2026-08-31 00:51:20'),
+(48, 9, 'Lead Masuk', 1, 1, 'purple', '2026-08-31 00:51:20', '2026-09-01 20:04:23'),
 (52, 10, 'Lead Masuk', 1, 1, 'purple', '2026-08-31 00:51:31', '2026-08-31 00:51:31'),
 (53, 10, 'Meeting Call', 2, 0, 'blue', '2026-08-31 00:51:31', '2026-08-31 00:51:31'),
 (54, 10, 'Kirim Penawaran', 3, 0, 'yellow', '2026-08-31 00:51:31', '2026-08-31 00:51:31'),
-(55, 10, 'Deal', 4, 0, 'green', '2026-08-31 00:51:31', '2026-08-31 00:51:31');
+(55, 10, 'Deal', 4, 0, 'green', '2026-08-31 00:51:31', '2026-08-31 00:51:31'),
+(56, 9, 'Diskusi', 5, 0, 'purple', '2026-09-01 19:58:17', '2026-09-01 20:04:23'),
+(57, 9, 'Kirim pilihan paket', 6, 0, 'purple', '2026-09-01 19:59:12', '2026-09-01 20:04:23'),
+(58, 9, 'Bahas budget', 7, 0, 'purple', '2026-09-01 19:59:47', '2026-09-01 20:04:23'),
+(59, 9, 'Survey lokasi', 8, 0, 'purple', '2026-09-01 20:00:02', '2026-09-01 20:04:23'),
+(60, 9, 'Closing', 9, 0, 'purple', '2026-09-01 20:06:11', '2026-09-01 20:06:11');
 
 -- --------------------------------------------------------
 
@@ -514,7 +537,7 @@ INSERT INTO `pipeline_stages` (`id`, `wa_account_id`, `name`, `order`, `is_defau
 -- Table structure for table `sessions`
 --
 
-DROP TABLE IF EXISTS `sessions`; CREATE TABLE `sessions` (
+CREATE TABLE `sessions` (
   `id` varchar(255) NOT NULL,
   `user_id` bigint(20) UNSIGNED DEFAULT NULL,
   `ip_address` varchar(45) DEFAULT NULL,
@@ -529,7 +552,7 @@ DROP TABLE IF EXISTS `sessions`; CREATE TABLE `sessions` (
 -- Table structure for table `smtp_settings`
 --
 
-DROP TABLE IF EXISTS `smtp_settings`; CREATE TABLE `smtp_settings` (
+CREATE TABLE `smtp_settings` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `mail_mailer` varchar(255) NOT NULL DEFAULT 'smtp',
   `mail_host` varchar(255) DEFAULT NULL,
@@ -557,7 +580,7 @@ INSERT INTO `smtp_settings` (`id`, `mail_mailer`, `mail_host`, `mail_port`, `mai
 -- Table structure for table `stage_triggers`
 --
 
-DROP TABLE IF EXISTS `stage_triggers`; CREATE TABLE `stage_triggers` (
+CREATE TABLE `stage_triggers` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `wa_account_id` bigint(20) UNSIGNED DEFAULT NULL,
   `pipeline_stage_id` bigint(20) UNSIGNED NOT NULL,
@@ -589,12 +612,6 @@ INSERT INTO `stage_triggers` (`id`, `wa_account_id`, `pipeline_stage_id`, `keywo
 (53, 7, 42, 'proposal', '2026-08-31 00:19:25', '2026-08-31 00:19:25'),
 (54, 7, 43, 'deal', '2026-08-31 00:19:25', '2026-08-31 00:19:25'),
 (55, 7, 43, 'lunas', '2026-08-31 00:19:25', '2026-08-31 00:19:25'),
-(62, 9, 49, 'meeting', '2026-08-31 00:51:20', '2026-08-31 00:51:20'),
-(63, 9, 49, 'call', '2026-08-31 00:51:20', '2026-08-31 00:51:20'),
-(64, 9, 50, 'penawaran', '2026-08-31 00:51:20', '2026-08-31 00:51:20'),
-(65, 9, 50, 'proposal', '2026-08-31 00:51:20', '2026-08-31 00:51:20'),
-(66, 9, 51, 'deal', '2026-08-31 00:51:20', '2026-08-31 00:51:20'),
-(67, 9, 51, 'lunas', '2026-08-31 00:51:20', '2026-08-31 00:51:20'),
 (68, 10, 53, 'meeting', '2026-08-31 00:51:31', '2026-08-31 00:51:31'),
 (69, 10, 53, 'call', '2026-08-31 00:51:31', '2026-08-31 00:51:31'),
 (70, 10, 54, 'penawaran', '2026-08-31 00:51:31', '2026-08-31 00:51:31'),
@@ -603,7 +620,14 @@ INSERT INTO `stage_triggers` (`id`, `wa_account_id`, `pipeline_stage_id`, `keywo
 (73, 10, 55, 'lunas', '2026-08-31 00:51:31', '2026-08-31 00:51:31'),
 (74, 8, 45, 'terima kasih sudah diijinkan telepon', '2026-09-01 00:46:47', '2026-09-01 00:46:47'),
 (75, 8, 46, 'berikut penawaran terlampir', '2026-09-01 00:47:06', '2026-09-01 00:47:06'),
-(76, 8, 47, 'terima kasih untuk pembayaran-nya', '2026-09-01 00:47:21', '2026-09-01 00:47:21');
+(76, 8, 47, 'terima kasih untuk pembayaran-nya', '2026-09-01 00:47:21', '2026-09-01 00:47:21'),
+(77, 9, 56, 'boleh kami dibantu dengan beberapa informasi berikut:', '2026-09-01 20:00:50', '2026-09-01 20:00:50'),
+(78, 9, 57, 'berikut kami lampirkan pilihan paket wedding', '2026-09-01 20:01:58', '2026-09-01 20:01:58'),
+(79, 9, 58, 'boleh kami tahu kisaran budget yang telah disiapkan', '2026-09-01 20:02:24', '2026-09-01 20:02:24'),
+(80, 9, 59, 'survei langsung ke lokasi venue?', '2026-09-01 20:03:02', '2026-09-01 20:03:02'),
+(82, 9, 60, 'mohon kirimkan bukti pembayaran', '2026-09-01 20:06:28', '2026-09-01 20:06:28'),
+(83, 9, 57, 'kak, ini kami kirimkan beberapa pilihan paket wedding', '2026-09-01 20:32:46', '2026-09-01 20:32:46'),
+(84, 9, 58, 'budget yang sudah disiapkan untuk wedding-nya', '2026-09-01 20:33:41', '2026-09-01 20:33:41');
 
 -- --------------------------------------------------------
 
@@ -611,7 +635,7 @@ INSERT INTO `stage_triggers` (`id`, `wa_account_id`, `pipeline_stage_id`, `keywo
 -- Table structure for table `users`
 --
 
-DROP TABLE IF EXISTS `users`; CREATE TABLE `users` (
+CREATE TABLE `users` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `name` varchar(255) NOT NULL,
   `email` varchar(255) NOT NULL,
@@ -635,9 +659,11 @@ DROP TABLE IF EXISTS `users`; CREATE TABLE `users` (
 
 INSERT INTO `users` (`id`, `name`, `email`, `phone`, `role`, `status`, `wa_account_id`, `session_id`, `wa_status`, `wa_phone`, `email_verified_at`, `password`, `remember_token`, `created_at`, `updated_at`) VALUES
 (1, 'CEO / Owner (Wijaya)', 'wijaya@difitech.co.id', NULL, 'CEO', 'APPROVED', NULL, 'session_user_1', 'DISCONNECTED', NULL, NULL, '$2y$12$786dM02HEyUQet7/oiAjleJpaQxIMlyk4/EtEW6566iYAUQ8rQt9e', 'AJIyYxXJEL1pIXS0ta7KX8vxca7bCAtJGkW1FTJiRiXBDa5MCztJcNKUaGUn', '2026-08-13 23:58:53', '2026-08-26 00:37:35'),
-(3, 'Siswandi', 'siswandi@difitech.co.id', '087733516564', 'SUPERVISOR', 'APPROVED', 4, 'session_user_3', 'DISCONNECTED', NULL, NULL, '$2y$12$dIxrwpWJXWmmjpsEmnL2Au2KsUJzcTTsOK5X9oAkilVyHejgsRRo6', '4eeBXAoz9LPvojyqX8OD6ABy2ksP5ohHm9oe2sJ7AgcOjsuGkK2DXp9dLtey', '2026-08-19 00:32:27', '2026-08-26 22:52:13'),
+(3, 'Siswandi', 'siswandi@difitech.co.id', '087733516564', 'SUPERVISOR', 'APPROVED', 4, 'session_user_3', 'DISCONNECTED', NULL, NULL, '$2y$12$dIxrwpWJXWmmjpsEmnL2Au2KsUJzcTTsOK5X9oAkilVyHejgsRRo6', 'tCAzqSEDUp7OXF0d9BL7b4sKMBnZoeIYYG08PN8ye7wXWsWwjr2ODoypU9DD', '2026-08-19 00:32:27', '2026-08-26 22:52:13'),
 (4, 'Amanda', 'amandadifitech@gmail.com', NULL, 'SALES_ADMIN', 'APPROVED', 4, 'session_user_4', 'CONNECTED', '6285772053530', NULL, '$2y$12$7ZcNPuSKIW981oUNd82FJeK5tObOB6WnmDNuUa7V69TDe2pEx2r.i', 'pQYbtPt5tjO7aylsPn6d9NAuxrFy20mMowSFsHCUr81tzYGd9FNqcLq9kmvK', '2026-08-19 00:52:42', '2026-08-28 02:33:44'),
-(5, 'Bu Amel', 'marketingwkm@gmail.com', '6285746338899', 'SALES_ADMIN', 'APPROVED', 8, 'session_user_5', 'CONNECTED', '6285746338899', NULL, '$2y$12$AsdegtKNRvydWYl55zwTmecOstuK.kkXMs2vh5Ps1Lcc9VHK7yigq', 'QDzsEMXKNmCCxUPT90VyeGU81pUznYBscTRczdQrFyHpa7E6TEgiPUpGcvj2', '2026-09-01 00:05:52', '2026-09-01 01:51:09');
+(5, 'Bu Amel', 'marketingwkm@gmail.com', '6285746338899', 'SALES_ADMIN', 'APPROVED', 8, 'session_user_5', 'CONNECTED', '6285746338899', NULL, '$2y$12$AsdegtKNRvydWYl55zwTmecOstuK.kkXMs2vh5Ps1Lcc9VHK7yigq', 'QDzsEMXKNmCCxUPT90VyeGU81pUznYBscTRczdQrFyHpa7E6TEgiPUpGcvj2', '2026-09-01 00:05:52', '2026-09-01 01:51:09'),
+(6, 'Calmara', 'operation@calmaracafe.com', '082144007307', 'SALES_ADMIN', 'APPROVED', 9, 'session_user_6', 'DISCONNECTED', '082144007307', NULL, '$2y$12$q/N8Gq.fKyb9yvduUfvHsu.5qZuePXJLlyNecPxJcIsaVb.635I8K', NULL, '2026-09-01 20:24:13', '2026-09-01 20:24:13'),
+(7, 'Ashabil', 'ashabil@difitech.co.id', NULL, 'SALES_ADMIN', 'APPROVED', 7, 'session_user_7', 'DISCONNECTED', NULL, NULL, '$2y$12$MXB1Zfv1gTru4hvuqxQt9.F7a0qrJSNFdLtMsO1zldatWgaWGRwEe', NULL, '2026-09-01 20:39:31', '2026-09-01 20:39:31');
 
 -- --------------------------------------------------------
 
@@ -645,7 +671,7 @@ INSERT INTO `users` (`id`, `name`, `email`, `phone`, `role`, `status`, `wa_accou
 -- Table structure for table `wa_accounts`
 --
 
-DROP TABLE IF EXISTS `wa_accounts`; CREATE TABLE `wa_accounts` (
+CREATE TABLE `wa_accounts` (
   `id` bigint(20) UNSIGNED NOT NULL,
   `name` varchar(255) NOT NULL,
   `category` varchar(255) DEFAULT NULL,
@@ -840,13 +866,13 @@ ALTER TABLE `jobs`
 -- AUTO_INCREMENT for table `leads`
 --
 ALTER TABLE `leads`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=32;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
 
 --
 -- AUTO_INCREMENT for table `lead_messages`
 --
 ALTER TABLE `lead_messages`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=170;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=191;
 
 --
 -- AUTO_INCREMENT for table `migrations`
@@ -864,7 +890,7 @@ ALTER TABLE `personal_access_tokens`
 -- AUTO_INCREMENT for table `pipeline_stages`
 --
 ALTER TABLE `pipeline_stages`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=56;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=61;
 
 --
 -- AUTO_INCREMENT for table `smtp_settings`
@@ -876,13 +902,13 @@ ALTER TABLE `smtp_settings`
 -- AUTO_INCREMENT for table `stage_triggers`
 --
 ALTER TABLE `stage_triggers`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=77;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=85;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `wa_accounts`
