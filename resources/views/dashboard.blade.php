@@ -3166,17 +3166,20 @@
                         return;
                     }
 
-                    tbody.innerHTML = data.map(b => `
+                    tbody.innerHTML = data.map(b => {
+                        const isConn = b.is_connected || b.status === 'CONNECTED' || (b.cs_team && b.cs_team.some(cs => cs.wa_status === 'CONNECTED'));
+                        const phoneDisplay = b.active_phone || b.phone || (b.cs_team && b.cs_team.find(cs => cs.wa_status === 'CONNECTED')?.wa_phone) || null;
+                        return `
                         <tr class="hover:bg-slate-50 transition border-b border-slate-100">
                             <td class="p-3 font-bold text-slate-800 flex items-center gap-2">
-                                🏢 ${b.name}
+                                🏢 ${escapeHtml(b.name)}
                             </td>
                             <td class="p-3 text-slate-600 font-mono">
-                                ${b.phone ? '+' + b.phone : '<span class="text-slate-400 font-sans italic">Belum di-set</span>'}
+                                ${phoneDisplay ? '+' + phoneDisplay : '<span class="text-slate-400 font-sans italic">Belum di-set</span>'}
                             </td>
                             <td class="p-3">
-                                <span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${b.status === 'CONNECTED' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">
-                                    ${b.status === 'CONNECTED' ? '🟢 TERHUBUNG' : '🔴 TERPUTUS'}
+                                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold ${isConn ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-rose-100 text-rose-800 border border-rose-200'}">
+                                    ${isConn ? '🟢 TERHUBUNG' : '🔴 TERPUTUS'}
                                 </span>
                             </td>
                             <td class="p-3 text-slate-400 font-mono text-[11px]">
@@ -3190,13 +3193,13 @@
                                     <button onclick="openEditBrandModal(${b.id})" class="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 font-semibold rounded-lg border border-amber-200 transition">
                                         ✏️ Edit
                                     </button>
-                                    <button onclick="deleteBrandSubmit(${b.id}, '${b.name}')" class="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-600 font-semibold rounded-lg transition">
+                                    <button onclick="deleteBrandSubmit(${b.id}, '${escapeHtml(b.name)}')" class="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-600 font-semibold rounded-lg transition">
                                         🗑️ Hapus
                                     </button>
                                 </div>
                             </td>
                         </tr>
-                    `).join('');
+                    `}).join('');
                 });
         }
 

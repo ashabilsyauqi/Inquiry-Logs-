@@ -24,6 +24,21 @@ class WaAccount extends Model
         'last_disconnect_email_sent_at',
     ];
 
+    protected $appends = [
+        'is_connected',
+        'active_phone',
+    ];
+
+    public function getIsConnectedAttribute(): bool
+    {
+        return $this->isConnected();
+    }
+
+    public function getActivePhoneAttribute(): ?string
+    {
+        return $this->getActivePhone();
+    }
+
     public function supervisor()
     {
         return $this->belongsTo(User::class, 'supervisor_id');
