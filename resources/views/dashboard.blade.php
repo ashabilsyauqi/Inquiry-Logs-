@@ -248,7 +248,7 @@
                     @endphp
                     <a href="/?filter={{ $filter }}&account_id={{ $acc->id }}&temperature={{ $temperatureFilter }}" 
                        class="px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 flex-shrink-0 {{ $isAccActive ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-600/30' : 'bg-slate-100 hover:bg-slate-200 text-slate-700' }}">
-                        <span>{{ $acc->status === 'CONNECTED' ? '🟢' : '🟡' }}</span>
+                        <span>{{ $acc->isConnected() ? '🟢' : '🟡' }}</span>
                         <span>{{ $acc->name }}</span>
                         <span class="px-2 py-0.5 rounded-full text-[10px] {{ $isAccActive ? 'bg-emerald-700 text-white' : 'bg-slate-200 text-slate-700' }} font-bold ml-0.5">
                             {{ $acc->leads->count() }}
@@ -335,26 +335,45 @@
                 </div>
             </div>
 
-            <!-- Disconnection Alert Banner -->
+            <!-- Context-Aware Disconnection Alert Banner -->
             @php
-                $disconnectedAccounts = $waAccounts->where('status', '!=', 'CONNECTED');
+                if ($activeAccount) {
+                    $shouldShowAlert = !$activeAccount->isConnected();
+                    $alertBrandName = $activeAccount->name;
+                    $alertCount = 1;
+                } else {
+                    $disconnectedList = $waAccounts->filter(fn($a) => !$a->isConnected());
+                    $alertCount = $disconnectedList->count();
+                    $alertBrandName = $disconnectedList->pluck('name')->join(', ');
+                    $shouldShowAlert = ($alertCount > 0);
+                }
             @endphp
 
-            @if($disconnectedAccounts->isNotEmpty())
+            @if($shouldShowAlert)
             <div class="bg-amber-50 border border-amber-300 p-3.5 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
                 <div class="flex items-center gap-3 min-w-0">
                     <div class="p-2 bg-amber-100 rounded-xl text-amber-800 font-bold text-sm flex-shrink-0">
                         ⚠️
                     </div>
                     <div class="min-w-0">
-                        <h4 class="font-bold text-amber-900 text-xs sm:text-sm truncate">Perhatian: {{ $disconnectedAccounts->count() }} Perangkat WA Terputus!</h4>
+                        <h4 class="font-bold text-amber-900 text-xs sm:text-sm truncate">
+                            @if($activeAccount)
+                            Perhatian: WhatsApp Brand {{ $activeAccount->name }} Belum Terhubung!
+                            @else
+                            Perhatian: {{ $alertCount }} Brand Belum Terhubung!
+                            @endif
+                        </h4>
                         <p class="text-[11px] sm:text-xs text-amber-700 mt-0.5 line-clamp-2 md:line-clamp-1">
-                            Akun terputus: <strong>{{ $disconnectedAccounts->pluck('name')->join(', ') }}</strong>. Email peringatan darurat otomatis dikirim ke Admin CS, Supervisor Brand & CC ke CEO (ashabil@difitech.id).
+                            @if($activeAccount)
+                            Belum ada Admin CS yang terhubung di brand <strong>{{ $activeAccount->name }}</strong>. Hubungkan barcode WhatsApp CS untuk menerima leads otomatis.
+                            @else
+                            Akun terputus: <strong>{{ $alertBrandName }}</strong>. Hubungkan barcode WhatsApp Admin CS untuk mulai menerima pesan.
+                            @endif
                         </p>
                     </div>
                 </div>
                 <button onclick="openDeviceModal();" class="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl transition whitespace-nowrap shadow-sm flex-shrink-0">
-                    📱 Scan Ulang Barcode
+                    📱 Hubungkan WA / Scan Barcode
                 </button>
             </div>
             @endif
@@ -456,10 +475,10 @@
                                     </div>
                                     <div class="truncate">
                                         <h4 class="font-bold text-slate-900 text-sm truncate leading-tight">{{ $acc->name }}</h4>
-                                        <p class="text-[10px] text-slate-400 font-mono truncate">{{ $acc->phone ? '+' . $acc->phone : 'Disconnected' }}</p>
+                                        <p class="text-[10px] text-slate-400 font-mono truncate">{{ $acc->isConnected() ? ($acc->getActivePhone() ? '+' . $acc->getActivePhone() : 'Online') : 'Disconnected' }}</p>
                                     </div>
                                 </div>
-                                <span class="w-2.5 h-2.5 rounded-full {{ $acc->status == 'CONNECTED' ? 'bg-emerald-500' : 'bg-amber-400' }} flex-shrink-0" title="{{ $acc->status == 'CONNECTED' ? 'Online' : 'Terputus' }}"></span>
+                                <span class="w-2.5 h-2.5 rounded-full {{ $acc->isConnected() ? 'bg-emerald-500' : 'bg-amber-400' }} flex-shrink-0" title="{{ $acc->isConnected() ? 'Online' : 'Terputus' }}"></span>
                             </div>
 
                             <!-- Mini Stats Bar -->
@@ -568,8 +587,8 @@
                         </span>
                         @else
                         <h2 class="text-2xl font-bold">Pipeline Sales: {{ $activeAccount->name }}</h2>
-                        <span class="px-3 py-1 rounded-full text-xs font-bold {{ $activeAccount->status == 'CONNECTED' ? 'bg-emerald-400 text-emerald-950' : 'bg-yellow-300 text-yellow-950' }}">
-                            {{ $activeAccount->status == 'CONNECTED' ? '🟢 Online (' . ($activeAccount->phone ? '+' . $activeAccount->phone : 'Connected') . ')' : '🟡 Belum Scan QR' }}
+                        <span class="px-3 py-1 rounded-full text-xs font-bold {{ $activeAccount->isConnected() ? 'bg-emerald-400 text-emerald-950' : 'bg-yellow-300 text-yellow-950' }}">
+                            {{ $activeAccount->isConnected() ? '🟢 Online (' . ($activeAccount->getActivePhone() ? '+' . $activeAccount->getActivePhone() : 'Connected') . ')' : '🟡 Belum Scan QR' }}
                         </span>
                         @endif
                     </div>

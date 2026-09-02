@@ -38,6 +38,23 @@ class WaAccount extends Model
         return $this->hasMany(User::class, 'wa_account_id')->where('role', 'SALES_ADMIN');
     }
 
+    public function isConnected(): bool
+    {
+        if ($this->status === 'CONNECTED') {
+            return true;
+        }
+        return $this->csTeam->where('wa_status', 'CONNECTED')->isNotEmpty();
+    }
+
+    public function getActivePhone(): ?string
+    {
+        if ($this->phone) {
+            return $this->phone;
+        }
+        $connectedCs = $this->csTeam->where('wa_status', 'CONNECTED')->first();
+        return $connectedCs ? $connectedCs->wa_phone : null;
+    }
+
     public function leads()
     {
         return $this->hasMany(Lead::class);
