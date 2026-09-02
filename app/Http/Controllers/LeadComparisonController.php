@@ -25,23 +25,25 @@ class LeadComparisonController extends Controller
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
 
-        // Sales Admin Isolation: Force account_id to assigned WA account if not CEO
         $assignedUserId = null;
-        if (!$user->isCeo()) {
-            $accountId = $user->wa_account_id ?? 'all';
-            if ($user->role === 'SALES_ADMIN') {
-                $assignedUserId = $user->id;
-            }
-        }
-
-        $comparison = $this->comparisonService->generateComparisonData($accountId, $period, $startDate, $endDate, $assignedUserId);
-
-        // Fetch WA Accounts for Filter Dropdown
         if ($user->isCeo()) {
             $waAccounts = WaAccount::where('approval_status', 'APPROVED')->get();
+            $comparisonTarget = $accountId;
+        } elseif ($user->isSupervisor()) {
+            $waAccounts = $user->getAccessibleBrands();
+            if ($accountId !== 'all' && !$user->canAccessBrand($accountId)) {
+                $accountId = 'all';
+            }
+            $comparisonTarget = ($accountId === 'all') ? $waAccounts->pluck('id')->toArray() : $accountId;
         } else {
+            // Sales Admin Isolation
+            $accountId = $user->wa_account_id ?? 'all';
+            $assignedUserId = $user->id;
             $waAccounts = $user->wa_account_id ? WaAccount::where('id', $user->wa_account_id)->where('approval_status', 'APPROVED')->get() : collect();
+            $comparisonTarget = $accountId;
         }
+
+        $comparison = $this->comparisonService->generateComparisonData($comparisonTarget, $period, $startDate, $endDate, $assignedUserId);
 
         // Fetch Historical Snapshots
         $snapshots = AiLeadComparison::latest('report_date')->take(10)->get();
@@ -57,11 +59,22 @@ class LeadComparisonController extends Controller
         $startDate = $request->query('start_date');
         $endDate = $request->query('end_date');
 
-        if (!$user->isCeo()) {
+        $assignedUserId = null;
+        if ($user->isCeo()) {
+            $comparisonTarget = $accountId;
+        } elseif ($user->isSupervisor()) {
+            $waAccounts = $user->getAccessibleBrands();
+            if ($accountId !== 'all' && !$user->canAccessBrand($accountId)) {
+                $accountId = 'all';
+            }
+            $comparisonTarget = ($accountId === 'all') ? $waAccounts->pluck('id')->toArray() : $accountId;
+        } else {
             $accountId = $user->wa_account_id ?? 'all';
+            $assignedUserId = $user->id;
+            $comparisonTarget = $accountId;
         }
 
-        $data = $this->comparisonService->generateComparisonData($accountId, $period, $startDate, $endDate);
+        $data = $this->comparisonService->generateComparisonData($comparisonTarget, $period, $startDate, $endDate, $assignedUserId);
 
         return response()->json($data);
     }
@@ -71,7 +84,9 @@ class LeadComparisonController extends Controller
         $user = Auth::user();
         $accountId = $request->input('account_id', 'all');
 
-        if (!$user->isCeo()) {
+        if ($user->isSupervisor() && $accountId === 'all') {
+            $accountId = $user->getAccessibleBrands()->pluck('id')->first() ?? 'all';
+        } elseif (!$user->isCeo()) {
             $accountId = $user->wa_account_id ?? 'all';
         }
 
@@ -85,7 +100,12 @@ class LeadComparisonController extends Controller
         $user = Auth::user();
         $query = \App\Models\Lead::with('messages');
 
-        if (!$user->isCeo()) {
+        if ($user->isCeo()) {
+            // all leads
+        } elseif ($user->isSupervisor()) {
+            $accessibleBrandIds = $user->getAccessibleBrands()->pluck('id')->toArray();
+            $query->whereIn('wa_account_id', $accessibleBrandIds);
+        } else {
             if ($user->role === 'SALES_ADMIN') {
                 $query->where('assigned_user_id', $user->id);
             } elseif ($user->wa_account_id) {

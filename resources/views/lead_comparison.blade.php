@@ -224,12 +224,12 @@
                         <div class="flex items-center gap-1.5">
                             <span class="text-slate-400 font-medium">Brand:</span>
                             <select name="account_id" onchange="this.form.submit()" class="bg-slate-50 border border-slate-200 text-slate-800 font-semibold rounded-lg px-2.5 py-1.5 focus:ring-1 focus:ring-slate-400 focus:outline-none">
-                                @if($user->isCeo())
-                                <option value="all" {{ $accountId == 'all' ? 'selected' : '' }}>🏢 Semua Brand</option>
+                                @if($user->isCeo() || $user->isSupervisor())
+                                <option value="all" {{ $accountId == 'all' ? 'selected' : '' }}>🏢 {{ $user->isCeo() ? 'Semua Brand (Portfolio)' : 'Semua Brand Saya' }}</option>
                                 @endif
                                 @foreach($waAccounts as $acc)
                                 <option value="{{ $acc->id }}" {{ $accountId == $acc->id ? 'selected' : '' }}>
-                                    📱 {{ $acc->name }} ({{ $acc->phone ?? 'No Phone' }})
+                                    📱 {{ $acc->name }} ({{ $acc->getActivePhone() ? '+' . $acc->getActivePhone() : 'Belum Scan QR' }})
                                 </option>
                                 @endforeach
                             </select>

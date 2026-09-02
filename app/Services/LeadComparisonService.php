@@ -25,7 +25,9 @@ class LeadComparisonService
         $query = Lead::with('waAccount');
 
         // Filter by WA Account
-        if ($accountId !== 'all' && is_numeric($accountId)) {
+        if (is_array($accountId)) {
+            $query->whereIn('wa_account_id', $accountId);
+        } elseif ($accountId !== 'all' && is_numeric($accountId)) {
             $query->where('wa_account_id', $accountId);
         }
 
