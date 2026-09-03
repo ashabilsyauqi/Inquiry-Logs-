@@ -231,157 +231,119 @@
 
         <div class="max-w-7xl mx-auto px-6 py-6 space-y-6" id="dashboard-content">
 
-            <!-- Enterprise Multi-Brand Switcher & Lead Temperature Funnel Toolbar (v2.0) -->
-            <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-sm space-y-3.5">
-                @if($user->isCeo() || ($user->isSupervisor() && $waAccounts->count() > 1))
-                <!-- 1. Multi-Brand Selector Tabs -->
-                <div class="flex items-center gap-2 overflow-x-auto pb-1.5 flex-nowrap" style="scrollbar-width: thin;">
-                    <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 pl-1 whitespace-nowrap flex items-center gap-1.5 flex-shrink-0">
-                        <span>🏢</span> Brand:
-                    </span>
-                    <a href="/?filter={{ $filter }}&account_id=all&temperature={{ $temperatureFilter }}" 
-                       class="px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 flex-shrink-0 {{ $accountId === 'all' ? 'bg-slate-900 text-white shadow-sm ring-2 ring-slate-900/20' : 'bg-slate-100 hover:bg-slate-200 text-slate-700' }}">
-                        <span>🌐</span> {{ $user->isCeo() ? 'Semua Brand (Portfolio)' : 'Semua Brand Saya' }}
-                        <span class="px-2 py-0.5 rounded-full text-[10px] {{ $accountId === 'all' ? 'bg-slate-700 text-white' : 'bg-slate-200 text-slate-700' }} font-bold ml-1">
-                            {{ $user->isCeo() ? \App\Models\Lead::count() : \App\Models\Lead::whereIn('wa_account_id', $waAccounts->pluck('id'))->count() }}
-                        </span>
-                    </a>
-                    @foreach($waAccounts as $acc)
-                    @php
-                        $isAccActive = ($accountId == $acc->id);
-                    @endphp
-                    <a href="/?filter={{ $filter }}&account_id={{ $acc->id }}&temperature={{ $temperatureFilter }}" 
-                       class="px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1.5 flex-shrink-0 {{ $isAccActive ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-600/30' : 'bg-slate-100 hover:bg-slate-200 text-slate-700' }}">
-                        <span>{{ $acc->isConnected() ? '🟢' : '🟡' }}</span>
-                        <span>{{ $acc->name }}</span>
-                        <span class="px-2 py-0.5 rounded-full text-[10px] {{ $isAccActive ? 'bg-emerald-700 text-white' : 'bg-slate-200 text-slate-700' }} font-bold ml-0.5">
-                            {{ $acc->leads->count() }}
-                        </span>
-                    </a>
-                    @endforeach
-                </div>
-                @endif
+            <!-- UNIFIED MINIMALIST CONTROL BAR (V3.0) -->
+            <div class="bg-white rounded-2xl p-3 border border-slate-200/90 shadow-2xs flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                <!-- Left: Brand & Filters -->
+                <div class="flex items-center gap-2 flex-wrap flex-1">
+                    <!-- 1. Brand Switcher Dropdown -->
+                    @if($user->isCeo() || ($user->isSupervisor() && $waAccounts->count() > 1))
+                    <div class="relative">
+                        <select onchange="window.location.href=this.value" class="appearance-none bg-slate-900 text-white font-bold text-xs pl-3 pr-8 py-2 rounded-xl focus:ring-2 focus:ring-slate-900 outline-none transition cursor-pointer shadow-2xs">
+                            <option value="/?filter={{ $filter }}&account_id=all&temperature={{ $temperatureFilter }}&follow_up={{ $followUpFilter }}" {{ $accountId == 'all' ? 'selected' : '' }}>
+                                🏢 {{ $user->isCeo() ? 'Semua Brand (Portfolio)' : 'Semua Brand Saya' }} ({{ $user->isCeo() ? \App\Models\Lead::count() : \App\Models\Lead::whereIn('wa_account_id', $waAccounts->pluck('id'))->count() }})
+                            </option>
+                            @foreach($waAccounts as $acc)
+                            <option value="/?filter={{ $filter }}&account_id={{ $acc->id }}&temperature={{ $temperatureFilter }}&follow_up={{ $followUpFilter }}" {{ $accountId == $acc->id ? 'selected' : '' }}>
+                                {{ $acc->isConnected() ? '🟢' : '🟡' }} {{ $acc->name }} ({{ $acc->leads->count() }})
+                            </option>
+                            @endforeach
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-300">
+                            <svg class="h-3 w-3 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+                        </div>
+                    </div>
+                    @endif
 
-                <!-- 2. Dynamic Lead Temperature Funnel Filter (Cold ❄️ -> Cool 💧 -> Warm 🌤️ -> Very Warm ⚡ -> Hot 🔥 & Dead 💀) -->
-                <div class="flex items-center justify-between gap-3 pt-2 {{ ($user->isCeo() || ($user->isSupervisor() && $waAccounts->count() > 1)) ? 'border-t border-slate-100' : '' }}">
-                    <div class="flex items-center gap-1.5 overflow-x-auto pb-1 flex-nowrap" style="scrollbar-width: thin;">
-                        <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 pl-1 whitespace-nowrap flex items-center gap-1 flex-shrink-0">
-                            <span>🌡️</span> Suhu Prospek:
-                        </span>
-
-                        <!-- All Temperatures -->
-                        <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature=all&cs_id={{ $csId }}" 
-                           class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 flex-shrink-0 {{ $temperatureFilter === 'all' ? 'bg-slate-900 text-white shadow-sm' : 'bg-slate-100 hover:bg-slate-200 text-slate-700' }}">
-                            <span>📊</span> Semua
-                            <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ $temperatureFilter === 'all' ? 'bg-slate-700 text-white' : 'bg-slate-200 text-slate-600' }} font-bold">
-                                {{ $totalLeads }}
-                            </span>
-                        </a>
-
-                        <!-- Hot Leads (Rose/Red) -->
-                        <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature=hot&cs_id={{ $csId }}" 
-                           class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 flex-shrink-0 {{ $temperatureFilter === 'hot' ? 'bg-rose-600 text-white shadow-sm ring-2 ring-rose-400/40' : 'bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200' }}">
-                            <span>🔥</span> Hot Lead
-                            <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ $temperatureFilter === 'hot' ? 'bg-rose-700 text-white' : 'bg-rose-200 text-rose-900' }} font-extrabold">
-                                {{ $hotCount }}
-                            </span>
-                        </a>
-
-                        <!-- Very Warm Leads (Orange) -->
-                        <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature=very_warm&cs_id={{ $csId }}" 
-                           class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 flex-shrink-0 {{ $temperatureFilter === 'very_warm' ? 'bg-orange-600 text-white shadow-sm ring-2 ring-orange-400/40' : 'bg-orange-50 hover:bg-orange-100 text-orange-800 border border-orange-200' }}">
-                            <span>⚡</span> Very Warm
-                            <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ $temperatureFilter === 'very_warm' ? 'bg-orange-700 text-white' : 'bg-orange-200 text-orange-900' }} font-extrabold">
-                                {{ $veryWarmCount }}
-                            </span>
-                        </a>
-
-                        <!-- Warm Leads (Amber/Yellow) -->
-                        <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature=warm&cs_id={{ $csId }}" 
-                           class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 flex-shrink-0 {{ $temperatureFilter === 'warm' ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-400/40' : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200' }}">
-                            <span>🌤️</span> Warm Lead
-                            <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ $temperatureFilter === 'warm' ? 'bg-amber-600 text-white' : 'bg-amber-200 text-amber-900' }} font-extrabold">
-                                {{ $warmCount }}
-                            </span>
-                        </a>
-
-                        <!-- Cool Leads (Teal/Cyan) -->
-                        <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature=cool&cs_id={{ $csId }}" 
-                           class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 flex-shrink-0 {{ $temperatureFilter === 'cool' ? 'bg-teal-600 text-white shadow-sm ring-2 ring-teal-400/40' : 'bg-teal-50 hover:bg-teal-100 text-teal-800 border border-teal-200' }}">
-                            <span>💧</span> Cool Lead
-                            <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ $temperatureFilter === 'cool' ? 'bg-teal-700 text-white' : 'bg-teal-200 text-teal-900' }} font-extrabold">
-                                {{ $coolCount }}
-                            </span>
-                        </a>
-
-                        <!-- Cold Leads (Sky/Blue) -->
-                        <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature=cold&cs_id={{ $csId }}" 
-                           class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 flex-shrink-0 {{ $temperatureFilter === 'cold' ? 'bg-sky-600 text-white shadow-sm ring-2 ring-sky-400/40' : 'bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200' }}">
-                            <span>❄️</span> Cold Lead
-                            <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ $temperatureFilter === 'cold' ? 'bg-sky-700 text-white' : 'bg-sky-200 text-sky-900' }} font-extrabold">
-                                {{ $coldCount }}
-                            </span>
-                        </a>
-
-                        <!-- Dead Leads (Slate/Gray) -->
-                        <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature=dead&cs_id={{ $csId }}" 
-                           class="px-2.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 flex-shrink-0 {{ $temperatureFilter === 'dead' ? 'bg-slate-700 text-white shadow-sm ring-2 ring-slate-400/40' : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300' }}">
-                            <span>💀</span> Dead / Spam
-                            <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ $temperatureFilter === 'dead' ? 'bg-slate-800 text-white' : 'bg-slate-200 text-slate-700' }} font-extrabold">
-                                {{ $deadCount }}
-                            </span>
-                        </a>
+                    <!-- 2. Suhu Prospek Dropdown -->
+                    <div class="relative">
+                        <select onchange="window.location.href=this.value" class="appearance-none bg-white hover:bg-slate-50 text-slate-800 font-semibold text-xs pl-3 pr-7 py-2 rounded-xl border {{ $temperatureFilter !== 'all' ? 'border-indigo-500 bg-indigo-50/50 text-indigo-950 font-bold ring-2 ring-indigo-500/20' : 'border-slate-200' }} focus:ring-2 focus:ring-indigo-500 outline-none transition cursor-pointer">
+                            <option value="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature=all&follow_up={{ $followUpFilter }}&cs_id={{ $csId }}" {{ $temperatureFilter === 'all' ? 'selected' : '' }}>
+                                🌡️ Suhu: Semua ({{ $totalLeads }})
+                            </option>
+                            <option value="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature=hot&follow_up={{ $followUpFilter }}&cs_id={{ $csId }}" {{ $temperatureFilter === 'hot' ? 'selected' : '' }}>
+                                🔥 Hot Lead ({{ $hotCount }})
+                            </option>
+                            <option value="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature=very_warm&follow_up={{ $followUpFilter }}&cs_id={{ $csId }}" {{ $temperatureFilter === 'very_warm' ? 'selected' : '' }}>
+                                ⚡ Very Warm ({{ $veryWarmCount }})
+                            </option>
+                            <option value="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature=warm&follow_up={{ $followUpFilter }}&cs_id={{ $csId }}" {{ $temperatureFilter === 'warm' ? 'selected' : '' }}>
+                                🌤️ Warm Lead ({{ $warmCount }})
+                            </option>
+                            <option value="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature=cool&follow_up={{ $followUpFilter }}&cs_id={{ $csId }}" {{ $temperatureFilter === 'cool' ? 'selected' : '' }}>
+                                💧 Cool Lead ({{ $coolCount }})
+                            </option>
+                            <option value="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature=cold&follow_up={{ $followUpFilter }}&cs_id={{ $csId }}" {{ $temperatureFilter === 'cold' ? 'selected' : '' }}>
+                                ❄️ Cold Lead ({{ $coldCount }})
+                            </option>
+                            <option value="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature=dead&follow_up={{ $followUpFilter }}&cs_id={{ $csId }}" {{ $temperatureFilter === 'dead' ? 'selected' : '' }}>
+                                💀 Dead / Spam ({{ $deadCount }})
+                            </option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
+                            <svg class="h-3 w-3 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+                        </div>
                     </div>
 
-                    <div class="hidden 2xl:flex items-center gap-1 text-[11px] text-slate-400 whitespace-nowrap pl-1">
-                        <span>🎯 Skala: Cold ❄️ &rarr; Warm 🌤️ &rarr; Hot 🔥 (Spam = 💀 Dead)</span>
+                    <!-- 3. Follow-Up Dropdown -->
+                    <div class="relative">
+                        <select onchange="window.location.href=this.value" class="appearance-none bg-white hover:bg-slate-50 text-slate-800 font-semibold text-xs pl-3 pr-7 py-2 rounded-xl border {{ $followUpFilter !== 'all' ? 'border-purple-500 bg-purple-50/50 text-purple-950 font-bold ring-2 ring-purple-500/20' : 'border-slate-200' }} focus:ring-2 focus:ring-purple-500 outline-none transition cursor-pointer">
+                            <option value="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature={{ $temperatureFilter }}&follow_up=all&cs_id={{ $csId }}" {{ $followUpFilter === 'all' ? 'selected' : '' }}>
+                                🔁 FU: Semua Lead
+                            </option>
+                            <option value="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature={{ $temperatureFilter }}&follow_up=done_today&cs_id={{ $csId }}" {{ $followUpFilter === 'done_today' ? 'selected' : '' }}>
+                                🟢 Sudah Di-FU Hari Ini ({{ $fuDoneTodayCount }})
+                            </option>
+                            <option value="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature={{ $temperatureFilter }}&follow_up=due_today&cs_id={{ $csId }}" {{ $followUpFilter === 'due_today' ? 'selected' : '' }}>
+                                🟡 Perlu FU Hari Ini ({{ $fuDueTodayCount }})
+                            </option>
+                            <option value="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature={{ $temperatureFilter }}&follow_up=overdue&cs_id={{ $csId }}" {{ $followUpFilter === 'overdue' ? 'selected' : '' }}>
+                                🔴 Overdue >48 Jam ({{ $fuOverdueCount }})
+                            </option>
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
+                            <svg class="h-3 w-3 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+                        </div>
+                    </div>
+
+                    <!-- 4. CS Team Dropdown (if active brand has CS) -->
+                    @if($csTeam->isNotEmpty())
+                    <div class="relative">
+                        <select onchange="window.location.href=this.value" class="appearance-none bg-white hover:bg-slate-50 text-slate-800 font-semibold text-xs pl-3 pr-7 py-2 rounded-xl border {{ $csId !== 'all' ? 'border-emerald-500 bg-emerald-50/50 text-emerald-950 font-bold' : 'border-slate-200' }} focus:ring-2 focus:ring-emerald-500 outline-none transition cursor-pointer">
+                            <option value="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature={{ $temperatureFilter }}&follow_up={{ $followUpFilter }}&cs_id=all" {{ $csId === 'all' ? 'selected' : '' }}>
+                                👤 Semua CS ({{ $csTeam->count() }})
+                            </option>
+                            @foreach($csTeam as $cs)
+                            <option value="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature={{ $temperatureFilter }}&follow_up={{ $followUpFilter }}&cs_id={{ $cs->id }}" {{ $csId == $cs->id ? 'selected' : '' }}>
+                                👤 {{ $cs->name }} ({{ $cs->leads_count ?? 0 }})
+                            </option>
+                            @endforeach
+                        </select>
+                        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
+                            <svg class="h-3 w-3 fill-current" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"/></svg>
+                        </div>
+                    </div>
+                    @endif
+
+                    <!-- 5. Period Toggle Segmented -->
+                    <div class="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200/80 text-xs">
+                        <a href="/?filter=all&account_id={{ $accountId }}&temperature={{ $temperatureFilter }}&follow_up={{ $followUpFilter }}&cs_id={{ $csId }}" class="px-2.5 py-1 rounded-lg font-bold transition {{ $filter === 'all' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-800' }}">Semua</a>
+                        <a href="/?filter=daily&account_id={{ $accountId }}&temperature={{ $temperatureFilter }}&follow_up={{ $followUpFilter }}&cs_id={{ $csId }}" class="px-2.5 py-1 rounded-lg font-bold transition {{ $filter === 'daily' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-800' }}">Hari Ini</a>
+                        <a href="/?filter=monthly&account_id={{ $accountId }}&temperature={{ $temperatureFilter }}&follow_up={{ $followUpFilter }}&cs_id={{ $csId }}" class="px-2.5 py-1 rounded-lg font-bold transition {{ $filter === 'monthly' ? 'bg-white text-slate-900 shadow-2xs' : 'text-slate-500 hover:text-slate-800' }}">Bulan Ini</a>
                     </div>
                 </div>
 
-                <!-- 3. Follow-Up Activity & Status Filter -->
-                <div class="flex items-center justify-between gap-3 pt-2 border-t border-slate-100">
-                    <div class="flex items-center gap-1.5 overflow-x-auto pb-1 flex-nowrap" style="scrollbar-width: thin;">
-                        <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 pl-1 whitespace-nowrap flex items-center gap-1 flex-shrink-0">
-                            <span>🔁</span> Follow-Up CS:
-                        </span>
-
-                        <!-- All Follow-Ups -->
-                        <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature={{ $temperatureFilter }}&follow_up=all&cs_id={{ $csId }}" 
-                           class="px-2.5 py-1 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 flex-shrink-0 {{ $followUpFilter === 'all' ? 'bg-indigo-900 text-white shadow-sm' : 'bg-slate-100 hover:bg-slate-200 text-slate-700' }}">
-                            <span>Semua Lead</span>
-                        </a>
-
-                        <!-- Done Today -->
-                        <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature={{ $temperatureFilter }}&follow_up=done_today&cs_id={{ $csId }}" 
-                           class="px-2.5 py-1 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 flex-shrink-0 {{ $followUpFilter === 'done_today' ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-400/40' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200' }}">
-                            <span>🟢 Sudah Di-FU Hari Ini</span>
-                            <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ $followUpFilter === 'done_today' ? 'bg-emerald-700 text-white' : 'bg-emerald-200 text-emerald-900' }} font-extrabold">
-                                {{ $fuDoneTodayCount }}
-                            </span>
-                        </a>
-
-                        <!-- Due Today -->
-                        <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature={{ $temperatureFilter }}&follow_up=due_today&cs_id={{ $csId }}" 
-                           class="px-2.5 py-1 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 flex-shrink-0 {{ $followUpFilter === 'due_today' ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-400/40' : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200' }}">
-                            <span>🟡 Perlu FU Hari Ini</span>
-                            <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ $followUpFilter === 'due_today' ? 'bg-amber-600 text-white' : 'bg-amber-200 text-amber-900' }} font-extrabold">
-                                {{ $fuDueTodayCount }}
-                            </span>
-                        </a>
-
-                        <!-- Overdue -->
-                        <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature={{ $temperatureFilter }}&follow_up=overdue&cs_id={{ $csId }}" 
-                           class="px-2.5 py-1 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 flex-shrink-0 {{ $followUpFilter === 'overdue' ? 'bg-rose-600 text-white shadow-sm ring-2 ring-rose-400/40' : 'bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200' }}">
-                            <span>🔴 Overdue (>48 Jam)</span>
-                            <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ $followUpFilter === 'overdue' ? 'bg-rose-700 text-white' : 'bg-rose-200 text-rose-900' }} font-extrabold">
-                                {{ $fuOverdueCount }}
-                            </span>
-                        </a>
+                <!-- Right: Search & Reset -->
+                <div class="flex items-center gap-2">
+                    <div class="relative flex-1 sm:w-56">
+                        <input type="text" id="instantSearchInput" onkeyup="filterKanbanCards(this.value)" placeholder="Cari lead / no WA..." class="w-full bg-slate-50 hover:bg-white focus:bg-white text-xs px-3 py-2 pl-8 rounded-xl border border-slate-200 focus:border-slate-400 focus:ring-1 focus:ring-slate-400 outline-none transition">
+                        <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                     </div>
 
-                    <div class="hidden 2xl:flex items-center gap-1 text-[11px] text-slate-400 whitespace-nowrap pl-1">
-                        <span>💡 Evaluasi Harian Proaktifitas Follow-Up CS</span>
-                    </div>
+                    @if($temperatureFilter !== 'all' || $followUpFilter !== 'all' || $csId !== 'all' || $filter !== 'all')
+                    <a href="/?filter=all&account_id={{ $accountId }}" class="px-2.5 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-xl border border-rose-200 transition flex items-center gap-1 whitespace-nowrap" title="Reset Semua Filter">
+                        ✕ Reset
+                    </a>
+                    @endif
                 </div>
             </div>
 
@@ -625,107 +587,54 @@
             </div>
             @endif
 
-            <!-- Active Pipeline Banner for Brand -->
+            <!-- Modern Minimalist Brand Pipeline Header -->
             @if($activeAccount)
-            <div class="bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl p-6 text-white shadow-lg flex flex-col md:flex-row justify-between items-center gap-4">
-                <div>
-                    <div class="flex items-center gap-3">
-                        @if($user->role === 'SALES_ADMIN')
-                        <h2 class="text-2xl font-bold">Pipeline CS: {{ $user->name }} (Brand: {{ $activeAccount->name }})</h2>
-                        <span class="px-3 py-1 rounded-full text-xs font-bold {{ $user->wa_status == 'CONNECTED' ? 'bg-emerald-400 text-emerald-950' : 'bg-red-400 text-white' }}">
-                            {{ $user->wa_status == 'CONNECTED' ? '🟢 Online (' . ($user->wa_phone ? '+' . $user->wa_phone : 'Connected') . ')' : '🔴 WA CS Belum Terhubung' }}
-                        </span>
-                        @else
-                        <h2 class="text-2xl font-bold">Pipeline Sales: {{ $activeAccount->name }}</h2>
-                        <span class="px-3 py-1 rounded-full text-xs font-bold {{ $activeAccount->isConnected() ? 'bg-emerald-400 text-emerald-950' : 'bg-yellow-300 text-yellow-950' }}">
-                            {{ $activeAccount->isConnected() ? '🟢 Online (' . ($activeAccount->getActivePhone() ? '+' . $activeAccount->getActivePhone() : 'Connected') . ')' : '🟡 Belum Scan QR' }}
-                        </span>
-                        @endif
+            <div class="bg-white rounded-2xl p-4 border border-slate-200/90 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div class="flex items-center gap-3 min-w-0">
+                    <div class="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-extrabold text-sm flex-shrink-0 shadow-2xs">
+                        {{ strtoupper(substr($activeAccount->name, 0, 2)) }}
                     </div>
-                    <p class="text-xs text-emerald-100 mt-1">
-                        @if($user->role === 'SALES_ADMIN')
-                        Daftar Leads & Stat Cards khusus untuk akun CS {{ $user->name }}.
-                        @else
-                        Daftar Leads & Stat Cards untuk seluruh saluran brand {{ $activeAccount->name }}.
-                        @endif
-                    </p>
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-2">
+                            <h2 class="text-base font-extrabold text-slate-900 truncate tracking-tight">
+                                {{ $activeAccount->name }}
+                            </h2>
+                            <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full {{ $activeAccount->isConnected() ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200' }}">
+                                <span class="w-1.5 h-1.5 rounded-full {{ $activeAccount->isConnected() ? 'bg-emerald-500' : 'bg-amber-400' }}"></span>
+                                <span>{{ $activeAccount->isConnected() ? ($activeAccount->getActivePhone() ? '+' . $activeAccount->getActivePhone() : 'Online') : 'Belum Scan QR' }}</span>
+                            </span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-0.5 truncate">
+                            {{ $leads->count() }} Leads &bull; {{ $stages->count() }} Kolom Pipeline Stage
+                            @if($csId !== 'all' && $csTeam->firstWhere('id', $csId))
+                                &bull; Filter CS: <strong class="text-slate-800">{{ $csTeam->firstWhere('id', $csId)->name }}</strong>
+                            @endif
+                        </p>
+                    </div>
                 </div>
                 
-                <div class="flex items-center gap-2">
-                    <button onclick="openBrandSettingsModal({{ $activeAccount->id }})" class="px-3.5 py-2 bg-emerald-800/60 hover:bg-emerald-900 text-white text-xs font-bold rounded-xl border border-emerald-500/50 shadow transition whitespace-nowrap">
-                        ⚙️ Stage & Keyword Trigger
+                <div class="flex items-center gap-2 flex-shrink-0">
+                    <!-- View Mode Toggle (Kanban vs Table) -->
+                    <div class="flex items-center bg-slate-100 p-0.5 rounded-xl border border-slate-200 text-xs">
+                        <button onclick="switchTab('kanban')" id="view-toggle-kanban" class="px-2.5 py-1.5 rounded-lg font-bold transition bg-white text-slate-900 shadow-2xs flex items-center gap-1.5">
+                            <span>⊞</span> Kanban
+                        </button>
+                        <button onclick="switchTab('table')" id="view-toggle-table" class="px-2.5 py-1.5 rounded-lg font-bold transition text-slate-500 hover:text-slate-800 flex items-center gap-1.5">
+                            <span>☰</span> Tabel
+                        </button>
+                        <button onclick="switchTab('analytics')" id="view-toggle-analytics" class="px-2.5 py-1.5 rounded-lg font-bold transition text-slate-500 hover:text-slate-800 flex items-center gap-1.5">
+                            <span>📈</span> Tren
+                        </button>
+                    </div>
+
+                    <button onclick="openBrandSettingsModal({{ $activeAccount->id }})" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 transition flex items-center gap-1.5" title="Kelola Stage & Keyword Trigger">
+                        ⚙️ Stage
                     </button>
-                    @if(!$user->isCeo() && $user->role === 'SALES_ADMIN')
-                    <button onclick="startScanQr('{{ $user->session_id ?? ('session_user_' . $user->id) }}'); openDeviceModal();" class="px-4 py-2.5 bg-white text-emerald-800 hover:bg-emerald-50 font-extrabold text-xs rounded-xl shadow-md transition flex items-center gap-2 whitespace-nowrap">
-                        📲 Connect WA CS / Scan Barcode
-                    </button>
-                    @else
-                    <button onclick="startScanQr('{{ $activeAccount->session_id }}'); openDeviceModal();" class="px-4 py-2.5 bg-white text-emerald-800 hover:bg-emerald-50 font-extrabold text-xs rounded-xl shadow-md transition flex items-center gap-2 whitespace-nowrap">
-                        📲 Connect WA / Scan QR
+                    @if(!$activeAccount->isConnected())
+                    <button onclick="startScanQr('{{ $activeAccount->session_id }}'); openDeviceModal();" class="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-2xs transition flex items-center gap-1 whitespace-nowrap">
+                        📲 Scan QR
                     </button>
                     @endif
-                </div>
-            </div>
-            @endif
-
-            <!-- CS Team Pipeline Selector for Supervisor & CEO -->
-            @if($activeAccount && ($user->isCeo() || $user->role === 'SUPERVISOR') && isset($csTeam) && $csTeam->count() > 0)
-            <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-2.5">
-                <div class="flex items-center justify-between">
-                    <span class="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
-                        <span>👥</span> Filter Pipeline per Admin CS ({{ $csTeam->count() }} CS Terdaftar):
-                    </span>
-                    @if($csId !== 'all')
-                    <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&cs_id=all" class="text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:underline">
-                        🔄 Tampilkan Semua CS
-                    </a>
-                    @endif
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-                    <!-- All CS Card -->
-                    <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&cs_id=all" 
-                       class="p-3 rounded-xl border transition flex items-center justify-between {{ $csId === 'all' ? 'bg-emerald-50/90 border-emerald-400 ring-2 ring-emerald-400/30 shadow-sm' : 'bg-slate-50 hover:bg-slate-100 border-slate-200' }}">
-                        <div class="flex items-center gap-2.5">
-                            <div class="w-8 h-8 rounded-lg bg-emerald-600 text-white font-black text-xs flex items-center justify-center shadow-sm">
-                                🌟
-                            </div>
-                            <div>
-                                <div class="text-xs font-bold text-slate-800">Semua Admin CS</div>
-                                <div class="text-[10px] text-slate-500">Seluruh tim brand</div>
-                            </div>
-                        </div>
-                        <span class="text-xs font-black px-2 py-0.5 rounded-full {{ $csId === 'all' ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-700' }}">
-                            {{ $activeAccount->leads->count() }}
-                        </span>
-                    </a>
-
-                    <!-- Individual CS Cards -->
-                    @foreach($csTeam as $cs)
-                    @php
-                        $isCsActive = ($csId == $cs->id);
-                        $isOnline = ($cs->wa_status === 'CONNECTED');
-                    @endphp
-                    <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&cs_id={{ $cs->id }}" 
-                       class="p-3 rounded-xl border transition flex items-center justify-between {{ $isCsActive ? 'bg-emerald-50/90 border-emerald-400 ring-2 ring-emerald-400/30 shadow-sm' : 'bg-slate-50 hover:bg-slate-100 border-slate-200' }}">
-                        <div class="flex items-center gap-2.5 truncate">
-                            <div class="w-8 h-8 rounded-lg {{ $isOnline ? 'bg-emerald-500' : 'bg-slate-400' }} text-white font-bold text-xs flex items-center justify-center shadow-sm flex-shrink-0">
-                                {{ strtoupper(substr($cs->name, 0, 2)) }}
-                            </div>
-                            <div class="truncate">
-                                <div class="text-xs font-bold text-slate-800 truncate flex items-center gap-1">
-                                    {{ $cs->name }}
-                                </div>
-                                <div class="text-[10px] {{ $isOnline ? 'text-emerald-700 font-medium' : 'text-slate-400' }} flex items-center gap-1">
-                                    <span class="inline-block w-1.5 h-1.5 rounded-full {{ $isOnline ? 'bg-emerald-500' : 'bg-red-400' }}"></span>
-                                    {{ $isOnline ? ($cs->wa_phone ? '+' . $cs->wa_phone : 'Online') : 'Offline' }}
-                                </div>
-                            </div>
-                        </div>
-                        <span class="text-xs font-black px-2 py-0.5 rounded-full flex-shrink-0 {{ $isCsActive ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-700' }}">
-                            {{ $cs->leads_count ?? 0 }}
-                        </span>
-                    </a>
-                    @endforeach
                 </div>
             </div>
             @endif
@@ -993,78 +902,75 @@
                              ondrop="dropLeadCard(event, '{{ $stage->name }}', {{ $stage->id }})" 
                              class="kanban-drop-zone space-y-3 flex-1 min-h-[160px] p-1.5 rounded-xl transition">
                             @foreach($stageLeads as $lead)
-                            @php $leadTemp = $lead->temperature; @endphp
+                            @php 
+                                $leadTemp = $lead->temperature; 
+                                $leadFu = $lead->follow_up_data; 
+                            @endphp
                             <div id="lead-card-{{ $lead->id }}" 
+                                 data-lead-name="{{ strtolower($lead->name) }}"
+                                 data-lead-phone="{{ $lead->phone }}"
                                  draggable="true" 
                                  ondragstart="dragLeadCard(event, {{ $lead->id }}, '{{ $stage->name }}')" 
                                  ondragend="dragEndLeadCard(event)" 
                                  onclick="openLeadDetailModal({{ $lead->id }})" 
-                                 class="kanban-lead-card bg-slate-50 hover:bg-white hover:shadow-md transition duration-150 p-4 rounded-xl shadow-xs border border-slate-200/90 cursor-grab active:cursor-grabbing select-none relative group">
-                                <div class="flex justify-between items-start">
-                                    <h3 class="font-bold text-slate-800 text-sm group-hover:text-slate-950 transition">{{ $lead->name }}</h3>
-                                    <div class="flex items-center gap-1">
-                                        @if($lead->priority > 0)
-                                            <div class="text-yellow-400 text-xs flex mt-0.5">
-                                                @for($i = 0; $i < $lead->priority; $i++)
-                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 fill-current" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
-                                                @endfor
-                                            </div>
-                                        @endif
-                                        <button onclick="event.stopPropagation(); quickEditLeadName({{ $lead->id }}, '{{ addslashes($lead->name) }}')" title="Edit Nama Lead" class="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-emerald-700 rounded transition text-xs">
-                                            ✏️
-                                        </button>
+                                 class="kanban-lead-card bg-white hover:border-slate-300 hover:shadow-md transition-all duration-150 p-3 rounded-xl shadow-2xs border border-slate-200/90 cursor-grab active:cursor-grabbing select-none relative group space-y-2">
+                                
+                                <!-- Card Header: Customer Name & Temperature Badge -->
+                                <div class="flex items-start justify-between gap-2">
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex items-center gap-1.5">
+                                            <h3 class="font-bold text-slate-900 text-xs sm:text-sm group-hover:text-indigo-600 transition truncate">{{ $lead->name }}</h3>
+                                            @if($lead->priority > 0)
+                                                <span class="text-amber-400 text-xs flex-shrink-0" title="{{ $lead->priority }} Bintang Prioritas">
+                                                    @for($i = 0; $i < $lead->priority; $i++)★@endfor
+                                                </span>
+                                            @endif
+                                        </div>
+                                        <div class="text-[11px] text-slate-500 font-mono flex items-center gap-1.5 mt-0.5">
+                                            <span>{{ $lead->phone }}</span>
+                                            <span class="text-slate-300">&bull;</span>
+                                            <span class="text-[10px] text-slate-400 font-sans">{{ $lead->created_at->format('d M, H:i') }}</span>
+                                        </div>
                                     </div>
-                                </div>
-                                <p class="text-xs text-slate-500 mt-1 font-sans flex items-center gap-1">
-                                    <span>🕒</span> {{ $lead->created_at->format('d M, H:i') }} &bull; <span class="font-mono text-[11px]">{{ $lead->phone }}</span>
-                                </p>
-                                <div class="mt-2.5 flex items-center gap-1.5 flex-wrap">
-                                    <span class="text-[10px] font-bold text-slate-600 bg-slate-200/70 px-2 py-0.5 rounded">
-                                        {{ $lead->waAccount->name ?? 'Default' }}
+
+                                    <!-- Subtle Temperature Indicator Pill -->
+                                    <span class="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 rounded-full {{ $leadTemp['badge_class'] }} flex-shrink-0" title="Funnel: {{ $leadTemp['progress'] }}%">
+                                        <span>{{ $leadTemp['icon'] }}</span>
+                                        <span>{{ $leadTemp['label'] }}</span>
                                     </span>
+                                </div>
+
+                                <!-- Card Metadata: Brand & Assigned CS (Minimalist tags) -->
+                                @if($accountId === 'all' || $lead->assignedUser)
+                                <div class="flex items-center gap-1.5 flex-wrap text-[10px]">
+                                    @if($accountId === 'all')
+                                    <span class="text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded font-medium border border-slate-200/60 truncate max-w-[120px]">
+                                        🏢 {{ $lead->waAccount->name ?? 'Default' }}
+                                    </span>
+                                    @endif
                                     @if($lead->assignedUser)
-                                    <span class="text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded">
+                                    <span class="text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded font-medium border border-slate-200/60 truncate max-w-[120px]">
                                         👤 {{ $lead->assignedUser->name }}
                                     </span>
                                     @endif
                                 </div>
+                                @endif
 
-                                <!-- Dynamic Lead Temperature Badge on Card -->
-                                <div class="mt-2.5 pt-2 border-t border-slate-200/60 flex items-center justify-between">
-                                    <span class="inline-flex items-center gap-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full {{ $leadTemp['badge_class'] }}">
-                                        <span>{{ $leadTemp['icon'] }}</span>
-                                        <span>{{ $leadTemp['label'] }}</span>
+                                <!-- Card Footer: Follow-Up Counter & Status (Sleek Single Row) -->
+                                <div class="pt-1.5 border-t border-slate-100 flex items-center justify-between gap-1 text-[10px]">
+                                    <span class="font-extrabold px-1.5 py-0.5 rounded text-[9px] {{ $leadFu['count'] > 0 ? 'bg-purple-50 text-purple-700 border border-purple-200' : 'bg-slate-50 text-slate-400 border border-slate-200' }}">
+                                        🔁 {{ $leadFu['count'] }}x FU
                                     </span>
-                                    <span class="text-[10px] font-bold font-mono {{ !empty($leadTemp['is_dead']) ? 'text-slate-400' : 'text-slate-500' }}">
-                                        @if(!empty($leadTemp['is_dead']))
-                                            🚫 Spam / Drop
-                                        @else
-                                            {{ $leadTemp['progress'] }}% Funnel
-                                        @endif
-                                    </span>
-                                </div>
-
-                                <!-- Dynamic Follow-Up Tracker Badge on Card -->
-                                @php $leadFu = $lead->follow_up_data; @endphp
-                                <div class="mt-1.5 pt-1.5 border-t border-slate-100 flex items-center justify-between gap-1 text-[10px]">
-                                    <div class="flex items-center gap-1">
-                                        <span class="font-extrabold px-1.5 py-0.5 rounded text-[9px] {{ $leadFu['count'] > 0 ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-slate-100 text-slate-500 border border-slate-200' }}">
-                                            🔁 FU: {{ $leadFu['count'] }}x
-                                        </span>
-                                    </div>
-                                    <span class="font-bold px-1.5 py-0.5 rounded-full text-[9px] {{ $leadFu['badge_class'] }}" title="{{ $leadFu['tooltip'] }}">
+                                    <span class="font-bold px-2 py-0.5 rounded-full text-[9px] {{ $leadFu['badge_class'] }}" title="{{ $leadFu['tooltip'] }}">
                                         {{ $leadFu['status_icon'] }} {{ $leadFu['status_label'] }}
                                     </span>
                                 </div>
 
+                                <!-- AI Alert (Compact Pill if active) -->
                                 @if($lead->ai_suggested_stage)
-                                <div class="mt-2.5 p-2 bg-amber-50 border border-amber-300 rounded-lg text-amber-900 text-xs flex flex-col gap-1 shadow-sm">
-                                    <div class="flex items-center gap-1.5 font-extrabold text-[11px] text-amber-800">
-                                        <span>🤖</span> AI Alert: CS Lupa Ketik {{ $lead->ai_suggested_keyword ?: '#' . $lead->ai_suggested_stage }}
-                                    </div>
-                                    <p class="text-[10px] text-amber-700 leading-tight">
-                                        Indikasi <strong>{{ $lead->ai_suggested_stage }}</strong>: {{ $lead->ai_suggestion_reason }}
-                                    </p>
+                                <div class="p-1.5 bg-amber-50 border border-amber-200 rounded-lg text-[10px] text-amber-900 flex items-center justify-between gap-1" title="{{ $lead->ai_suggestion_reason }}">
+                                    <span class="font-bold truncate">🤖 AI: Lupa {{ $lead->ai_suggested_keyword ?: '#' . $lead->ai_suggested_stage }}</span>
+                                    <span class="text-[9px] text-amber-700 font-bold underline flex-shrink-0">&rarr; {{ $lead->ai_suggested_stage }}</span>
                                 </div>
                                 @endif
                             </div>
@@ -2043,7 +1949,7 @@
             });
         }
 
-        let currentActiveTab = 'all';
+        let currentActiveTab = 'kanban';
 
         // INTERACTIVE TAB SWITCHING LOGIC
         function switchTab(tabName) {
@@ -2062,6 +1968,14 @@
                         btn.className = "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-[#8b949e] hover:bg-[#161b22] hover:text-[#f0f6fc] transition text-left";
                     }
                 }
+                const toggleBtn = document.getElementById('view-toggle-' + t);
+                if (toggleBtn) {
+                    if (t === tabName) {
+                        toggleBtn.className = "px-2.5 py-1.5 rounded-lg font-bold transition bg-white text-slate-900 shadow-2xs flex items-center gap-1.5";
+                    } else {
+                        toggleBtn.className = "px-2.5 py-1.5 rounded-lg font-bold transition text-slate-500 hover:text-slate-800 flex items-center gap-1.5";
+                    }
+                }
             });
 
             if (secAnalytics) secAnalytics.classList.toggle('hidden', tabName !== 'all' && tabName !== 'analytics');
@@ -2069,7 +1983,36 @@
             if (secKanban) secKanban.classList.toggle('hidden', tabName !== 'all' && tabName !== 'kanban');
         }
 
+        // REAL-TIME INSTANT SEARCH FILTER
+        function filterKanbanCards(query) {
+            const q = (query || '').toLowerCase().trim();
+            const cards = document.querySelectorAll('.kanban-lead-card');
+            cards.forEach(card => {
+                const name = card.getAttribute('data-lead-name') || '';
+                const phone = card.getAttribute('data-lead-phone') || '';
+                if (!q || name.includes(q) || phone.includes(q)) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+
+            // Also filter table rows if table is open
+            const rows = document.querySelectorAll('#section-table tbody tr');
+            rows.forEach(row => {
+                const text = row.innerText.toLowerCase();
+                if (!q || text.includes(q)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
+            if (document.getElementById('section-kanban')) {
+                switchTab('kanban');
+            }
             if (document.getElementById('inquiryChart')) {
                 initInquiryChart();
             }
