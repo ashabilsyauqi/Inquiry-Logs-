@@ -337,6 +337,52 @@
                         <span>🎯 Skala: Cold ❄️ &rarr; Warm 🌤️ &rarr; Hot 🔥 (Spam = 💀 Dead)</span>
                     </div>
                 </div>
+
+                <!-- 3. Follow-Up Activity & Status Filter -->
+                <div class="flex items-center justify-between gap-3 pt-2 border-t border-slate-100">
+                    <div class="flex items-center gap-1.5 overflow-x-auto pb-1 flex-nowrap" style="scrollbar-width: thin;">
+                        <span class="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 pl-1 whitespace-nowrap flex items-center gap-1 flex-shrink-0">
+                            <span>🔁</span> Follow-Up CS:
+                        </span>
+
+                        <!-- All Follow-Ups -->
+                        <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature={{ $temperatureFilter }}&follow_up=all&cs_id={{ $csId }}" 
+                           class="px-2.5 py-1 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 flex-shrink-0 {{ $followUpFilter === 'all' ? 'bg-indigo-900 text-white shadow-sm' : 'bg-slate-100 hover:bg-slate-200 text-slate-700' }}">
+                            <span>Semua Lead</span>
+                        </a>
+
+                        <!-- Done Today -->
+                        <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature={{ $temperatureFilter }}&follow_up=done_today&cs_id={{ $csId }}" 
+                           class="px-2.5 py-1 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 flex-shrink-0 {{ $followUpFilter === 'done_today' ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-400/40' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200' }}">
+                            <span>🟢 Sudah Di-FU Hari Ini</span>
+                            <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ $followUpFilter === 'done_today' ? 'bg-emerald-700 text-white' : 'bg-emerald-200 text-emerald-900' }} font-extrabold">
+                                {{ $fuDoneTodayCount }}
+                            </span>
+                        </a>
+
+                        <!-- Due Today -->
+                        <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature={{ $temperatureFilter }}&follow_up=due_today&cs_id={{ $csId }}" 
+                           class="px-2.5 py-1 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 flex-shrink-0 {{ $followUpFilter === 'due_today' ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-400/40' : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200' }}">
+                            <span>🟡 Perlu FU Hari Ini</span>
+                            <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ $followUpFilter === 'due_today' ? 'bg-amber-600 text-white' : 'bg-amber-200 text-amber-900' }} font-extrabold">
+                                {{ $fuDueTodayCount }}
+                            </span>
+                        </a>
+
+                        <!-- Overdue -->
+                        <a href="/?filter={{ $filter }}&account_id={{ $accountId }}&temperature={{ $temperatureFilter }}&follow_up=overdue&cs_id={{ $csId }}" 
+                           class="px-2.5 py-1 rounded-xl text-xs font-bold transition whitespace-nowrap flex items-center gap-1 flex-shrink-0 {{ $followUpFilter === 'overdue' ? 'bg-rose-600 text-white shadow-sm ring-2 ring-rose-400/40' : 'bg-rose-50 hover:bg-rose-100 text-rose-800 border border-rose-200' }}">
+                            <span>🔴 Overdue (>48 Jam)</span>
+                            <span class="px-1.5 py-0.2 rounded-full text-[10px] {{ $followUpFilter === 'overdue' ? 'bg-rose-700 text-white' : 'bg-rose-200 text-rose-900' }} font-extrabold">
+                                {{ $fuOverdueCount }}
+                            </span>
+                        </a>
+                    </div>
+
+                    <div class="hidden 2xl:flex items-center gap-1 text-[11px] text-slate-400 whitespace-nowrap pl-1">
+                        <span>💡 Evaluasi Harian Proaktifitas Follow-Up CS</span>
+                    </div>
+                </div>
             </div>
 
             <!-- Context-Aware Disconnection Alert Banner -->
@@ -998,6 +1044,19 @@
                                     </span>
                                 </div>
 
+                                <!-- Dynamic Follow-Up Tracker Badge on Card -->
+                                @php $leadFu = $lead->follow_up_data; @endphp
+                                <div class="mt-1.5 pt-1.5 border-t border-slate-100 flex items-center justify-between gap-1 text-[10px]">
+                                    <div class="flex items-center gap-1">
+                                        <span class="font-extrabold px-1.5 py-0.5 rounded text-[9px] {{ $leadFu['count'] > 0 ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-slate-100 text-slate-500 border border-slate-200' }}">
+                                            🔁 FU: {{ $leadFu['count'] }}x
+                                        </span>
+                                    </div>
+                                    <span class="font-bold px-1.5 py-0.5 rounded-full text-[9px] {{ $leadFu['badge_class'] }}" title="{{ $leadFu['tooltip'] }}">
+                                        {{ $leadFu['status_icon'] }} {{ $leadFu['status_label'] }}
+                                    </span>
+                                </div>
+
                                 @if($lead->ai_suggested_stage)
                                 <div class="mt-2.5 p-2 bg-amber-50 border border-amber-300 rounded-lg text-amber-900 text-xs flex flex-col gap-1 shadow-sm">
                                     <div class="flex items-center gap-1.5 font-extrabold text-[11px] text-amber-800">
@@ -1094,9 +1153,33 @@
                         </select>
                     </div>
 
-                    <div class="mb-4">
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">Catatan Internal Sales / CS</label>
-                        <textarea name="notes" id="modalNotes" rows="3" class="w-full px-3.5 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none placeholder-slate-400" placeholder="Tambahkan catatan khusus mengenai prospek ini..."></textarea>
+                    <!-- Follow-Up Activity & History Section -->
+                    <div class="bg-purple-50/70 border border-purple-200 rounded-xl p-3.5 space-y-2.5 mb-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="text-sm">🔁</span>
+                                <h5 class="font-bold text-xs text-purple-900">Aktivitas Follow-Up CS</h5>
+                                <span id="modalFuBadge" class="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-purple-200 text-purple-900">
+                                    0x Follow-Up
+                                </span>
+                            </div>
+                            <span id="modalFuStatus" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+                                Memuat status...
+                            </span>
+                        </div>
+
+                        <!-- Quick Record FU Input -->
+                        <div class="flex gap-1.5 pt-1">
+                            <input type="text" id="manualFuNoteInput" placeholder="Catatan Follow Up CS (Misal: Sudah ditelepon / kirim promo...)" class="flex-1 px-3 py-1.5 text-xs bg-white border border-purple-200 rounded-lg outline-none focus:ring-1 focus:ring-purple-500">
+                            <button type="button" onclick="recordManualFuSubmit()" class="px-3 py-1.5 bg-purple-700 hover:bg-purple-800 text-white font-bold text-xs rounded-lg shadow-xs transition whitespace-nowrap">
+                                + Catat FU
+                            </button>
+                        </div>
+
+                        <!-- FU Sessions Log Timeline -->
+                        <div id="modalFuSessionsContainer" class="space-y-1.5 max-h-36 overflow-y-auto text-[11px] pt-1">
+                            <div class="text-slate-400 text-center py-2 italic text-xs">Belum ada riwayat follow-up tercatat.</div>
+                        </div>
                     </div>
 
                     <div class="flex items-center justify-between gap-3 pt-2">
@@ -2667,10 +2750,65 @@
                         }
                         csSelect.innerHTML = csOptionsHtml;
                     }
+
+                    // Populate Follow-Up Activity Data & Timeline
+                    const fuBadge = document.getElementById('modalFuBadge');
+                    const fuStatus = document.getElementById('modalFuStatus');
+                    const fuContainer = document.getElementById('modalFuSessionsContainer');
+
+                    if (lead.follow_up) {
+                        if (fuBadge) fuBadge.innerText = lead.follow_up.count + 'x Follow-Up';
+                        if (fuStatus) {
+                            fuStatus.className = 'text-[10px] font-bold px-2.5 py-0.5 rounded-full ' + lead.follow_up.badge_class;
+                            fuStatus.innerText = lead.follow_up.status_icon + ' ' + lead.follow_up.status_label;
+                            fuStatus.title = lead.follow_up.tooltip || '';
+                        }
+                        if (fuContainer) {
+                            const sessions = lead.follow_up.fu_sessions || [];
+                            if (sessions.length === 0) {
+                                fuContainer.innerHTML = `<div class="text-slate-400 text-center py-2 italic text-xs">Belum ada riwayat follow-up tercatat dari percakapan.</div>`;
+                            } else {
+                                fuContainer.innerHTML = sessions.map((s, idx) => `
+                                    <div class="p-2 bg-white rounded-lg border border-purple-100 flex flex-col gap-1 shadow-2xs">
+                                        <div class="flex justify-between items-center text-[10px] font-bold text-purple-900">
+                                            <span>🔁 Sesi FU #${sessions.length - idx} &bull; ${s.date} (${s.time})</span>
+                                            <span class="text-slate-400 font-normal font-mono text-[9px]">${escapeHtml(s.reason || '')}</span>
+                                        </div>
+                                        <p class="text-slate-700 text-xs italic font-sans leading-tight">"${escapeHtml(s.message || '')}"</p>
+                                    </div>
+                                `).join('');
+                            }
+                        }
+                    }
                 })
                 .catch(err => {
                     console.error('Error fetching lead details:', err);
                 });
+        }
+
+        function recordManualFuSubmit() {
+            const leadId = document.getElementById('modalLeadId').value || currentEditingLeadId;
+            const input = document.getElementById('manualFuNoteInput');
+            const note = input ? input.value.trim() : '';
+            if (!leadId) return;
+
+            fetch('/leads/' + leadId + '/record-fu', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ note: note || 'Follow-up manual dicatat oleh CS.' })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (input) input.value = '';
+                openLeadDetailModal(leadId);
+            })
+            .catch(err => {
+                alert('Gagal mencatat follow up.');
+            });
         }
 
         function submitLeadUpdate(e) {

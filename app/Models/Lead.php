@@ -43,5 +43,10 @@ class Lead extends Model
     {
         return \App\Services\LeadTemperatureService::getTemperature($this);
     }
+
+    public function getFollowUpDataAttribute(): array
+    {
+        return \App\Services\LeadFollowUpService::getFollowUpData($this);
+    }
 }
 

@@ -184,7 +184,7 @@ Route::middleware(['auth'])->group(function () {
             \Illuminate\Support\Facades\Artisan::call('wa:check-disconnects');
         } catch (\Throwable $e) {}
 
-        $query = Lead::with(['waAccount', 'assignedUser']);
+        $query = Lead::with(['waAccount', 'assignedUser', 'messages']);
 
         if ($filter === 'daily') {
             $query->whereDate('created_at', Carbon::today());
@@ -201,6 +201,7 @@ Route::middleware(['auth'])->group(function () {
         $activeAccount = null;
         $csId = $request->query('cs_id', 'all');
         $temperatureFilter = $request->query('temperature', 'all');
+        $followUpFilter = $request->query('follow_up', 'all');
 
         if ($accountId !== 'all') {
             if (in_array((int)$accountId, $accessibleBrandIds) || $user->isCeo()) {
@@ -274,13 +275,17 @@ Route::middleware(['auth'])->group(function () {
 
         $allLeads = $query->latest()->get();
 
-        // Calculate Temperature Metrics for the current brand / view (Cold -> Cool -> Warm -> Very Warm -> Hot & Dead)
+        // Calculate Temperature & Follow-Up Metrics
         $coldCount = 0;
         $coolCount = 0;
         $warmCount = 0;
         $veryWarmCount = 0;
         $hotCount = 0;
         $deadCount = 0;
+
+        $fuDoneTodayCount = 0;
+        $fuDueTodayCount = 0;
+        $fuOverdueCount = 0;
 
         foreach ($allLeads as $l) {
             $t = $l->temperature['key'] ?? 'cold';
@@ -290,15 +295,29 @@ Route::middleware(['auth'])->group(function () {
             elseif ($t === 'very_warm') $veryWarmCount++;
             elseif ($t === 'hot') $hotCount++;
             elseif ($t === 'dead') $deadCount++;
+
+            $fu = $l->follow_up_data;
+            if ($fu['status'] === 'FOLLOWED_UP_TODAY') $fuDoneTodayCount++;
+            elseif ($fu['status'] === 'DUE_TODAY') $fuDueTodayCount++;
+            elseif ($fu['status'] === 'OVERDUE') $fuOverdueCount++;
         }
 
         // Apply Temperature Filter if selected
+        $filteredLeads = $allLeads;
         if (in_array($temperatureFilter, ['cold', 'cool', 'warm', 'very_warm', 'hot', 'dead'])) {
-            $leads = $allLeads->filter(fn($l) => ($l->temperature['key'] ?? '') === $temperatureFilter)->values();
-        } else {
-            $leads = $allLeads;
+            $filteredLeads = $filteredLeads->filter(fn($l) => ($l->temperature['key'] ?? '') === $temperatureFilter);
         }
 
+        // Apply Follow-Up Filter if selected
+        if ($followUpFilter === 'done_today') {
+            $filteredLeads = $filteredLeads->filter(fn($l) => $l->follow_up_data['status'] === 'FOLLOWED_UP_TODAY');
+        } elseif ($followUpFilter === 'due_today') {
+            $filteredLeads = $filteredLeads->filter(fn($l) => $l->follow_up_data['status'] === 'DUE_TODAY');
+        } elseif ($followUpFilter === 'overdue') {
+            $filteredLeads = $filteredLeads->filter(fn($l) => $l->follow_up_data['status'] === 'OVERDUE');
+        }
+
+        $leads = $filteredLeads->values();
         $totalLeads = $allLeads->count();
 
         // Determine pipeline stages for current view
@@ -325,7 +344,8 @@ Route::middleware(['auth'])->group(function () {
 
         return view('dashboard', compact(
             'leads', 'filter', 'accountId', 'activeAccount', 'waAccounts', 'user', 'stages',
-            'totalLeads', 'csTeam', 'csId', 'coldCount', 'coolCount', 'warmCount', 'veryWarmCount', 'hotCount', 'deadCount', 'temperatureFilter'
+            'totalLeads', 'csTeam', 'csId', 'coldCount', 'coolCount', 'warmCount', 'veryWarmCount', 'hotCount', 'deadCount', 'temperatureFilter',
+            'followUpFilter', 'fuDoneTodayCount', 'fuDueTodayCount', 'fuOverdueCount'
         ));
     });
 
@@ -364,6 +384,26 @@ Route::middleware(['auth'])->group(function () {
             'cs_list' => $csList,
             'stages' => $brandStages,
             'messages' => $lead->messages,
+            'follow_up' => $lead->follow_up_data,
+        ]);
+    });
+
+    Route::post('/leads/{id}/record-fu', function (Request $request, $id) {
+        $lead = Lead::findOrFail($id);
+        $user = Auth::user();
+        $customNote = $request->input('note', 'Follow-up manual dicatat oleh CS.');
+
+        LeadMessage::create([
+            'lead_id' => $lead->id,
+            'sender' => $user->wa_phone ?: $user->name,
+            'message' => '📌 [Catatan Follow-Up]: ' . $customNote,
+            'is_from_me' => true,
+        ]);
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Follow-up berhasil dicatat!',
+            'follow_up' => $lead->fresh()->follow_up_data,
         ]);
     });
 
