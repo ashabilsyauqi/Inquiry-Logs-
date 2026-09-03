@@ -48,5 +48,29 @@ class Lead extends Model
     {
         return \App\Services\LeadFollowUpService::getFollowUpData($this);
     }
+
+    public function isLid(): bool
+    {
+        return strlen($this->phone) >= 14 && !str_starts_with($this->phone, '62');
+    }
+
+    public function getDisplayPhoneAttribute(): string
+    {
+        if ($this->isLid()) {
+            return 'WA Privacy ID (' . substr($this->phone, -4) . ')';
+        }
+        if (str_starts_with($this->phone, '62')) {
+            return '+62 ' . substr($this->phone, 2, 3) . '-' . substr($this->phone, 5, 4) . '-' . substr($this->phone, 9);
+        }
+        return '+' . $this->phone;
+    }
+
+    public function getDisplayNameAttribute(): string
+    {
+        if ($this->isLid() && (str_starts_with($this->name, '+') || $this->name === $this->phone)) {
+            return 'Pelanggan WA (' . substr($this->phone, -4) . ')';
+        }
+        return $this->name;
+    }
 }
 

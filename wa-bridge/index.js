@@ -154,6 +154,33 @@ async function createSession(sessionId = 'default') {
             }
         });
 
+        // Track and map WhatsApp LID (Privacy ID) to Phone Numbers (PNJID)
+        sock.ev.on('contacts.upsert', (contacts) => {
+            for (const contact of contacts) {
+                if (contact.id && contact.lid) {
+                    const phone = contact.id.replace('@s.whatsapp.net', '').replace(/[^0-9]/g, '');
+                    const lid = contact.lid.replace('@lid', '').replace(/[^0-9]/g, '');
+                    if (phone && lid) {
+                        lidToPhoneMap.set(lid, phone);
+                        console.log(`[WA Bridge] [${sessionId}] Cached LID mapping: ${lid} -> ${phone}`);
+                    }
+                }
+            }
+        });
+
+        sock.ev.on('contacts.update', (updates) => {
+            for (const update of updates) {
+                if (update.id && update.lid) {
+                    const phone = update.id.replace('@s.whatsapp.net', '').replace(/[^0-9]/g, '');
+                    const lid = update.lid.replace('@lid', '').replace(/[^0-9]/g, '');
+                    if (phone && lid) {
+                        lidToPhoneMap.set(lid, phone);
+                        console.log(`[WA Bridge] [${sessionId}] Updated LID mapping: ${lid} -> ${phone}`);
+                    }
+                }
+            }
+        });
+
         sock.ev.on('messages.upsert', async (m) => {
             if (m.type !== 'notify') return;
             for (const msg of m.messages) {
@@ -170,18 +197,32 @@ async function createSession(sessionId = 'default') {
                     remotePhone = msg.key.participant.replace('@s.whatsapp.net', '').replace(/[^0-9]/g, '');
                 } else if (msg.participant && msg.participant.endsWith('@s.whatsapp.net')) {
                     remotePhone = msg.participant.replace('@s.whatsapp.net', '').replace(/[^0-9]/g, '');
+                } else if (remoteJid.endsWith('@lid')) {
+                    const cleanLid = remoteJid.replace('@lid', '').replace(/[^0-9]/g, '');
+                    let resolved = lidToPhoneMap.get(cleanLid);
+
+                    if (!resolved && (msg.key.participant || msg.participant)) {
+                        const participantPhone = (msg.key.participant || msg.participant).replace('@s.whatsapp.net', '').replace(/[^0-9]/g, '');
+                        if (participantPhone && participantPhone.length <= 13) {
+                            resolved = participantPhone;
+                            lidToPhoneMap.set(cleanLid, resolved);
+                        }
+                    }
+
+                    if (!resolved && sock.signalRepository?.lidMapping?.getPNForLID) {
+                        try {
+                            const pn = await sock.signalRepository.lidMapping.getPNForLID(remoteJid);
+                            if (pn) {
+                                resolved = pn.replace('@s.whatsapp.net', '').replace(/[^0-9]/g, '');
+                                lidToPhoneMap.set(cleanLid, resolved);
+                            }
+                        } catch (e) {}
+                    }
+
+                    remotePhone = resolved || cleanLid;
                 } else {
                     const cleanId = remoteJid.split('@')[0].replace(/[^0-9]/g, '');
                     remotePhone = lidToPhoneMap.get(cleanId) || cleanId;
-                }
-
-                if (remoteJid.endsWith('@lid') && (msg.key.participant || msg.participant)) {
-                    const participantPhone = (msg.key.participant || msg.participant).replace('@s.whatsapp.net', '').replace(/[^0-9]/g, '');
-                    const cleanLid = remoteJid.replace('@lid', '').replace(/[^0-9]/g, '');
-                    if (participantPhone && cleanLid) {
-                        lidToPhoneMap.set(cleanLid, participantPhone);
-                        remotePhone = participantPhone;
-                    }
                 }
 
                 const text = msg.message.conversation || msg.message.extendedTextMessage?.text || msg.message.imageMessage?.caption || '';

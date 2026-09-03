@@ -485,6 +485,9 @@ class WebhookController extends Controller
         if (str_starts_with($phone, '62')) {
             return '+62 ' . substr($phone, 2, 3) . '-' . substr($phone, 5, 4) . '-' . substr($phone, 9);
         }
+        if (strlen($phone) >= 14 && !str_starts_with($phone, '62')) {
+            return 'Pelanggan WA (' . substr($phone, -4) . ')';
+        }
         return '+' . $phone;
     }
 }

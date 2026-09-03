@@ -778,7 +778,7 @@
                             <tr class="hover:bg-slate-50/80 cursor-pointer transition" onclick="openLeadDetailModal({{ $lead->id }})">
                                 <td class="px-6 py-4">
                                     <div class="font-bold text-slate-800 flex items-center gap-2">
-                                        {{ $lead->name }}
+                                        {{ $lead->display_name }}
                                         @if($lead->priority > 0)
                                             <div class="text-yellow-400 text-xs flex">
                                                 @for($i = 0; $i < $lead->priority; $i++)
@@ -791,7 +791,7 @@
                                         <div class="text-xs text-slate-500 mt-0.5 italic">{{ Str::limit($lead->notes, 35) }}</div>
                                     @endif
                                 </td>
-                                <td class="px-6 py-4 text-slate-600 font-mono text-xs">{{ $lead->phone }}</td>
+                                <td class="px-6 py-4 text-slate-600 font-mono text-xs">{{ $lead->display_phone }}</td>
                                 <td class="px-6 py-4">
                                     <span class="bg-slate-100 text-slate-700 px-2.5 py-1 rounded-md text-xs font-semibold border border-slate-200">
                                         {{ $lead->waAccount->name ?? 'Default' }}
@@ -907,8 +907,8 @@
                                 $leadFu = $lead->follow_up_data; 
                             @endphp
                             <div id="lead-card-{{ $lead->id }}" 
-                                 data-lead-name="{{ strtolower($lead->name) }}"
-                                 data-lead-phone="{{ $lead->phone }}"
+                                 data-lead-name="{{ strtolower($lead->display_name) }}"
+                                 data-lead-phone="{{ $lead->display_phone }}"
                                  draggable="true" 
                                  ondragstart="dragLeadCard(event, {{ $lead->id }}, '{{ $stage->name }}')" 
                                  ondragend="dragEndLeadCard(event)" 
@@ -919,7 +919,7 @@
                                 <div class="flex items-start justify-between gap-2">
                                     <div class="min-w-0 flex-1">
                                         <div class="flex items-center gap-1.5">
-                                            <h3 class="font-bold text-slate-900 text-xs sm:text-sm group-hover:text-indigo-600 transition truncate">{{ $lead->name }}</h3>
+                                            <h3 class="font-bold text-slate-900 text-xs sm:text-sm group-hover:text-indigo-600 transition truncate">{{ $lead->display_name }}</h3>
                                             @if($lead->priority > 0)
                                                 <span class="text-amber-400 text-xs flex-shrink-0" title="{{ $lead->priority }} Bintang Prioritas">
                                                     @for($i = 0; $i < $lead->priority; $i++)★@endfor
@@ -927,7 +927,7 @@
                                             @endif
                                         </div>
                                         <div class="text-[11px] text-slate-500 font-mono flex items-center gap-1.5 mt-0.5">
-                                            <span>{{ $lead->phone }}</span>
+                                            <span>{{ $lead->display_phone }}</span>
                                             <span class="text-slate-300">&bull;</span>
                                             <span class="text-[10px] text-slate-400 font-sans">{{ $lead->created_at->format('d M, H:i') }}</span>
                                         </div>
@@ -2660,9 +2660,9 @@
             fetch('/leads/' + leadId + '/detail')
                 .then(res => res.json())
                 .then(lead => {
-                    document.getElementById('detailLeadName').textContent = lead.name;
-                    document.getElementById('detailLeadPhone').textContent = lead.phone ? '+' + lead.phone : '-';
-                    document.getElementById('modalName').value = lead.name || '';
+                    document.getElementById('detailLeadName').textContent = lead.display_name || lead.name;
+                    document.getElementById('detailLeadPhone').textContent = lead.display_phone || (lead.phone ? '+' + lead.phone : '-');
+                    document.getElementById('modalName').value = lead.display_name || lead.name || '';
                     document.getElementById('modalPhone').value = lead.phone || '';
                     document.getElementById('modalPriority').value = lead.priority ?? 0;
                     document.getElementById('modalNotes').value = lead.notes || '';

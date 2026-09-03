@@ -374,7 +374,10 @@ Route::middleware(['auth'])->group(function () {
         return response()->json([
             'id' => $lead->id,
             'name' => $lead->name,
+            'display_name' => $lead->display_name,
             'phone' => $lead->phone,
+            'display_phone' => $lead->display_phone,
+            'is_lid' => $lead->isLid(),
             'stage' => $lead->stage,
             'priority' => $lead->priority,
             'notes' => $lead->notes,
