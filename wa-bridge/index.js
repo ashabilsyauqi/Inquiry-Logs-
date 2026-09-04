@@ -182,7 +182,7 @@ async function createSession(sessionId = 'default') {
         });
 
         sock.ev.on('messages.upsert', async (m) => {
-            if (m.type !== 'notify') return;
+            if (m.type !== 'notify' && m.type !== 'append') return;
             for (const msg of m.messages) {
                 if (!msg.message) continue;
                 const remoteJid = msg.key.remoteJid || '';
@@ -225,7 +225,28 @@ async function createSession(sessionId = 'default') {
                     remotePhone = lidToPhoneMap.get(cleanId) || cleanId;
                 }
 
-                const text = msg.message.conversation || msg.message.extendedTextMessage?.text || msg.message.imageMessage?.caption || '';
+                // Unwrap ephemeral / view once / wrappers
+                let realMsg = msg.message;
+                if (realMsg.ephemeralMessage) realMsg = realMsg.ephemeralMessage.message;
+                if (realMsg.viewOnceMessage) realMsg = realMsg.viewOnceMessage.message;
+                if (realMsg.viewOnceMessageV2) realMsg = realMsg.viewOnceMessageV2.message;
+                if (realMsg.documentWithCaptionMessage) realMsg = realMsg.documentWithCaptionMessage.message;
+
+                const text = realMsg?.conversation 
+                    || realMsg?.extendedTextMessage?.text 
+                    || realMsg?.imageMessage?.caption 
+                    || realMsg?.videoMessage?.caption
+                    || realMsg?.documentMessage?.caption
+                    || realMsg?.buttonsResponseMessage?.selectedButtonId
+                    || realMsg?.templateButtonReplyMessage?.selectedId
+                    || realMsg?.listResponseMessage?.singleSelectReply?.selectedRowId
+                    || (realMsg?.imageMessage ? '[Gambar]' : '')
+                    || (realMsg?.audioMessage ? '[Voice Note]' : '')
+                    || (realMsg?.documentMessage ? '[Dokumen]' : '')
+                    || (realMsg?.stickerMessage ? '[Stiker]' : '')
+                    || (realMsg?.contactMessage ? '[Kontak]' : '')
+                    || '';
+
                 if (!text.trim()) continue;
 
                 const senderName = isFromMe ? 'Admin CS' : (msg.pushName || remotePhone);

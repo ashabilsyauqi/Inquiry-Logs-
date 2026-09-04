@@ -150,7 +150,9 @@ class WebhookController extends Controller
         }
 
         $leadPhone = $isFromMe ? $receiverPhone : $senderPhone;
-        $lead = Lead::where('phone', $leadPhone)->first();
+        $lead = $waAccount 
+            ? Lead::where('wa_account_id', $waAccount->id)->where('phone', $leadPhone)->first()
+            : Lead::where('phone', $leadPhone)->first();
 
         // 2. HANDLE INTERNAL ADMIN WA SLASH & OPERATOR COMMANDS (e.g. /1, /2, .1, .2, /deal, /meeting)
         if ($isFromMe && $isAdminCommand) {
@@ -273,7 +275,7 @@ class WebhookController extends Controller
                 if ($assignedUserId && !$lead->assigned_user_id) {
                     $lead->assigned_user_id = $assignedUserId;
                 }
-                if ($senderNameInput && (str_contains($lead->name, 'Lead') || preg_match('/^[0-9]+$/', $lead->name))) {
+                if ($senderNameInput && (str_contains($lead->name, 'Pelanggan') || str_contains($lead->name, 'Lead') || preg_match('/^[0-9]+$/', $lead->name))) {
                     $lead->name = $senderNameInput;
                 }
                 if ($matchedStageName) {
