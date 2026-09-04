@@ -274,9 +274,6 @@ async function createSession(sessionId = 'default') {
     return sessionData;
 }
 
-// Automatically initialize 'default' session on startup
-createSession('default');
-
 // API ENDPOINTS
 
 // 1. Get all active sessions
@@ -386,7 +383,8 @@ function autoResumeExistingSessions() {
         const authFolders = files.filter(f => f.startsWith('baileys_auth_') && fs.statSync(path.join(__dirname, f)).isDirectory());
 
         if (authFolders.length === 0) {
-            console.log('[WA Bridge] No existing auth sessions found to auto-resume.');
+            console.log('[WA Bridge] No existing auth sessions found. Initializing default session...');
+            createSession('default');
             return;
         }
 
@@ -402,6 +400,7 @@ function autoResumeExistingSessions() {
         });
     } catch (err) {
         console.error('[WA Bridge] Error checking auth folders for auto-resume:', err.message);
+        createSession('default');
     }
 }
 

@@ -231,8 +231,8 @@ class WebhookController extends Controller
         }
 
         // Entry Stage Defaulting
-        $entryStage = $waAccount->pipelineStages()->where('is_default', true)->first();
-        if (!$entryStage) {
+        $entryStage = $waAccount ? $waAccount->pipelineStages()->where('is_default', true)->first() : null;
+        if ($waAccount && !$entryStage) {
             $entryStage = $waAccount->pipelineStages()->first();
         }
         $defaultStageName = $entryStage ? $entryStage->name : 'Lead Masuk';
